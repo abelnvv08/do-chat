@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { getRoomsForUser, getAIRoom } from '@/lib/demo'
+import { parseFile } from '@/lib/file-parser'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -32,28 +33,19 @@ function getSenderName(msg: RawMessage): string {
   return (msg.user as { name: string } | null)?.name ?? 'Usuario'
 }
 
-// Construir contenido para Claude incluyendo imágenes
 function buildMessageContent(
   textContext: string,
   images: { url: string; sender: string }[]
 ): Anthropic.Messages.MessageParam['content'] {
-  if (images.length === 0) {
-    return textContext
-  }
+  if (images.length === 0) return textContext
 
   const parts: Anthropic.Messages.ContentBlockParam[] = [
     { type: 'text', text: textContext }
   ]
 
-  for (const img of images.slice(0, 5)) { // máximo 5 imágenes por request
-    parts.push({
-      type: 'text',
-      text: `\nImagen compartida por ${img.sender}:`
-    })
-    parts.push({
-      type: 'image',
-      source: { type: 'url', url: img.url }
-    })
+  for (const img of images.slice(0, 5)) {
+    parts.push({ type: 'text', text: `\nImagen compartida por ${img.sender}:` })
+    parts.push({ type: 'image', source: { type: 'url', url: img.url } })
   }
 
   return parts
@@ -96,18 +88,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Resumen de archivos para el contexto
-  const filesContext = allFiles.length > 0
+  // Parse file contents when the query mentions documents/files
+  const queryMentionsFiles = /archivo|excel|word|pdf|csv|documento|contenido|tabla|hoja|dato/i.test(query)
+  const parsedFilesContext: string[] = []
+  if (allFiles.length > 0 && (queryMentionsFiles || /analiz|lee|mostr|resum/i.test(query))) {
+    for (const f of allFiles.slice(0, 3)) {
+      const content = await parseFile(f.url, f.name)
+      if (content) {
+        parsedFilesContext.push(`\n--- Contenido de "${f.name}" (enviado por ${f.sender} en ${f.room}) ---\n${content}`)
+      }
+    }
+  }
+
+  const filesListContext = allFiles.length > 0
     ? `\n\nARCHIVOS COMPARTIDOS EN LOS CHATS:\n${allFiles.map(f => `- "${f.name}" — enviado por ${f.sender} en ${f.room}`).join('\n')}`
     : ''
 
+  const parsedFilesBlock = parsedFilesContext.length > 0
+    ? `\n\nCONTENIDO DE ARCHIVOS ANALIZADOS:${parsedFilesContext.join('\n')}`
+    : ''
+
   const contextBlock = allChatsContext.length > 0
-    ? `CONTEXTO DE TODOS LOS CHATS:\n${allChatsContext.join('\n\n')}${filesContext}`
+    ? `CONTEXTO DE TODOS LOS CHATS:\n${allChatsContext.join('\n\n')}${filesListContext}${parsedFilesBlock}`
     : '(No hay mensajes en los chats aún)'
 
   const systemPrompt = `Eres do, una IA accionable con acceso completo a todos los chats, imágenes y archivos.
 Tienes visión — puedes ver y analizar las imágenes que se comparten en los chats.
-Puedes leer mensajes, ver imágenes, conocer qué archivos se compartieron, resumir conversaciones, extraer tareas y enviar mensajes.
+Puedes leer mensajes, ver imágenes, leer el contenido de archivos (PDF, Excel, Word, CSV), resumir conversaciones, extraer tareas y enviar mensajes.
 
 Cuando el usuario te pide ENVIAR un mensaje, incluye al final:
 [ACCION:ENVIAR:room_id:mensaje]
@@ -116,8 +123,7 @@ room_ids disponibles: group, dm-001-002, dm-001-003, dm-001-004, dm-002-003, dm-
 
 Responde en español. Sé directo y útil.`
 
-  // Incluir imágenes en el request si las hay y la query las menciona o es general
-  const queryMentionsImages = /imagen|foto|adjunto|archivo|compartió|mandó/i.test(query)
+  const queryMentionsImages = /imagen|foto|adjunto|compartió|mandó/i.test(query)
   const imagesToInclude = (queryMentionsImages || allImages.length > 0) ? allImages : []
 
   const userContent = buildMessageContent(
@@ -134,7 +140,6 @@ Responde en español. Sé directo y útil.`
 
   let reply = response.content[0].type === 'text' ? response.content[0].text : ''
 
-  // Ejecutar acciones de envío
   const actionRegex = /\[ACCION:ENVIAR:([^:]+):([^\]]+)\]/g
   const actions: { roomId: string; message: string }[] = []
   let match
