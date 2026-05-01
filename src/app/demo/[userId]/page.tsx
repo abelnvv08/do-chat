@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { USERS, getRoomsForUser, type Room } from '@/lib/demo'
@@ -12,14 +12,25 @@ type RoomWithMeta = Room & {
   seenByOthers: boolean
 }
 
+type SearchResult = {
+  id: string; room_id: string; room_name: string; room_emoji: string
+  sender_name: string; sender_emoji: string; preview: string
+  type: string; created_at: string; fileInfo: { name: string; url: string } | null
+}
+
 export default function ChatListPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
   const router = useRouter()
   const me = USERS[userId]
   const [tab, setTab] = useState<'chats' | 'tu'>('chats')
   const [rooms, setRooms] = useState<RoomWithMeta[]>([])
-  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!me) { router.push('/demo'); return }
@@ -28,23 +39,50 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (showSearch) setTimeout(() => searchInputRef.current?.focus(), 50)
+  }, [showSearch])
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!searchQuery || searchQuery.length < 2) { setSearchResults([]); return }
+    debounceRef.current = setTimeout(doSearch, 400)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [searchQuery])
+
   async function fetchRooms() {
     try {
       const res = await fetch(`/api/demo/chat-list?user_id=${userId}`)
       const { rooms: r } = await res.json()
       setRooms(r ?? [])
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
+  }
+
+  async function doSearch() {
+    setSearchLoading(true)
+    try {
+      const res = await fetch(`/api/demo/search?user_id=${userId}&q=${encodeURIComponent(searchQuery)}`)
+      const data = await res.json()
+      setSearchResults(data.results ?? [])
+    } finally { setSearchLoading(false) }
+  }
+
+  function closeSearch() {
+    setShowSearch(false)
+    setSearchQuery('')
+    setSearchResults([])
   }
 
   if (!me) return null
 
-  const filtered = rooms.filter(r =>
-    !search || r.name.toLowerCase().includes(search.toLowerCase())
-  )
-
   const totalUnread = rooms.reduce((sum, r) => sum + r.unread, 0)
+
+  // Group search results by room
+  const grouped: Record<string, SearchResult[]> = {}
+  for (const r of searchResults) {
+    if (!grouped[r.room_id]) grouped[r.room_id] = []
+    grouped[r.room_id].push(r)
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
@@ -52,31 +90,21 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
       <div className="bg-white px-4 pt-12 pb-0 sticky top-0 z-10 border-b border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl font-bold text-gray-900">DO Chat</h1>
-          <div className="flex items-center gap-3">
-            <Link href={`/demo/${userId}/buscar`} className="text-gray-500 hover:text-blue-600 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-            </Link>
-          </div>
+          <button onClick={() => setShowSearch(true)} className="text-gray-500 hover:text-blue-600 transition-colors p-1">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+          </button>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-gray-100">
-          <button
-            onClick={() => setTab('chats')}
-            className={`flex-1 py-2.5 text-sm font-semibold relative transition-colors ${tab === 'chats' ? 'text-blue-600' : 'text-gray-400'}`}
-          >
+          <button onClick={() => setTab('chats')} className={`flex-1 py-2.5 text-sm font-semibold relative transition-colors ${tab === 'chats' ? 'text-blue-600' : 'text-gray-400'}`}>
             Chats
-            {totalUnread > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold">{totalUnread > 9 ? '9+' : totalUnread}</span>
-            )}
+            {totalUnread > 0 && <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] font-bold">{totalUnread > 9 ? '9+' : totalUnread}</span>}
             {tab === 'chats' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />}
           </button>
-          <button
-            onClick={() => setTab('tu')}
-            className={`flex-1 py-2.5 text-sm font-semibold relative transition-colors ${tab === 'tu' ? 'text-blue-600' : 'text-gray-400'}`}
-          >
+          <button onClick={() => setTab('tu')} className={`flex-1 py-2.5 text-sm font-semibold relative transition-colors ${tab === 'tu' ? 'text-blue-600' : 'text-gray-400'}`}>
             Tú
             {tab === 'tu' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />}
           </button>
@@ -84,39 +112,100 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
       </div>
 
       {tab === 'chats' && (
-        <>
-          {/* Search */}
-          <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-3 py-2">
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar conversación..."
-                className="flex-1 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none bg-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Chat list */}
-          <div className="flex-1 divide-y divide-gray-50">
-            {loading && (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            {filtered.map(room => (
-              <ChatRow key={room.id} room={room} userId={userId} />
-            ))}
-          </div>
-        </>
+        <div className="flex-1 divide-y divide-gray-50">
+          {loading && <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
+          {rooms.map(room => <ChatRow key={room.id} room={room} userId={userId} />)}
+        </div>
       )}
 
       {tab === 'tu' && <ProfileTab userId={userId} me={me} />}
 
       <BottomNav userId={userId} active="chats" />
+
+      {/* Search overlay */}
+      {showSearch && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col max-w-md mx-auto">
+          {/* Search header */}
+          <div className="px-4 pt-12 pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2.5">
+                <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar mensajes, archivos…"
+                  className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                  autoComplete="off"
+                />
+                {searchQuery.length > 0 && (
+                  <button onClick={() => { setSearchQuery(''); setSearchResults([]) }} className="text-gray-400">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <button onClick={closeSearch} className="text-blue-600 font-medium text-sm shrink-0">Cancelar</button>
+            </div>
+          </div>
+
+          {/* Search results */}
+          <div className="flex-1 overflow-y-auto">
+            {!searchQuery && (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">🔍</div>
+                <p className="text-gray-700 font-medium">Buscá en todos tus chats</p>
+                <p className="text-sm text-gray-400">Mensajes, archivos, respuestas de do AI</p>
+              </div>
+            )}
+
+            {searchLoading && (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-8">
+                <p className="text-gray-500 font-medium">Sin resultados para &ldquo;{searchQuery}&rdquo;</p>
+              </div>
+            )}
+
+            {!searchLoading && Object.entries(grouped).map(([roomId, msgs]) => (
+              <div key={roomId}>
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-y border-gray-100">
+                  <span>{msgs[0].room_emoji}</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{msgs[0].room_name}</span>
+                  <span className="ml-auto text-xs text-gray-400">{msgs.length} resultado{msgs.length > 1 ? 's' : ''}</span>
+                </div>
+                {msgs.map(result => (
+                  <button
+                    key={result.id}
+                    onClick={() => { closeSearch(); router.push(`/demo/${userId}/${result.room_id}`) }}
+                    className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 border-b border-gray-50 text-left"
+                  >
+                    <div className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-sm mt-0.5 ${result.type === 'ai' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+                      {result.type === 'ai' ? '✦' : result.sender_emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                        <p className="text-sm font-semibold text-gray-800">{result.sender_name}</p>
+                        <p className="text-xs text-gray-400 shrink-0">{formatMessageTime(result.created_at)}</p>
+                      </div>
+                      <p className="text-sm text-gray-500 line-clamp-2 text-left">
+                        {result.fileInfo ? `📎 ${result.fileInfo.name}` : result.preview.slice(0, 140)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
