@@ -218,6 +218,15 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           </p>
         </div>
 
+        <button
+          onClick={() => router.push(`/demo/${userId}/buscar`)}
+          className="text-gray-400 hover:text-blue-600 transition-colors p-1 shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+        </button>
+
         {!isAIRoom && (
           <button
             onClick={() => { setShowAIPanel(true); setTimeout(() => aiInputRef.current?.focus(), 50) }}

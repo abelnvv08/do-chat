@@ -53,16 +53,11 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl font-bold text-gray-900">DO Chat</h1>
           <div className="flex items-center gap-3">
-            <button className="text-gray-500">
+            <Link href={`/demo/${userId}/buscar`} className="text-gray-500 hover:text-blue-600 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-            </button>
-            <button className="text-gray-500">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-              </svg>
-            </button>
+            </Link>
           </div>
         </div>
 
