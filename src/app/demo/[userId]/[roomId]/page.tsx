@@ -23,9 +23,11 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   const [showAIPanel, setShowAIPanel] = useState(false)
   const [aiQuery, setAiQuery] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const aiInputRef = useRef<HTMLTextAreaElement>(null)
   const fetchingRef = useRef(false)
+  const lastMsgCountRef = useRef(0)
   const [otherReads, setOtherReads] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -47,14 +49,20 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
 
   async function fetchReads() {
     try {
-      const res = await fetch(`/api/demo/reads?user_id=${userId}`)
-      // We need reads from others in this room — handled via chat-list, approximate here
-      // by checking if otherUser has a more recent read than our messages
+      await fetch(`/api/demo/reads?user_id=${userId}`)
     } catch { /* ignore */ }
   }
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = scrollContainerRef.current
+    if (!container) return
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+    const isNearBottom = distanceFromBottom < 120
+    const gotNewMessages = messages.length > lastMsgCountRef.current
+    lastMsgCountRef.current = messages.length
+    if (isNearBottom || gotNewMessages) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages, aiTyping])
 
   async function fetchMessages() {
@@ -221,7 +229,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 pb-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1 pb-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${isAIRoom ? 'bg-blue-100' : 'bg-gray-100'}`}>
