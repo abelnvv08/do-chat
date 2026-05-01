@@ -1,7 +1,8 @@
 export const USERS: Record<string, { name: string; emoji: string; bg: string; text: string; border: string }> = {
-  '001': { name: 'Usuario 001', emoji: '🟣', bg: 'bg-violet-600',  text: 'text-violet-400',  border: 'border-violet-500/40'  },
-  '002': { name: 'Usuario 002', emoji: '🟢', bg: 'bg-emerald-600', text: 'text-emerald-400', border: 'border-emerald-500/40' },
-  '003': { name: 'Usuario 003', emoji: '🟡', bg: 'bg-amber-500',   text: 'text-amber-400',   border: 'border-amber-500/40'   },
+  '001': { name: 'Abel',   emoji: '🟣', bg: 'bg-violet-600',  text: 'text-violet-400',  border: 'border-violet-500/40'  },
+  '002': { name: 'Santi',  emoji: '🟢', bg: 'bg-emerald-600', text: 'text-emerald-400', border: 'border-emerald-500/40' },
+  '003': { name: 'Hernan', emoji: '🟡', bg: 'bg-amber-500',   text: 'text-amber-400',   border: 'border-amber-500/40'   },
+  '004': { name: 'Walter', emoji: '🔵', bg: 'bg-blue-600',    text: 'text-blue-400',    border: 'border-blue-500/40'    },
 }
 
 export function getDMRoom(a: string, b: string) {

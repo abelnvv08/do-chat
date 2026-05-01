@@ -20,7 +20,7 @@ async function getMessagesFromRoom(roomId: string, limit = 30) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user_id, query } = await req.json()
+  const { user_id, query, room_id: replyRoomId } = await req.json()
   const supabase = admin()
 
   // Cargar todos los chats del usuario para contexto
@@ -97,12 +97,13 @@ Responde siempre en español. Sé directo y accionable.`
     reply += `\n\n✅ Mensaje enviado a ${action.roomId === 'group' ? 'el grupo' : action.roomId}.`
   }
 
-  // Guardar respuesta de do en el chat de IA del usuario
+  // Guardar respuesta en el chat donde se invocó (o en el AI room por defecto)
+  const targetRoom = replyRoomId || getAIRoom(user_id)
   await supabase.from('demo_messages').insert({
     user_id,
     content: reply,
     type: 'ai',
-    room_id: getAIRoom(user_id),
+    room_id: targetRoom,
   })
 
   return NextResponse.json({ reply, actions })

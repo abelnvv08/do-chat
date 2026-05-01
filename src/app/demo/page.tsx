@@ -1,9 +1,10 @@
 import Link from 'next/link'
 
 const USERS = [
-  { id: '001', name: 'Usuario 001', emoji: '🟣', desc: 'Entra como el primero' },
-  { id: '002', name: 'Usuario 002', emoji: '🟢', desc: 'Entra como el segundo' },
-  { id: '003', name: 'Usuario 003', emoji: '🟡', desc: 'Entra como el tercero' },
+  { id: '001', name: 'Abel',   emoji: '🟣' },
+  { id: '002', name: 'Santi',  emoji: '🟢' },
+  { id: '003', name: 'Hernan', emoji: '🟡' },
+  { id: '004', name: 'Walter', emoji: '🔵' },
 ]
 
 export default function DemoPage() {
@@ -30,7 +31,6 @@ export default function DemoPage() {
               </div>
               <div className="text-left">
                 <p className="font-semibold text-zinc-100">{user.name}</p>
-                <p className="text-xs text-zinc-500">{user.desc}</p>
               </div>
               <span className="ml-auto text-zinc-500 text-lg">→</span>
             </Link>

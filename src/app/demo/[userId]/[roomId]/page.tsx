@@ -3,7 +3,7 @@
 import { use, useEffect, useRef, useState, KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import TextareaAutosize from 'react-textarea-autosize'
-import { SendHorizonalIcon, BotIcon, ArrowLeftIcon, PaperclipIcon, FileIcon } from 'lucide-react'
+import { SendHorizonalIcon, BotIcon, ArrowLeftIcon, PaperclipIcon, FileIcon, SparklesIcon, XIcon } from 'lucide-react'
 import { USERS, getRoomsForUser, getAIRoom, DemoMessage } from '@/lib/demo'
 import { formatMessageTime } from '@/lib/utils'
 
@@ -20,8 +20,11 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   const [loading, setLoading] = useState(false)
   const [aiTyping, setAiTyping] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [showAIPanel, setShowAIPanel] = useState(false)
+  const [aiQuery, setAiQuery] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const aiInputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (!me || !room) { router.push(`/demo/${userId}`); return }
@@ -73,6 +76,31 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
       await fetchMessages()
       setLoading(false)
     }
+  }
+
+  async function askAI() {
+    if (!aiQuery.trim()) return
+    const query = aiQuery.trim()
+    setAiQuery('')
+    setShowAIPanel(false)
+    setAiTyping(true)
+
+    // Guardar pregunta del usuario en este chat
+    await fetch('/api/demo/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, content: `@do ${query}`, room_id: roomId }),
+    })
+    await fetchMessages()
+
+    // Llamar a la IA con contexto de este chat
+    await fetch('/api/demo/ai-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
+    })
+    await fetchMessages()
+    setAiTyping(false)
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -135,9 +163,18 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
         <div className="flex-1 min-w-0">
           <h1 className="text-sm font-semibold text-zinc-100">{room.name}</h1>
           <p className="text-xs text-zinc-500">
-            {isAIRoom ? 'Acceso a todos tus chats · puede enviar mensajes' : room.type === 'group' ? '3 participantes' : 'Chat privado'}
+            {isAIRoom ? 'Acceso a todos tus chats · puede enviar mensajes' : room.type === 'group' ? '4 participantes' : 'Chat privado'}
           </p>
         </div>
+        {!isAIRoom && (
+          <button
+            onClick={() => { setShowAIPanel(true); setTimeout(() => aiInputRef.current?.focus(), 50) }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-400 hover:bg-violet-600/30 transition-colors text-xs font-medium shrink-0"
+          >
+            <SparklesIcon className="h-3.5 w-3.5" />
+            @do
+          </button>
+        )}
       </div>
 
       {/* Messages */}
@@ -220,6 +257,60 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Panel @do AI */}
+      {showAIPanel && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
+              <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center">
+                <BotIcon className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-zinc-100">do AI</p>
+                <p className="text-xs text-zinc-500">¿Qué quieres que haga en este chat?</p>
+              </div>
+              <button onClick={() => { setShowAIPanel(false); setAiQuery('') }} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {['Resumir este chat', 'Extraer tareas', 'Buscar acuerdos', 'Generar reporte'].map(suggestion => (
+                  <button
+                    key={suggestion}
+                    onClick={() => setAiQuery(suggestion)}
+                    className="text-xs px-3 py-1.5 rounded-full border border-zinc-700 text-zinc-400 hover:border-violet-500/50 hover:text-violet-400 transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2 items-end bg-zinc-800 rounded-xl border border-zinc-700 focus-within:border-violet-500/50 px-3 py-2 transition-colors">
+                <TextareaAutosize
+                  ref={aiInputRef}
+                  value={aiQuery}
+                  onChange={e => setAiQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askAI() } }}
+                  placeholder="Ej: resume los pendientes, extrae los compromisos…"
+                  className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 resize-none focus:outline-none min-h-[20px] max-h-28 py-1"
+                  minRows={1}
+                  maxRows={4}
+                />
+                <button
+                  onClick={askAI}
+                  disabled={!aiQuery.trim()}
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <SendHorizonalIcon className="h-4 w-4 text-white" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-zinc-800 bg-zinc-950">
