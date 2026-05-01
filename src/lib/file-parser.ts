@@ -7,7 +7,9 @@ async function fetchBuffer(url: string): Promise<Buffer> {
 }
 
 async function parsePDF(url: string): Promise<ParseResult> {
-  const pdfParse = (await import('pdf-parse')).default
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfParseModule = await import('pdf-parse') as any
+  const pdfParse = pdfParseModule.default ?? pdfParseModule
   const buf = await fetchBuffer(url)
   const data = await pdfParse(buf)
   const text = data.text.trim().slice(0, 3000)
