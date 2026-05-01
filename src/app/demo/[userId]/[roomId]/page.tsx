@@ -172,7 +172,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     <div className="flex flex-col h-screen bg-gray-50 max-w-md mx-auto">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={() => router.push(`/demo/${userId}`)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 -ml-1">
+        <button onClick={() => router.push(`/demo/${userId}`)} className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors p-1 -ml-1">
           <ArrowLeftIcon className="h-5 w-5" />
         </button>
 

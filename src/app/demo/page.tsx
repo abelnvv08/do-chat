@@ -12,11 +12,8 @@ export default function DemoPage() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
       <div className="w-full max-w-sm space-y-6 text-center">
         <div>
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center">
-              <span className="text-lg font-bold text-white">d</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">do-chat</span>
+          <div className="flex justify-center mb-5">
+            <img src="/dologo.png" alt="DO Chat" className="h-12 w-auto" />
           </div>
           <p className="text-sm text-gray-500">¿Quién eres hoy?</p>
         </div>

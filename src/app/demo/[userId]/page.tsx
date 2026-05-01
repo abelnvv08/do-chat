@@ -14,7 +14,7 @@ export default async function ChatListPage({ params }: { params: Promise<{ userI
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-bold text-gray-900">Chats</h1>
+          <img src="/dologo.png" alt="DO Chat" className="h-7 w-auto" />
           <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 font-medium">
             {me.emoji} {me.name}
           </div>
@@ -36,8 +36,8 @@ export default async function ChatListPage({ params }: { params: Promise<{ userI
           href={`/demo/${userId}/ai-${userId}`}
           className="flex items-center gap-3 px-4 py-3.5 hover:bg-blue-50 transition-colors active:scale-[0.99]"
         >
-          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-sm">
-            <span className="text-lg">✦</span>
+          <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm overflow-hidden p-1">
+            <img src="/dologo.png" alt="do AI" className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
