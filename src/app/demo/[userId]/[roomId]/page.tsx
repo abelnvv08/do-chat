@@ -25,6 +25,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const aiInputRef = useRef<HTMLTextAreaElement>(null)
+  const fetchingRef = useRef(false)
 
   useEffect(() => {
     if (!me || !room) { router.push(`/demo/${userId}`); return }
@@ -38,9 +39,18 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   }, [messages, aiTyping])
 
   async function fetchMessages() {
-    const res = await fetch(`/api/demo/messages?room=${encodeURIComponent(roomId)}`)
-    const { messages: msgs } = await res.json()
-    setMessages(msgs)
+    if (fetchingRef.current) return
+    fetchingRef.current = true
+    try {
+      const res = await fetch(`/api/demo/messages?room=${encodeURIComponent(roomId)}`)
+      if (!res.ok) return
+      const { messages: msgs } = await res.json()
+      setMessages(msgs ?? [])
+    } catch {
+      // ignore network errors, retry on next poll
+    } finally {
+      fetchingRef.current = false
+    }
   }
 
   async function send() {
@@ -48,33 +58,35 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     const content = input.trim()
     setInput('')
     setLoading(true)
-
-    if (isAIRoom) {
-      // Guardar mensaje del usuario en el chat de IA
-      await fetch('/api/demo/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
-      })
-      await fetchMessages()
+    try {
+      if (isAIRoom) {
+        await fetch('/api/demo/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
+        })
+        await fetchMessages()
+        setLoading(false)
+        setAiTyping(true)
+        await fetch('/api/demo/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, query: content }),
+        })
+        await fetchMessages()
+      } else {
+        await fetch('/api/demo/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
+        })
+        await fetchMessages()
+      }
+    } catch {
+      // ignore
+    } finally {
       setLoading(false)
-      setAiTyping(true)
-
-      await fetch('/api/demo/ai-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, query: content }),
-      })
-      await fetchMessages()
       setAiTyping(false)
-    } else {
-      await fetch('/api/demo/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
-      })
-      await fetchMessages()
-      setLoading(false)
     }
   }
 
@@ -84,23 +96,24 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setAiQuery('')
     setShowAIPanel(false)
     setAiTyping(true)
-
-    // Guardar pregunta del usuario en este chat
-    await fetch('/api/demo/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, content: `@do ${query}`, room_id: roomId }),
-    })
-    await fetchMessages()
-
-    // Llamar a la IA con contexto de este chat
-    await fetch('/api/demo/ai-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
-    })
-    await fetchMessages()
-    setAiTyping(false)
+    try {
+      await fetch('/api/demo/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, content: `@do ${query}`, room_id: roomId }),
+      })
+      await fetchMessages()
+      await fetch('/api/demo/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
+      })
+      await fetchMessages()
+    } catch {
+      // ignore
+    } finally {
+      setAiTyping(false)
+    }
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
