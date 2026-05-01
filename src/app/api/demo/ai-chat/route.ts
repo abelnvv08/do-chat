@@ -130,6 +130,14 @@ Usá esto cuando el usuario pide extraer tareas, pendientes o compromisos. Podé
 [ACCION:PROYECTO:título|contenido completo del reporte]
 Usá esto cuando el usuario pide generar un reporte, resumen ejecutivo, acta o proyecto.
 
+4. Generar un archivo Excel descargable:
+[ACCION:EXCEL:nombre del archivo|Columna1;Columna2;Columna3|valor1;valor2;valor3|valor1;valor2;valor3]
+- La primera fila después del nombre es el encabezado (separado por ;)
+- Cada fila siguiente es una fila de datos (separada por ;)
+- Usá esto cuando el usuario pide un Excel, tabla, planilla o compilación de datos
+- Podés incluir tantas filas como necesites
+- Ejemplo: [ACCION:EXCEL:Facturas abril|Proveedor;Monto;Fecha;Estado|Pedro García;$5.000;15/04;Pendiente|María López;$3.200;20/04;Pagado]
+
 Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomaste.`
 
   const queryMentionsImages = /imagen|foto|adjunto|compartió|mandó/i.test(query)
@@ -206,6 +214,54 @@ Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomas
   }
   if (projects.length > 0) {
     reply += `\n\n📁 Proyecto "${projects[0].title}" guardado en Proyectos.`
+  }
+
+  // Process EXCEL actions
+  const excelRegex = /\[ACCION:EXCEL:([^|]+)\|([^\]]+)\]/g
+  const excelActions: { name: string; headers: string[]; rows: string[][] }[] = []
+  while ((match = excelRegex.exec(reply)) !== null) {
+    const name = match[1].trim()
+    const lines = match[2].split('|').map(l => l.trim()).filter(Boolean)
+    if (lines.length >= 1) {
+      const headers = lines[0].split(';').map(h => h.trim())
+      const rows = lines.slice(1).map(l => l.split(';').map(v => v.trim()))
+      excelActions.push({ name, headers, rows })
+    }
+  }
+  reply = reply.replace(/\[ACCION:EXCEL:[^\]]+\]/g, '').trim()
+
+  for (const excel of excelActions) {
+    try {
+      const XLSX = await import('xlsx')
+      const ws = XLSX.utils.aoa_to_sheet([excel.headers, ...excel.rows])
+      // Style header row bold
+      const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1')
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[cellRef]) ws[cellRef].s = { font: { bold: true } }
+      }
+      ws['!cols'] = excel.headers.map(() => ({ wch: 20 }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos')
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+
+      const fileName = `${excel.name.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '').trim()}.xlsx`
+      const storagePath = `excel/${Date.now()}-${fileName}`
+      const { error } = await supabase.storage
+        .from('demo-files')
+        .upload(storagePath, buffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', upsert: true })
+
+      if (!error) {
+        const { data: { publicUrl } } = supabase.storage.from('demo-files').getPublicUrl(storagePath)
+        const fileMeta = JSON.stringify({ url: publicUrl, name: fileName, size: buffer.length })
+        await supabase.from('demo_messages').insert({
+          user_id, content: fileMeta, type: 'file', room_id: replyRoomId || getAIRoom(user_id),
+        })
+        reply += `\n\n📊 Excel "${fileName}" generado con ${excel.rows.length} filas — disponible arriba y en Documentos.`
+      }
+    } catch (e) {
+      reply += `\n\n⚠️ No pude generar el Excel. Intentá de nuevo.`
+    }
   }
 
   const actions = sendActions
