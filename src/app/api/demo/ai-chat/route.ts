@@ -114,14 +114,23 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = `Eres do, una IA accionable con acceso completo a todos los chats, imágenes y archivos.
 Tienes visión — puedes ver y analizar las imágenes que se comparten en los chats.
-Puedes leer mensajes, ver imágenes, leer el contenido de archivos (PDF, Excel, Word, CSV), resumir conversaciones, extraer tareas y enviar mensajes.
+Puedes leer mensajes, ver imágenes, leer el contenido de archivos (PDF, Excel, Word, CSV), resumir conversaciones, extraer tareas, crear proyectos y enviar mensajes.
 
-Cuando el usuario te pide ENVIAR un mensaje, incluye al final:
+ACCIONES DISPONIBLES — incluirlas al final de tu respuesta:
+
+1. Enviar mensaje a un chat:
 [ACCION:ENVIAR:room_id:mensaje]
+room_ids: group, dm-001-002, dm-001-003, dm-001-004, dm-002-003, dm-002-004, dm-003-004
 
-room_ids disponibles: group, dm-001-002, dm-001-003, dm-001-004, dm-002-003, dm-002-004, dm-003-004
+2. Guardar una tarea en "Mis pendientes" del usuario:
+[ACCION:TAREA:contenido de la tarea]
+Usá esto cuando el usuario pide extraer tareas, pendientes o compromisos. Podés incluir múltiples.
 
-Responde en español. Sé directo y útil.`
+3. Crear un proyecto/reporte en "Proyectos":
+[ACCION:PROYECTO:título|contenido completo del reporte]
+Usá esto cuando el usuario pide generar un reporte, resumen ejecutivo, acta o proyecto.
+
+Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomaste.`
 
   const queryMentionsImages = /imagen|foto|adjunto|compartió|mandó/i.test(query)
   const imagesToInclude = (queryMentionsImages || allImages.length > 0) ? allImages : []
@@ -140,34 +149,66 @@ Responde en español. Sé directo y útil.`
 
   let reply = response.content[0].type === 'text' ? response.content[0].text : ''
 
-  const actionRegex = /\[ACCION:ENVIAR:([^:]+):([^\]]+)\]/g
-  const actions: { roomId: string; message: string }[] = []
+  // Process ENVIAR actions
+  const sendRegex = /\[ACCION:ENVIAR:([^:]+):([^\]]+)\]/g
+  const sendActions: { roomId: string; message: string }[] = []
   let match
-
-  while ((match = actionRegex.exec(reply)) !== null) {
-    actions.push({ roomId: match[1].trim(), message: match[2].trim() })
+  while ((match = sendRegex.exec(reply)) !== null) {
+    sendActions.push({ roomId: match[1].trim(), message: match[2].trim() })
   }
-
   reply = reply.replace(/\[ACCION:ENVIAR:[^\]]+\]/g, '').trim()
 
-  for (const action of actions) {
+  const roomNames: Record<string, string> = {
+    'group': 'el grupo general',
+    'dm-001-002': 'el chat de Abel y Santi',
+    'dm-001-003': 'el chat de Abel y Hernan',
+    'dm-001-004': 'el chat de Abel y Walter',
+    'dm-002-003': 'el chat de Santi y Hernan',
+    'dm-002-004': 'el chat de Santi y Walter',
+    'dm-003-004': 'el chat de Hernan y Walter',
+  }
+  for (const action of sendActions) {
     await supabase.from('demo_messages').insert({
-      user_id,
-      content: action.message,
-      type: 'text',
-      room_id: action.roomId,
+      user_id, content: action.message, type: 'text', room_id: action.roomId,
     })
-    const roomNames: Record<string, string> = {
-      'group': 'el grupo general',
-      'dm-001-002': 'el chat de Abel y Santi',
-      'dm-001-003': 'el chat de Abel y Hernan',
-      'dm-001-004': 'el chat de Abel y Walter',
-      'dm-002-003': 'el chat de Santi y Hernan',
-      'dm-002-004': 'el chat de Santi y Walter',
-      'dm-003-004': 'el chat de Hernan y Walter',
-    }
     reply += `\n\n✅ Mensaje enviado a ${roomNames[action.roomId] ?? action.roomId}.`
   }
+
+  // Process TAREA actions
+  const taskRegex = /\[ACCION:TAREA:([^\]]+)\]/g
+  const tasks: string[] = []
+  while ((match = taskRegex.exec(reply)) !== null) {
+    tasks.push(match[1].trim())
+  }
+  reply = reply.replace(/\[ACCION:TAREA:[^\]]+\]/g, '').trim()
+
+  for (const task of tasks) {
+    await supabase.from('demo_tasks').insert({
+      user_id, content: task, source_room: replyRoomId || getAIRoom(user_id),
+    })
+  }
+  if (tasks.length > 0) {
+    reply += `\n\n📋 ${tasks.length} tarea${tasks.length > 1 ? 's' : ''} guardada${tasks.length > 1 ? 's' : ''} en Mis pendientes.`
+  }
+
+  // Process PROYECTO actions
+  const projectRegex = /\[ACCION:PROYECTO:([^|]+)\|([^\]]+)\]/g
+  const projects: { title: string; content: string }[] = []
+  while ((match = projectRegex.exec(reply)) !== null) {
+    projects.push({ title: match[1].trim(), content: match[2].trim() })
+  }
+  reply = reply.replace(/\[ACCION:PROYECTO:[^\]]+\]/g, '').trim()
+
+  for (const proj of projects) {
+    await supabase.from('demo_projects').insert({
+      user_id, title: proj.title, content: proj.content,
+    })
+  }
+  if (projects.length > 0) {
+    reply += `\n\n📁 Proyecto "${projects[0].title}" guardado en Proyectos.`
+  }
+
+  const actions = sendActions
 
   const targetRoom = replyRoomId || getAIRoom(user_id)
   await supabase.from('demo_messages').insert({

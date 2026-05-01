@@ -81,10 +81,11 @@ export default async function ChatListPage({ params }: { params: Promise<{ userI
 
 function BottomNav({ userId, active }: { userId: string; active: string }) {
   const tabs = [
-    { id: 'chats', label: 'Chats', href: `/demo/${userId}`, icon: ChatIcon },
-    { id: 'ai',    label: 'do IA', href: `/demo/${userId}/ai-${userId}`, icon: AIIcon },
-    { id: 'tasks', label: 'Pendientes', href: `/demo/${userId}/pendientes`, icon: TaskIcon },
-    { id: 'docs',  label: 'Docs', href: `/demo/${userId}/documentos`, icon: DocIcon },
+    { id: 'chats',    label: 'Chats',      href: `/demo/${userId}`, icon: ChatIcon },
+    { id: 'ai',       label: 'do IA',      href: `/demo/${userId}/ai-${userId}`, icon: AIIcon },
+    { id: 'tasks',    label: 'Pendientes', href: `/demo/${userId}/pendientes`, icon: TaskIcon },
+    { id: 'projects', label: 'Proyectos',  href: `/demo/${userId}/proyectos`, icon: ProjectIcon },
+    { id: 'docs',     label: 'Docs',       href: `/demo/${userId}/documentos`, icon: DocIcon },
   ]
   return (
     <div className="bg-white border-t border-gray-100 flex sticky bottom-0 z-10">
@@ -122,6 +123,14 @@ function TaskIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-400'}`} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  )
+}
+
+function ProjectIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-400'}`} fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
     </svg>
   )
 }
