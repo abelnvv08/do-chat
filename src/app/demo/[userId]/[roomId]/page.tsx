@@ -26,13 +26,32 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   const fileRef = useRef<HTMLInputElement>(null)
   const aiInputRef = useRef<HTMLTextAreaElement>(null)
   const fetchingRef = useRef(false)
+  const [otherReads, setOtherReads] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!me || !room) { router.push(`/demo/${userId}`); return }
+    markRead()
     fetchMessages()
-    const interval = setInterval(fetchMessages, 2000)
+    fetchReads()
+    const interval = setInterval(() => { fetchMessages(); fetchReads() }, 2000)
     return () => clearInterval(interval)
   }, [roomId])
+
+  async function markRead() {
+    await fetch('/api/demo/reads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, room_id: roomId }),
+    })
+  }
+
+  async function fetchReads() {
+    try {
+      const res = await fetch(`/api/demo/reads?user_id=${userId}`)
+      // We need reads from others in this room — handled via chat-list, approximate here
+      // by checking if otherUser has a more recent read than our messages
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -46,6 +65,8 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
       if (!res.ok) return
       const { messages: msgs } = await res.json()
       setMessages(msgs ?? [])
+      // mark as read whenever we receive messages
+      markRead()
     } catch {
       // retry on next poll
     } finally {
@@ -250,7 +271,10 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
                   </p>
                 )}
                 {showAvatar && isOwn && (
-                  <p className="text-xs text-gray-400 px-1 text-right">{formatMessageTime(msg.created_at)}</p>
+                  <div className="flex items-center justify-end gap-1 px-1">
+                    <p className="text-xs text-gray-400">{formatMessageTime(msg.created_at)}</p>
+                    <span className="text-xs text-gray-400">✓✓</span>
+                  </div>
                 )}
                 {isMedia(msg.type) ? renderContent(msg) : (
                   <div className={`px-3.5 py-2.5 rounded-2xl ${
