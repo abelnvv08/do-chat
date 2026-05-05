@@ -387,6 +387,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const searchRef = useRef<HTMLInputElement>(null)
   const matchRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const [matchIdx, setMatchIdx] = useState(0)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     if (!isAIRoom && !room) {
@@ -416,6 +418,48 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     const interval = setInterval(() => { fetchMessages(); fetchReads() }, 3000)
     return () => { supabase.removeChannel(channel); channelRef.current = null; clearInterval(interval) }
   }, [roomId])
+
+  async function exportChat(format: 'docx' | 'pdf') {
+    setExporting(true); setShowExportMenu(false)
+    try {
+      const url = `/api/demo/export?room_id=${roomId}&user_id=${userId}&format=${format}`
+      if (format === 'docx') {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = `chat.docx`
+        a.click()
+        URL.revokeObjectURL(a.href)
+      } else {
+        const res = await fetch(url)
+        const data = await res.json()
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.roomName}</title><style>
+          body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 24px; color: #111827; }
+          h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+          .meta { font-size: 12px; color: #9ca3af; margin-bottom: 32px; }
+          .msg { margin-bottom: 16px; }
+          .sender { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+          .sender.ai { color: #2563eb; }
+          .sender.user { color: #111827; }
+          .time { font-size: 11px; color: #9ca3af; margin-left: 8px; font-weight: 400; }
+          .content { font-size: 14px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
+          .divider { border: none; border-top: 1px solid #f3f4f6; margin: 12px 0; }
+          @media print { body { padding: 0; } }
+        </style></head><body>
+          <h1>${data.roomName}</h1>
+          <div class="meta">Exportado el ${new Date(data.exportedAt).toLocaleString('es-AR')} · ${data.messages.length} mensajes</div>
+          ${data.messages.map((m: any) => `
+            <div class="msg">
+              <div class="sender ${m.isAI ? 'ai' : 'user'}">${m.emoji} ${m.sender}<span class="time">${m.time}</span></div>
+              <div class="content">${m.content.replace(/</g, '&lt;')}</div>
+            </div><hr class="divider">`).join('')}
+        </body></html>`
+        const win = window.open('', '_blank')
+        if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 400) }
+      }
+    } finally { setExporting(false) }
+  }
 
   async function markRead() {
     await fetch('/api/demo/reads', {
@@ -921,6 +965,28 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
             </button>
+
+            <div className="relative shrink-0">
+              <button onClick={() => setShowExportMenu(v => !v)} className="text-gray-400 hover:text-blue-600 transition-colors p-1">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden min-w-[168px]"
+                  onMouseLeave={() => setShowExportMenu(false)}>
+                  <p className="px-4 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Exportar chat</p>
+                  <button onClick={() => exportChat('pdf')} disabled={exporting}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40">
+                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                    {exporting ? 'Exportando…' : 'Exportar PDF'}
+                  </button>
+                  <button onClick={() => exportChat('docx')} disabled={exporting}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 border-t border-gray-100">
+                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                    {exporting ? 'Exportando…' : 'Exportar Word'}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {!isAIRoom && (
               <button

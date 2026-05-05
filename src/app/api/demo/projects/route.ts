@@ -17,13 +17,24 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user_id, title, content } = await req.json()
-  if (!user_id || !content) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  const { user_id, title, content, type, project_files, instructions } = await req.json()
+  if (!user_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   const { data } = await admin()
     .from('demo_projects')
-    .insert({ user_id, title: title || 'Reporte', content })
+    .insert({ user_id, title: title || 'Proyecto', content: content ?? '', type: type ?? 'report', project_files: project_files ?? [], instructions: instructions ?? '' })
     .select()
     .single()
+  return NextResponse.json({ project: data })
+}
+
+export async function PATCH(req: NextRequest) {
+  const { id, title, instructions, project_files } = await req.json()
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  const updates: Record<string, unknown> = {}
+  if (title !== undefined) updates.title = title
+  if (instructions !== undefined) updates.instructions = instructions
+  if (project_files !== undefined) updates.project_files = project_files
+  const { data } = await admin().from('demo_projects').update(updates).eq('id', id).select().single()
   return NextResponse.json({ project: data })
 }
 
