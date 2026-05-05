@@ -105,6 +105,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [showDailyPanel, setShowDailyPanel] = useState(false)
   const [invites, setInvites] = useState<Invite[]>([])
   const [sentInvites, setSentInvites] = useState<SentInvite[]>([])
+  const [inviteFilter, setInviteFilter] = useState<'all' | 'received' | 'sent'>('all')
   const [showSendInvite, setShowSendInvite] = useState(false)
   const [inviteTarget, setInviteTarget] = useState('')
   const [inviteContent, setInviteContent] = useState('')
@@ -1150,19 +1151,29 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
         <div className="fixed inset-0 z-40 flex flex-col bg-white"
           style={{ animation: 'slideInFromRight 0.22s cubic-bezier(0.4,0,0.2,1)' }}>
           {/* Header */}
-          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10 flex items-center gap-3">
-            <button onClick={() => setShowDailyPanel(false)} className="text-gray-400 hover:text-gray-600 p-1 -ml-1">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-gray-900">Lo importante de hoy</h1>
-              <p className="text-xs text-gray-400">Tus tareas y recordatorios</p>
+          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
+            <div className="flex items-center gap-3 mb-3">
+              <button onClick={() => setShowDailyPanel(false)} className="text-gray-400 hover:text-gray-600 p-1 -ml-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <div className="flex-1">
+                <h1 className="text-lg font-bold text-gray-900">Lo importante de hoy</h1>
+              </div>
+              <button onClick={() => setShowSendInvite(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 text-xs font-semibold">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
+                Enviar
+              </button>
             </div>
-            <button onClick={() => setShowSendInvite(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 text-xs font-semibold">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
-              Enviar
-            </button>
+            {/* Tabs */}
+            <div className="flex gap-2">
+              {(['all', 'received', 'sent'] as const).map(f => (
+                <button key={f} onClick={() => setInviteFilter(f)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${inviteFilter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                  {f === 'all' ? 'Todos' : f === 'received' ? 'Recibidas' : 'Enviadas'}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto bg-gray-50 pb-8">
@@ -1196,71 +1207,75 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             )}
 
 
-            {/* Tareas recibidas */}
-            <div className="px-4 py-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📥 Recibidas</p>
-              {invites.length === 0 ? (
-                <p className="text-sm text-gray-400 italic px-1">Sin tareas recibidas</p>
-              ) : (
-                <div className="space-y-2">
-                  {invites.map(inv => (
-                    <div key={inv.id} className="bg-white rounded-2xl border border-blue-200 px-4 py-3 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">{inv.from_emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-700">{inv.from_name}</p>
-                          <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? 'Recordatorio' : 'Tarea'} · {formatMessageTime(inv.created_at)}</p>
+            {/* Recibidas */}
+            {(inviteFilter === 'all' || inviteFilter === 'received') && (
+              <div className="px-4 py-3">
+                {inviteFilter === 'all' && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📥 Recibidas</p>}
+                {invites.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic px-1">Sin tareas recibidas</p>
+                ) : (
+                  <div className="space-y-2">
+                    {invites.map(inv => (
+                      <div key={inv.id} className="bg-white rounded-2xl border border-blue-200 px-4 py-3 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">{inv.from_emoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-700">{inv.from_name}</p>
+                            <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? 'Recordatorio' : 'Tarea'} · {formatMessageTime(inv.created_at)}</p>
+                          </div>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {inv.invite_type === 'reminder' ? '🔔 Recordatorio' : '📋 Tarea'}
+                          </span>
                         </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                          {inv.invite_type === 'reminder' ? '🔔 Recordatorio' : '📋 Tarea'}
-                        </span>
+                        <p className="text-sm text-gray-800 mb-1 leading-snug">{inv.content}</p>
+                        {inv.due_date && <p className="text-xs text-amber-600 mb-2">📅 {new Date(inv.due_date + 'T00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                        {inv.remind_at && <p className="text-xs text-purple-600 mb-2">🔔 {new Date(inv.remind_at).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
+                        <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+                          <button onClick={() => respondInvite(inv.id, 'reject')}
+                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors">
+                            Rechazar
+                          </button>
+                          <button onClick={() => respondInvite(inv.id, 'accept')}
+                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            Aceptar
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-800 mb-1 leading-snug">{inv.content}</p>
-                      {inv.due_date && <p className="text-xs text-amber-600 mb-2">📅 {new Date(inv.due_date + 'T00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
-                      {inv.remind_at && <p className="text-xs text-purple-600 mb-2">🔔 {new Date(inv.remind_at).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
-                      <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
-                        <button onClick={() => respondInvite(inv.id, 'reject')}
-                          className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors">
-                          Rechazar
-                        </button>
-                        <button onClick={() => respondInvite(inv.id, 'accept')}
-                          className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                          Aceptar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Tareas enviadas */}
-            <div className="px-4 py-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📤 Enviadas</p>
-              {sentInvites.length === 0 ? (
-                <p className="text-sm text-gray-400 italic px-1">Sin tareas enviadas</p>
-              ) : (
-                <div className="space-y-2">
-                  {sentInvites.map(inv => (
-                    <div key={inv.id} className="bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">{inv.to_emoji}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-700">Para {inv.to_name}</p>
-                          <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? 'Recordatorio' : 'Tarea'} · {formatMessageTime(inv.created_at)}</p>
+            {/* Enviadas */}
+            {(inviteFilter === 'all' || inviteFilter === 'sent') && (
+              <div className="px-4 py-3">
+                {inviteFilter === 'all' && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📤 Enviadas</p>}
+                {sentInvites.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic px-1">Sin tareas enviadas</p>
+                ) : (
+                  <div className="space-y-2">
+                    {sentInvites.map(inv => (
+                      <div key={inv.id} className="bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">{inv.to_emoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-700">Para {inv.to_name}</p>
+                            <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? 'Recordatorio' : 'Tarea'} · {formatMessageTime(inv.created_at)}</p>
+                          </div>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-amber-100 text-amber-700'}`}>
+                            {inv.invite_type === 'reminder' ? '🔔' : '📋'} Pendiente
+                          </span>
                         </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-amber-100 text-amber-700'}`}>
-                          {inv.invite_type === 'reminder' ? '🔔' : '📋'} Pendiente
-                        </span>
+                        <p className="text-sm text-gray-800 leading-snug">{inv.content}</p>
+                        {inv.due_date && <p className="text-xs text-amber-600 mt-1">📅 {new Date(inv.due_date + 'T00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                        {inv.remind_at && <p className="text-xs text-purple-600 mt-1">🔔 {new Date(inv.remind_at).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
                       </div>
-                      <p className="text-sm text-gray-800 leading-snug">{inv.content}</p>
-                      {inv.due_date && <p className="text-xs text-amber-600 mt-1">📅 {new Date(inv.due_date + 'T00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
-                      {inv.remind_at && <p className="text-xs text-purple-600 mt-1">🔔 {new Date(inv.remind_at).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {!tasksLoading && taskReminders.length > 0 && (
               <div className="px-4 py-3">
