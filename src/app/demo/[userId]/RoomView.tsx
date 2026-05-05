@@ -597,6 +597,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     }
   }, [messages, aiTyping])
 
+  const cleanedEncryptedRef = useRef(false)
+
   async function fetchMessages() {
     if (fetchingRef.current) { pendingFetchRef.current = true; return }
     fetchingRef.current = true
@@ -605,6 +607,16 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       const res = await fetch(`/api/demo/messages?room=${encodeURIComponent(roomId)}`)
       if (!res.ok) return
       const { messages: msgs } = await res.json()
+      const hasEncrypted = (msgs ?? []).some((m: DemoMessage) => isEncrypted(m.content))
+      if (hasEncrypted && !cleanedEncryptedRef.current) {
+        cleanedEncryptedRef.current = true
+        fetch('/api/demo/cleanup-encrypted', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room_id: roomId }),
+        }).then(() => fetchMessages()).catch(() => {})
+        return
+      }
       setMessages(msgs ?? [])
       markRead()
     } catch {
