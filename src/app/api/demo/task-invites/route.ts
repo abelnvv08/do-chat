@@ -11,24 +11,56 @@ const inviteRoom = (userId: string) => `invites-${userId}`
 
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get('user_id')
-  if (!userId) return NextResponse.json({ invites: [] })
+  if (!userId) return NextResponse.json({ invites: [], sent: [] })
 
   const db = admin()
-  const { data } = await db
+
+  // Received: invites in the user's own invite room
+  const { data: received } = await db
     .from('demo_messages')
     .select('id, content, created_at, user_id')
     .eq('room_id', inviteRoom(userId))
     .eq('type', 'task_invite')
     .order('created_at', { ascending: false })
 
-  const invites = (data ?? []).map((m: any) => {
+  const invites = (received ?? []).map((m: any) => {
+    try { const parsed = JSON.parse(m.content); return { id: m.id, created_at: m.created_at, ...parsed } }
+    catch { return null }
+  }).filter(Boolean)
+
+  // Sent: invites created by this user in other people's invite rooms
+  const { data: sentData } = await db
+    .from('demo_messages')
+    .select('id, content, created_at, room_id')
+    .eq('user_id', userId)
+    .eq('type', 'task_invite')
+    .order('created_at', { ascending: false })
+
+  // Resolve to_user names from profiles
+  const toUserIds = (sentData ?? []).map((m: any) => m.room_id.replace('invites-', '')).filter(Boolean)
+  const { data: profiles } = toUserIds.length
+    ? await db.from('demo_profiles').select('id, name, emoji').in('id', toUserIds)
+    : { data: [] }
+  const profileMap: Record<string, { name: string; emoji: string }> = {}
+  for (const p of profiles ?? []) profileMap[p.id] = p
+
+  const sent = (sentData ?? []).map((m: any) => {
     try {
       const parsed = JSON.parse(m.content)
-      return { id: m.id, created_at: m.created_at, ...parsed }
+      const toUserId = m.room_id.replace('invites-', '')
+      const toProfile = profileMap[toUserId]
+      return {
+        id: m.id,
+        created_at: m.created_at,
+        to_user_id: toUserId,
+        to_name: toProfile?.name ?? 'Usuario',
+        to_emoji: toProfile?.emoji ?? '👤',
+        ...parsed,
+      }
     } catch { return null }
   }).filter(Boolean)
 
-  return NextResponse.json({ invites })
+  return NextResponse.json({ invites, sent })
 }
 
 export async function POST(req: NextRequest) {

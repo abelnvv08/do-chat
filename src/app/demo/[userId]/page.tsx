@@ -42,6 +42,7 @@ type Contact = { id: string; name: string; firstName: string; lastName: string; 
 type Task = { id: string; content: string; done: boolean; created_at: string; source_room: string | null; due_date: string | null }
 type Reminder = { id: string; content: string; remind_at: string }
 type Invite = { id: string; from_user_id: string; from_name: string; from_emoji: string; content: string; invite_type: 'task' | 'reminder'; due_date: string | null; remind_at: string | null; created_at: string }
+type SentInvite = { id: string; to_user_id: string; to_name: string; to_emoji: string; content: string; invite_type: 'task' | 'reminder'; due_date: string | null; remind_at: string | null; created_at: string }
 type ProjectFile = { name: string; url: string; size: number; fileType: string }
 type Project = { id: string; title: string; content?: string; instructions: string; project_files: ProjectFile[]; created_at: string }
 type FileEntry = { id: string; name: string; url: string; size: number | null; type: 'file' | 'image'; room_id: string; created_at: string; sender: string; sender_emoji: string }
@@ -103,6 +104,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [addingTask, setAddingTask] = useState(false)
   const [showDailyPanel, setShowDailyPanel] = useState(false)
   const [invites, setInvites] = useState<Invite[]>([])
+  const [sentInvites, setSentInvites] = useState<SentInvite[]>([])
   const [showSendInvite, setShowSendInvite] = useState(false)
   const [inviteTarget, setInviteTarget] = useState('')
   const [inviteContent, setInviteContent] = useState('')
@@ -323,8 +325,9 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   async function fetchInvites() {
     try {
       const res = await fetch(`/api/demo/task-invites?user_id=${userId}`)
-      const { invites: inv } = await res.json()
+      const { invites: inv, sent } = await res.json()
       setInvites(inv ?? [])
+      setSentInvites(sent ?? [])
     } catch { /* ignore */ }
   }
   async function respondInvite(id: string, action: 'accept' | 'reject') {
@@ -1192,7 +1195,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
             )}
 
-            {!tasksLoading && tasks.length === 0 && taskReminders.length === 0 && invites.length === 0 && (
+            {!tasksLoading && tasks.length === 0 && taskReminders.length === 0 && invites.length === 0 && sentInvites.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
                 <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center">
                   <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -1202,10 +1205,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
             )}
 
-            {/* Invitaciones recibidas */}
+            {/* Tareas recibidas */}
             {invites.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Enviadas a ti</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📥 Recibidas</p>
                 <div className="space-y-2">
                   {invites.map(inv => (
                     <div key={inv.id} className="bg-white rounded-2xl border border-blue-200 px-4 py-3 shadow-sm">
@@ -1232,6 +1235,32 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           Aceptar
                         </button>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tareas enviadas */}
+            {sentInvites.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📤 Enviadas</p>
+                <div className="space-y-2">
+                  {sentInvites.map(inv => (
+                    <div key={inv.id} className="bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">{inv.to_emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-700">Para {inv.to_name}</p>
+                          <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? 'Recordatorio' : 'Tarea'} · {formatMessageTime(inv.created_at)}</p>
+                        </div>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-amber-100 text-amber-700'}`}>
+                          {inv.invite_type === 'reminder' ? '🔔' : '📋'} Pendiente
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800 leading-snug">{inv.content}</p>
+                      {inv.due_date && <p className="text-xs text-amber-600 mt-1">📅 {new Date(inv.due_date + 'T00:00').toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}</p>}
+                      {inv.remind_at && <p className="text-xs text-purple-600 mt-1">🔔 {new Date(inv.remind_at).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
                     </div>
                   ))}
                 </div>
