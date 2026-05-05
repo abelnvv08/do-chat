@@ -365,6 +365,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const fileRef = useRef<HTMLInputElement>(null)
   const aiInputRef = useRef<HTMLTextAreaElement>(null)
   const fetchingRef = useRef(false)
+  const pendingFetchRef = useRef(false)
   const lastMsgCountRef = useRef(0)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const [otherReads, setOtherReads] = useState<Record<string, string>>({})
@@ -502,9 +503,14 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       .subscribe()
     channelRef.current = channel
 
+    // Refresh when tab becomes visible again (phone back from background)
+    const onVisible = () => { if (document.visibilityState === 'visible') { fetchMessages(); fetchReads() } }
+    document.addEventListener('visibilitychange', onVisible)
+
     // Fallback every 3s in case websocket drops
     const interval = setInterval(() => { fetchMessages(); fetchReads() }, 3000)
     return () => {
+      document.removeEventListener('visibilitychange', onVisible)
       // Signal the other side before tearing down the channel
       if (callStateRef.current !== 'idle') {
         channel.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
@@ -592,19 +598,23 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   }, [messages, aiTyping])
 
   async function fetchMessages() {
-    if (fetchingRef.current) return
+    if (fetchingRef.current) { pendingFetchRef.current = true; return }
     fetchingRef.current = true
+    pendingFetchRef.current = false
     try {
       const res = await fetch(`/api/demo/messages?room=${encodeURIComponent(roomId)}`)
       if (!res.ok) return
       const { messages: msgs } = await res.json()
       setMessages(msgs ?? [])
-      // mark as read whenever we receive messages
       markRead()
     } catch {
       // retry on next poll
     } finally {
       fetchingRef.current = false
+      if (pendingFetchRef.current) {
+        pendingFetchRef.current = false
+        fetchMessages()
+      }
     }
   }
 
@@ -616,18 +626,16 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     setInput('')
     setReplyingTo(null)
     setPendingFiles([])
-    setLoading(true)
-    try {
-      const broadcast = () => channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
 
-      if (isAIRoom) {
-        // Upload pending files first, collect their metadata for AI context
+    const broadcast = () => channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
+
+    if (isAIRoom) {
+      setLoading(true)
+      try {
         const uploadedFiles: { name: string; url: string; type: string }[] = []
         for (const file of filesToSend) {
           const fd = new FormData()
-          fd.append('file', file)
-          fd.append('user_id', userId)
-          fd.append('room_id', roomId)
+          fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
           const res = await fetch('/api/demo/upload', { method: 'POST', body: fd })
           const data = await res.json()
           if (data.message?.content) {
@@ -637,7 +645,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             } catch { /* skip */ }
           }
         }
-
         if (content) {
           await fetch('/api/demo/messages', {
             method: 'POST',
@@ -664,34 +671,62 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           broadcast()
           await fetchMessages()
         }
-      } else {
-        // Encrypt content if key is available
-        const finalContent = (encKey && content) ? await encryptMsg(content, encKey) : content
-        // For file uploads in encrypted rooms — still upload as-is (files are at secure URLs)
-        for (const file of filesToSend) {
-          const fd = new FormData()
-          fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
-          await fetch('/api/demo/upload', { method: 'POST', body: fd })
-        }
-        if (finalContent) {
-          await fetch('/api/demo/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user_id: userId, content: finalContent, room_id: roomId,
-              reply_to_id: reply?.id ?? null,
-              reply_preview: reply?.preview ?? null,
-            }),
-          })
-        }
-        broadcast()
-        await fetchMessages()
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false)
+        setAiTyping(false)
       }
+      return
+    }
+
+    // ── Non-AI room: optimistic update so message appears instantly ──
+    const tempId = `temp-${Date.now()}`
+    const meUser = usersCache[userId]
+    if (content && !filesToSend.length) {
+      setMessages(prev => [...prev, {
+        id: tempId,
+        user_id: userId,
+        content,
+        type: 'text',
+        room_id: roomId,
+        created_at: new Date().toISOString(),
+        user: meUser ? { name: meUser.name, emoji: meUser.emoji } : null,
+        reactions: [],
+        reply_to_id: reply?.id ?? null,
+        reply_preview: reply?.preview ?? null,
+        reply_user_name: null,
+        edited: false,
+      }])
+    } else if (filesToSend.length) {
+      setLoading(true)
+    }
+
+    try {
+      const finalContent = (encKey && content) ? await encryptMsg(content, encKey) : content
+      for (const file of filesToSend) {
+        const fd = new FormData()
+        fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
+        await fetch('/api/demo/upload', { method: 'POST', body: fd })
+      }
+      if (finalContent) {
+        await fetch('/api/demo/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId, content: finalContent, room_id: roomId,
+            reply_to_id: reply?.id ?? null,
+            reply_preview: reply?.preview ?? null,
+          }),
+        })
+      }
+      broadcast()
+      await fetchMessages()
     } catch {
-      // ignore
+      // remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId))
     } finally {
       setLoading(false)
-      setAiTyping(false)
     }
   }
 
