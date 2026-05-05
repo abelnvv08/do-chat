@@ -54,8 +54,19 @@ export async function POST(req: NextRequest) {
     const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('id', contact_id).single()
     profile = data
   } else if (phone) {
-    const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('phone', phone).neq('id', user_id).single()
-    profile = data
+    const digits = phone.replace(/\D/g, '')
+    // Try exact, with +, and suffix match (last 10 digits) to handle different country code formats
+    const variants = [phone.trim(), `+${digits}`, digits]
+    for (const v of variants) {
+      const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('phone', v).neq('id', user_id).single()
+      if (data) { profile = data; break }
+    }
+    // Last resort: match by last 10 digits
+    if (!profile && digits.length >= 10) {
+      const last10 = digits.slice(-10)
+      const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').ilike('phone', `%${last10}`).neq('id', user_id).single()
+      if (data) profile = data
+    }
   }
 
   if (!profile) return NextResponse.json({ error: 'No se encontró el usuario' }, { status: 404 })
