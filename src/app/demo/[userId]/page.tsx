@@ -85,7 +85,6 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [ncFirstName, setNcFirstName] = useState('')
   const [ncLastName, setNcLastName] = useState('')
   const [ncPhone, setNcPhone] = useState('')
-  const [ncFound, setNcFound] = useState<{ id: string; name: string; emoji: string; bg: string } | null>(null)
   const [ncError, setNcError] = useState('')
   const [ncSaving, setNcSaving] = useState(false)
   const [showNewGroup, setShowNewGroup] = useState(false)
@@ -289,7 +288,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       if (data.contact?.room_id) setActiveRoomId(data.contact.room_id)
     } finally { setNcSaving(false) }
   }
-  function resetNc() { setNcFirstName(''); setNcLastName(''); setNcPhone(''); setNcFound(null); setNcError('') }
+  function resetNc() { setNcFirstName(''); setNcLastName(''); setNcPhone(''); setNcError('') }
 
   // New group
   async function createGroup() {
@@ -1546,20 +1545,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 6.75Z" /></svg>
               <div className="flex-1 flex items-center gap-2">
                 <input type="tel" placeholder="Número de teléfono" value={ncPhone}
-                  onChange={e => { setNcPhone(e.target.value); setNcFound(null); setNcError('') }}
+                  onChange={e => { setNcPhone(e.target.value); setNcError('') }}
                   className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none" />
               </div>
             </div>
             {ncError && <p className="text-red-500 text-sm text-center mt-4 px-4">{ncError}</p>}
-            {ncFound && (
-              <div className="mx-4 mt-4 bg-green-50 rounded-2xl px-4 py-3 flex items-center gap-3 border border-green-100">
-                <Avatar emoji={ncFound.emoji} bg={ncFound.bg} />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{ncFound.name}</p>
-                  <p className="text-xs text-green-600">Usuario en do-chat ✓</p>
-                </div>
-              </div>
-            )}
             <p className="text-xs text-gray-400 text-center mt-6 px-8">
               Si el número está registrado en do-chat, se agregará automáticamente como contacto.
             </p>

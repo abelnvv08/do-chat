@@ -411,6 +411,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const localStreamRef = useRef<MediaStream | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
 
   useEffect(() => {
@@ -467,7 +468,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
         if (payload.from === userId) return
         if (callStateRef.current !== 'idle') {
           // Busy — auto-reject
-          channel.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
+          channelRef.current?.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
           return
         }
         setIncomingOffer({ sdp: payload.sdp, callerId: payload.from, callerName: payload.callerName ?? 'Usuario' })
@@ -836,12 +837,14 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
 
   async function saveEdit() {
     if (!editingMsg || !editInput.trim()) return
-    setMessages(prev => prev.map(m => m.id === editingMsg.id ? { ...m, content: editInput.trim(), edited: true } : m))
+    const plainContent = editInput.trim()
+    const finalContent = (encKey && !isAIRoom) ? await encryptMsg(plainContent, encKey) : plainContent
+    setMessages(prev => prev.map(m => m.id === editingMsg.id ? { ...m, content: finalContent, edited: true } : m))
     setEditingMsg(null)
     await fetch('/api/demo/messages', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message_id: editingMsg.id, content: editInput.trim(), user_id: userId }),
+      body: JSON.stringify({ message_id: editingMsg.id, content: finalContent, user_id: userId }),
     })
   }
 
@@ -881,6 +884,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     pcRef.current = null
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null
     if (callTimerRef.current) { clearInterval(callTimerRef.current); callTimerRef.current = null }
+    if (callTimeoutRef.current) { clearTimeout(callTimeoutRef.current); callTimeoutRef.current = null }
     setCallState('idle')
     setIncomingOffer(null)
     setMuted(false)
@@ -922,6 +926,13 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       await pc.setLocalDescription(offer)
       setCallState('calling')
       channelRef.current?.send({ type: 'broadcast', event: 'call-offer', payload: { sdp: offer.sdp, from: userId, callerName: me?.name ?? 'Usuario' } })
+      // Auto-cancel if nobody answers in 30 seconds
+      callTimeoutRef.current = setTimeout(() => {
+        if (callStateRef.current === 'calling') {
+          channelRef.current?.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
+          cleanupCall()
+        }
+      }, 30000)
     } catch {
       cleanupCall()
       alert('No se pudo acceder al micrófono')
