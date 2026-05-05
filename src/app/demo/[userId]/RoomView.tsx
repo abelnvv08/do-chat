@@ -680,51 +680,38 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       return
     }
 
-    // ── Non-AI room: optimistic update so message appears instantly ──
-    const tempId = `temp-${Date.now()}`
-    const meUser = usersCache[userId]
-    if (content && !filesToSend.length) {
-      setMessages(prev => [...prev, {
-        id: tempId,
-        user_id: userId,
-        content,
-        type: 'text',
-        room_id: roomId,
-        created_at: new Date().toISOString(),
-        user: meUser ? { name: meUser.name, emoji: meUser.emoji } : null,
-        reactions: [],
-        reply_to_id: reply?.id ?? null,
-        reply_preview: reply?.preview ?? null,
-        reply_user_name: null,
-        edited: false,
-      }])
-    } else if (filesToSend.length) {
-      setLoading(true)
-    }
+    // ── Non-AI room ──
+    if (filesToSend.length) setLoading(true)
 
     try {
-      const finalContent = content
       for (const file of filesToSend) {
         const fd = new FormData()
         fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
         await fetch('/api/demo/upload', { method: 'POST', body: fd })
       }
-      if (finalContent) {
-        await fetch('/api/demo/messages', {
+      if (content) {
+        const res = await fetch('/api/demo/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: userId, content: finalContent, room_id: roomId,
+            user_id: userId, content, room_id: roomId,
             reply_to_id: reply?.id ?? null,
             reply_preview: reply?.preview ?? null,
           }),
         })
+        const data = await res.json()
+        // Append the confirmed message directly — no flash, no duplicate
+        if (data.message) {
+          setMessages(prev => {
+            if (prev.find(m => m.id === data.message.id)) return prev
+            return [...prev, { ...data.message, reactions: data.message.reactions ?? [] }]
+          })
+        }
       }
       broadcast()
-      await fetchMessages()
+      fetchMessages() // background sync — don't await
     } catch {
-      // remove optimistic message on error
-      setMessages(prev => prev.filter(m => m.id !== tempId))
+      // ignore
     } finally {
       setLoading(false)
     }
