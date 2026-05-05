@@ -59,7 +59,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, aiTyping])
 
   async function fetchMessages() {
-    const res = await fetch(`/api/demo/messages?room_id=${roomId}&user_id=${userId}`)
+    const res = await fetch(`/api/demo/messages?room=${roomId}&user_id=${userId}`)
     const data = await res.json()
     setMessages(data.messages ?? [])
   }
