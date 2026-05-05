@@ -537,8 +537,6 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
   const visibleRooms = rooms.filter(r => {
     if (getPref(r.id).deleted) return false
-    if (r.type === 'ai') return true
-    if (r.type === 'dm' && !r.lastMsg) return false
     return true
   })
   const aiRoom = visibleRooms.find(r => r.type === 'ai')
