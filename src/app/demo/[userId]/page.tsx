@@ -578,12 +578,12 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* ── CHATS TAB ── */}
       {activeTab === 'mensajes' && (
         <>
-          <div className="bg-white px-4 pt-12 pb-0 sticky top-0 z-10 border-b border-gray-100">
+          <div className="bg-[#075E54] px-4 pt-12 pb-0 sticky top-0 z-10">
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-2xl font-bold text-gray-900">DO Chat</h1>
+              <h1 className="text-2xl font-bold text-white">DO Chat</h1>
               <div className="relative">
-                <button onClick={() => setShowNewMenu(v => !v)} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 active:scale-95 transition-all">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                <button onClick={() => setShowNewMenu(v => !v)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 active:scale-95 transition-all">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 </button>
                 {showNewMenu && (
                   <>
@@ -608,13 +608,13 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2.5 mb-3">
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            <div className="flex items-center gap-2 bg-white/20 rounded-xl px-3 py-2.5 mb-3">
+              <svg className="w-4 h-4 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
               <input ref={searchInputRef} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Buscar mensajes, chats…"
-                className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none" autoComplete="off" />
+                className="flex-1 bg-transparent text-sm text-white placeholder:text-white/50 focus:outline-none" autoComplete="off" />
               {searchQuery.length > 0 && (
-                <button onClick={() => { setSearchQuery(''); setSearchResults([]) }} className="text-gray-400">
+                <button onClick={() => { setSearchQuery(''); setSearchResults([]) }} className="text-white/70">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                 </button>
               )}
@@ -1704,7 +1704,7 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
     <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 max-w-md mx-auto z-10">
       {tabs.map(t => (
         <button key={t.id} onClick={() => onTabChange(t.id)}
-          className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-blue-600' : 'text-gray-400'}`}>
+          className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-[#25D366]' : 'text-gray-400'}`}>
           {t.icon}
           <span className="text-[9px] font-medium">{t.label}</span>
         </button>

@@ -189,14 +189,14 @@ function LinkPreview({ url, isOwn }: { url: string; isOwn: boolean }) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer"
         className={`mt-1.5 flex items-center gap-2.5 rounded-xl px-3 py-2 border text-left no-underline ${
-          isOwn ? 'border-blue-500/30 bg-blue-700/30' : 'border-gray-200 bg-gray-50'
+          isOwn ? 'border-[#25D366]/40 bg-[#b2dfba]/30' : 'border-gray-200 bg-gray-50'
         }`}>
-        <svg className={`w-4 h-4 shrink-0 ${isOwn ? 'text-blue-200' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 shrink-0 ${isOwn ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
         </svg>
         <div className="min-w-0">
-          <p className={`text-[10px] font-medium uppercase tracking-wide ${isOwn ? 'text-blue-200' : 'text-gray-400'}`}>{domain}</p>
-          <p className={`text-xs truncate ${isOwn ? 'text-white/80' : 'text-gray-500'}`}>{url}</p>
+          <p className={`text-[10px] font-medium uppercase tracking-wide ${isOwn ? 'text-green-700' : 'text-gray-400'}`}>{domain}</p>
+          <p className={`text-xs truncate ${isOwn ? 'text-gray-600' : 'text-gray-500'}`}>{url}</p>
         </div>
       </a>
     )
@@ -205,15 +205,15 @@ function LinkPreview({ url, isOwn }: { url: string; isOwn: boolean }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
       className={`mt-1.5 flex flex-col rounded-xl overflow-hidden border text-left no-underline ${
-        isOwn ? 'border-blue-500/30 bg-blue-700/30' : 'border-gray-200 bg-gray-50'
+        isOwn ? 'border-[#25D366]/40 bg-[#b2dfba]/30' : 'border-gray-200 bg-gray-50'
       }`}>
       {data!.image && (
         <img src={data!.image} alt="" className="w-full max-h-32 object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
       )}
       <div className="px-3 py-2">
-        <p className={`text-[10px] font-medium uppercase tracking-wide mb-0.5 ${isOwn ? 'text-blue-200' : 'text-gray-400'}`}>{data!.siteName}</p>
-        <p className={`text-xs font-semibold leading-snug ${isOwn ? 'text-white' : 'text-gray-800'}`}>{data!.title}</p>
-        {data!.description && <p className={`text-[11px] mt-0.5 line-clamp-2 ${isOwn ? 'text-blue-100' : 'text-gray-500'}`}>{data!.description}</p>}
+        <p className={`text-[10px] font-medium uppercase tracking-wide mb-0.5 ${isOwn ? 'text-green-700' : 'text-gray-400'}`}>{data!.siteName}</p>
+        <p className={`text-xs font-semibold leading-snug ${isOwn ? 'text-gray-900' : 'text-gray-800'}`}>{data!.title}</p>
+        {data!.description && <p className={`text-[11px] mt-0.5 line-clamp-2 ${isOwn ? 'text-gray-600' : 'text-gray-500'}`}>{data!.description}</p>}
       </div>
     </a>
   )
@@ -274,7 +274,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
 
   return (
     <div className={`rounded-2xl min-w-[220px] max-w-[280px] overflow-hidden ${
-      isOwn ? 'bg-blue-600' : 'bg-white border border-gray-100 shadow-sm'
+      isOwn ? 'bg-[#dcf8c6]' : 'bg-white border border-gray-100 shadow-sm'
     }`}>
       <div className="flex items-center gap-2.5 px-3.5 py-2.5">
         <audio
@@ -285,7 +285,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
           onEnded={() => { setPlaying(false); setCurrent(0) }}
         />
         <button onClick={toggle} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-          isOwn ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
+          isOwn ? 'bg-[#25D366]/40 text-gray-700' : 'bg-[#25D366] text-white'
         }`}>
           {playing
             ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
@@ -308,30 +308,30 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
                   key={idx}
                   className={`flex-1 rounded-full transition-colors ${
                     filled
-                      ? isOwn ? 'bg-white' : 'bg-blue-500'
-                      : isOwn ? 'bg-white/30' : 'bg-gray-200'
+                      ? isOwn ? 'bg-[#25D366]' : 'bg-[#25D366]'
+                      : isOwn ? 'bg-gray-400/40' : 'bg-gray-200'
                   } ${playing && filled ? 'animate-pulse' : ''}`}
                   style={{ height: `${h}px` }}
                 />
               )
             })}
           </div>
-          <p className={`text-xs mt-0.5 ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>
+          <p className={`text-xs mt-0.5 ${isOwn ? 'text-gray-500' : 'text-gray-400'}`}>
             {duration > 0 ? (playing ? fmt(current) : fmt(duration)) : '—'}
           </p>
         </div>
         {!transcript && (
           <button onClick={transcribe} disabled={transcribing}
             className={`shrink-0 text-[10px] font-medium px-2 py-1 rounded-lg transition-colors ${
-              isOwn ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              isOwn ? 'bg-black/10 text-gray-600 hover:bg-black/20' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
             } disabled:opacity-50`}>
             {transcribing ? '…' : 'Aa'}
           </button>
         )}
       </div>
       {transcript && (
-        <div className={`px-3.5 pb-2.5 text-xs leading-relaxed ${isOwn ? 'text-white/90' : 'text-gray-600'}`}>
-          <div className={`h-px mb-2 ${isOwn ? 'bg-white/20' : 'bg-gray-100'}`} />
+        <div className={`px-3.5 pb-2.5 text-xs leading-relaxed ${isOwn ? 'text-gray-700' : 'text-gray-600'}`}>
+          <div className={`h-px mb-2 ${isOwn ? 'bg-black/10' : 'bg-gray-100'}`} />
           {transcript}
         </div>
       )}
@@ -1131,7 +1131,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const isDMRoom = !isAIRoom && (room?.type === 'dm' || roomId.startsWith('dm-'))
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 max-w-md mx-auto">
+    <div className="flex flex-col h-screen bg-[#e5ddd5] max-w-md mx-auto">
       {/* Hidden remote audio element */}
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
 
@@ -1242,7 +1242,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
+      <div className="bg-[#075E54] px-4 pt-12 pb-3 sticky top-0 z-10">
         {showSearch ? (
           /* Search mode — full header replaced */
           (() => {
@@ -1250,8 +1250,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             const matches = q ? messages.filter(m => (m.type === 'text' || m.type === 'ai') && m.content.toLowerCase().includes(q)) : []
             return (
               <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
-                  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-xl px-3 py-2">
+                  <svg className="w-4 h-4 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                   <input
@@ -1259,7 +1259,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                     value={searchQuery}
                     onChange={e => { setSearchQuery(e.target.value); setMatchIdx(0) }}
                     placeholder="Buscar en este chat…"
-                    className="flex-1 text-sm text-gray-800 bg-transparent focus:outline-none placeholder:text-gray-400 min-w-0"
+                    className="flex-1 text-sm text-white bg-transparent focus:outline-none placeholder:text-white/50 min-w-0"
                   />
                   {searchQuery ? (
                     <button onClick={() => setSearchQuery('')} className="text-gray-400 shrink-0">
@@ -1269,19 +1269,19 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 </div>
                 {matches.length > 0 && (
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <span className="text-xs text-gray-400 w-8 text-center">{matchIdx + 1}/{matches.length}</span>
+                    <span className="text-xs text-white/70 w-8 text-center">{matchIdx + 1}/{matches.length}</span>
                     <button onClick={() => {
                       const prev = (matchIdx - 1 + matches.length) % matches.length
                       setMatchIdx(prev)
                       matchRefs.current[messages.indexOf(matches[prev])]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    }} className="p-1.5 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-gray-100">
+                    }} className="p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>
                     </button>
                     <button onClick={() => {
                       const next = (matchIdx + 1) % matches.length
                       setMatchIdx(next)
                       matchRefs.current[messages.indexOf(matches[next])]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    }} className="p-1.5 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-gray-100">
+                    }} className="p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                     </button>
                   </div>
@@ -1291,7 +1291,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 )}
                 <button
                   onClick={() => { setShowSearch(false); setSearchQuery(''); setMatchIdx(0) }}
-                  className="text-blue-600 text-sm font-medium shrink-0 pl-1"
+                  className="text-white text-sm font-medium shrink-0 pl-1"
                 >
                   Listo
                 </button>
@@ -1301,12 +1301,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
         ) : (
           /* Normal header */
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors p-1 -ml-1">
+            <button onClick={onBack} className="flex items-center gap-2 text-white/80 hover:text-white transition-colors p-1 -ml-1">
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
 
             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 ${
-              isAIRoom ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              isAIRoom ? 'bg-white/20 text-white' : 'bg-white/20 text-white'
             }`}>
               {isAIRoom ? '✦' : roomData.emoji}
             </div>
@@ -1317,9 +1317,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 if (roomData.type === 'group') { fetchGroupInfo(); setShowGroupInfo(true) }
               }}
             >
-              <h1 className="text-sm font-semibold text-gray-900">{isAIRoom ? 'do AI' : roomData.name}</h1>
-              <p className="text-xs text-gray-400 flex items-center gap-1">
-                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : 'Chat privado'}
+              <h1 className="text-sm font-semibold text-white">{isAIRoom ? 'do AI' : roomData.name}</h1>
+              <p className="text-xs text-white/60 flex items-center gap-1">
+                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : 'en línea'}
               </p>
             </button>
 
@@ -1327,7 +1327,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             {isDMRoom && callState === 'idle' && (
               <button
                 onClick={startCall}
-                className="text-gray-400 hover:text-green-600 transition-colors p-1 shrink-0"
+                className="text-white/80 hover:text-white transition-colors p-1 shrink-0"
                 title="Llamar"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1338,7 +1338,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
 
             <button
               onClick={() => { setShowSearch(true); setSearchQuery(''); setMatchIdx(0); setTimeout(() => searchRef.current?.focus(), 50) }}
-              className="text-gray-400 hover:text-blue-600 transition-colors p-1 shrink-0"
+              className="text-white/80 hover:text-white transition-colors p-1 shrink-0"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -1346,7 +1346,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             </button>
 
             <div className="relative shrink-0">
-              <button onClick={() => setShowExportMenu(v => !v)} className="text-gray-400 hover:text-blue-600 transition-colors p-1">
+              <button onClick={() => setShowExportMenu(v => !v)} className="text-white/80 hover:text-white transition-colors p-1">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
               </button>
               {showExportMenu && (
@@ -1370,7 +1370,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             {!isAIRoom && (
               <button
                 onClick={() => { setShowAIPanel(true); setTimeout(() => aiInputRef.current?.focus(), 50) }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 text-white text-xs font-semibold hover:bg-white/30 transition-colors shrink-0"
               >
                 ✦ @do
               </button>
@@ -1380,7 +1380,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       </div>
 
       {/* Messages */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1 pb-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-1 pb-4 bg-[#e5ddd5]">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${isAIRoom ? 'bg-blue-100' : 'bg-gray-100'}`}>
@@ -1401,7 +1401,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             : []
           const activeMatchId = searchMatchList[matchIdx]?.id ?? null
 
-          const lastOwnMsgId = [...messages].reverse().find(m => m.user_id === userId)?.id ?? null
           const readerCount = Object.keys(otherReads).length
           const anyReaderAfter = (msgCreatedAt: string) =>
             Object.values(otherReads).some(t => t >= msgCreatedAt)
@@ -1434,41 +1433,22 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           const msgReactions = msg.reactions ?? []
 
           return (
-            <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-end gap-2 py-0.5 ${isOwn ? 'flex-row-reverse' : ''} ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>
-              <div className="w-7 shrink-0">
-                {showAvatar && (
-                  <div className={`w-7 h-7 rounded-full ${sender?.bg ?? 'bg-gray-300'} flex items-center justify-center text-xs`}>
+            <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-end gap-1.5 py-0.5 ${isOwn ? 'flex-row-reverse' : ''} ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>
+              <div className="w-6 shrink-0">
+                {showAvatar && !isOwn && (
+                  <div className={`w-6 h-6 rounded-full ${sender?.bg ?? 'bg-gray-300'} flex items-center justify-center text-xs`}>
                     {sender?.emoji
                       ? sender.emoji
-                      : <svg className="w-4 h-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                      : <svg className="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     }
                   </div>
                 )}
               </div>
-              <div className={`max-w-[72%] space-y-0.5 ${isOwn ? 'items-end flex flex-col' : ''}`}>
-                {showAvatar && !isOwn && (
-                  <p className={`text-xs font-medium px-1 ${sender?.text ?? 'text-gray-500'}`}>
-                    {msg.user?.name} · {formatMessageTime(msg.created_at)}
+              <div className={`max-w-[75%] space-y-0.5 ${isOwn ? 'items-end flex flex-col' : ''}`}>
+                {showAvatar && !isOwn && room?.type === 'group' && (
+                  <p className={`text-xs font-semibold px-1 ${sender?.text ?? 'text-[#06CF9C]'}`}>
+                    {msg.user?.name}
                   </p>
-                )}
-                {showAvatar && isOwn && (
-                  <div className="flex items-center justify-end gap-1 px-1">
-                    {msg.edited && <span className="text-xs text-gray-400 italic">Editado ·</span>}
-                    <p className="text-xs text-gray-400">{formatMessageTime(msg.created_at)}</p>
-                    {readerCount > 0 && anyReaderAfter(msg.created_at)
-                      ? <span className="text-xs text-blue-400">✓✓</span>
-                      : <span className="text-xs text-gray-400">✓✓</span>
-                    }
-                  </div>
-                )}
-                {msg.id === lastOwnMsgId && readerCount > 0 && anyReaderAfter(msg.created_at) && (
-                  <div className="flex justify-end gap-0.5 px-1 mt-0.5">
-                    {Object.keys(otherReads).filter(uid => otherReads[uid] >= msg.created_at).map(uid => (
-                      <span key={uid} className={`w-4 h-4 rounded-full ${usersCache[uid]?.bg ?? 'bg-gray-300'} flex items-center justify-center text-[9px]`} title={usersCache[uid]?.name ?? uid}>
-                        {usersCache[uid]?.emoji || '👤'}
-                      </span>
-                    ))}
-                  </div>
                 )}
                 <div
                   onMouseDown={() => { longPressRef.current = setTimeout(() => setReactionPickerMsgId(msg.id), 500) }}
@@ -1480,26 +1460,42 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                   {isMedia(msg.type) ? (
                     <div>
                       {msg.reply_preview && (
-                        <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-blue-700/50 border-white/50 text-white/80' : 'bg-gray-100 border-blue-400 text-gray-500'}`}>
+                        <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#b2dfba]/50 border-[#25D366]/70 text-gray-600' : 'bg-gray-100 border-[#25D366] text-gray-500'}`}>
                           <p className="font-semibold">{msg.reply_user_name}</p>
                           <p className="truncate">{msg.reply_preview}</p>
                         </div>
                       )}
                       {renderContent(msg, isOwn)}
+                      <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                        {msg.edited && <span className="text-[10px] text-gray-500 italic">Editado ·</span>}
+                        <span className="text-[10px] text-gray-500">{formatMessageTime(msg.created_at)}</span>
+                        {isOwn && (anyReaderAfter(msg.created_at)
+                          ? <span className="text-[11px] text-[#53bdeb] font-medium">✓✓</span>
+                          : <span className="text-[11px] text-gray-400 font-medium">✓✓</span>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <div className={`px-3.5 py-2.5 rounded-2xl ${
+                    <div className={`px-3 py-2 rounded-2xl ${
                       isOwn
-                        ? `bg-blue-600 text-white rounded-br-sm${isActiveMatch ? ' outline outline-2 outline-yellow-400 outline-offset-1' : ''}`
-                        : `bg-white text-gray-800 rounded-bl-sm shadow-sm${isActiveMatch ? ' border-2 border-yellow-400' : ' border border-gray-100'}`
+                        ? `bg-[#dcf8c6] text-gray-900 rounded-tr-sm${isActiveMatch ? ' outline outline-2 outline-yellow-400 outline-offset-1' : ''}`
+                        : `bg-white text-gray-800 rounded-tl-sm shadow-sm${isActiveMatch ? ' border-2 border-yellow-400' : ''}`
                     }`}>
                       {msg.reply_preview && (
-                        <div className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-blue-700/50 border-white/50 text-white/80' : 'bg-gray-100 border-blue-400 text-gray-500'}`}>
+                        <div className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#b2dfba]/40 border-[#25D366]/70 text-gray-600' : 'bg-gray-100 border-[#25D366] text-gray-500'}`}>
                           <p className="font-semibold">{msg.reply_user_name}</p>
                           <p className="truncate">{msg.reply_preview}</p>
                         </div>
                       )}
                       {renderContent(msg, isOwn)}
+                      <div className="flex items-center justify-end gap-1 mt-1 -mb-0.5">
+                        {msg.edited && <span className="text-[10px] text-gray-400 italic">Editado ·</span>}
+                        <span className="text-[10px] text-gray-400">{formatMessageTime(msg.created_at)}</span>
+                        {isOwn && (anyReaderAfter(msg.created_at)
+                          ? <span className="text-[11px] text-[#53bdeb] font-medium">✓✓</span>
+                          : <span className="text-[11px] text-gray-400 font-medium">✓✓</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1510,7 +1506,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                       <button key={r.emoji} onClick={() => toggleReaction(msg.id, r.emoji)}
                         className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
                           r.user_ids.includes(userId)
-                            ? 'bg-blue-100 border-blue-300 text-blue-700'
+                            ? 'bg-green-100 border-green-300 text-green-700'
                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                         }`}>
                         <span>{r.emoji}</span>
@@ -1639,7 +1635,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Input bar */}
-      <div className="bg-white border-t border-gray-100 px-4 py-3 pb-6">
+      <div className="bg-[#f0f2f5] px-3 py-2 pb-6">
         {editingMsg && (
           <div className="flex items-end gap-2 bg-blue-50 rounded-2xl border border-blue-200 px-3.5 py-2 mb-2">
             <div className="flex-1">
@@ -1705,7 +1701,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             </button>
           </div>
         ) : (
-          <div className="rounded-2xl border border-gray-200 focus-within:border-blue-400 bg-gray-50 transition-colors overflow-hidden">
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
             {/* Pending file chips — AI room only */}
             {pendingFiles.length > 0 && (
               <div className="flex flex-wrap gap-1.5 px-3 pt-2.5 pb-1">
@@ -1739,17 +1735,17 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               />
               {(input.trim() || pendingFiles.length > 0) ? (
                 <button onClick={send} disabled={loading}
-                  className="h-8 w-8 mb-0.5 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
               ) : !isAIRoom ? (
                 <button onClick={startRecording} disabled={uploading}
-                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-blue-500 disabled:opacity-40 flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-[#25D366] disabled:opacity-40 flex items-center justify-center transition-colors">
                   <MicIcon className="h-4 w-4" />
                 </button>
               ) : (
                 <button onClick={send} disabled={!input.trim() || loading}
-                  className="h-8 w-8 mb-0.5 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
               )}
