@@ -123,6 +123,8 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [newUsername, setNewUsername] = useState('')
   const [usernameError, setUsernameError] = useState('')
   const [usernameChecking, setUsernameChecking] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -366,6 +368,29 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
     } finally {
       setProfileSaving(false)
     }
+  }
+
+  async function uploadAvatar(file: File) {
+    setAvatarUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('user_id', userId)
+    const res = await fetch('/api/auth/upload-avatar', { method: 'POST', body: fd })
+    const data = await res.json()
+    if (res.ok && data.url) {
+      const db = (await import('@/lib/supabase-client')).supabase
+      const { data: { session } } = await db.auth.getSession()
+      await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', avatar_url: data.url }),
+      })
+      setProfile(prev => prev ? { ...prev, avatar_url: data.url } as any : prev)
+    }
+    setAvatarUploading(false)
   }
 
   async function saveUsername() {
@@ -720,15 +745,35 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
           </div>
           <div className="flex-1 overflow-y-auto pb-24 bg-gray-50">
             <div className="flex flex-col items-center py-10 bg-white border-b border-gray-100">
-              <div className="w-24 h-24 rounded-full mb-3 shadow-sm overflow-hidden bg-gray-200 flex items-center justify-center">
-                {(profile as any).avatar_url ? (
-                  <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
-                ) : (
-                  <svg className="w-14 h-14 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12Zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8Z"/>
-                  </svg>
-                )}
+              <div className="relative mb-1">
+                <div className="w-24 h-24 rounded-full shadow-sm overflow-hidden bg-gray-200 flex items-center justify-center">
+                  {avatarUploading ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : (profile as any).avatar_url ? (
+                    <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-14 h-14 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12Zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8Z"/>
+                    </svg>
+                  )}
+                </div>
               </div>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="text-xs text-blue-600 font-medium mb-4 disabled:opacity-40"
+              >
+                Editar foto
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f) }}
+              />
               {editingProfile ? (
                 <>
                   <input

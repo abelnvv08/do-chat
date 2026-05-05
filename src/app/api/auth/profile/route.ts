@@ -150,7 +150,7 @@ export async function PATCH(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, emoji, username } = await req.json()
+  const { name, emoji, username, avatar_url } = await req.json()
   if (!name || name.length < 2) return NextResponse.json({ error: 'Name too short' }, { status: 400 })
 
   const db = admin()
@@ -162,6 +162,8 @@ export async function PATCH(req: NextRequest) {
     updates.emoji = emoji
     updates.bg = bg
   }
+
+  if (avatar_url) updates.avatar_url = avatar_url
 
   if (username) {
     const clean = username.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20)
