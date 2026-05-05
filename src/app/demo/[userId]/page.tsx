@@ -118,9 +118,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [forwardingItems, setForwardingItems] = useState(false)
 
   // Perfil tab
-  const [icalUrl, setIcalUrl] = useState('')
-  const [icalSaved, setIcalSaved] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
+const [darkMode, setDarkMode] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
   const [editName, setEditName] = useState('')
   const [profileSaving, setProfileSaving] = useState(false)
@@ -172,8 +170,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
       if (!filesFetched) { setFilesFetched(true); setFilesLoading(true); fetchFiles() }
     }
     if (activeTab === 'tu') {
-      setIcalUrl(localStorage.getItem(`ical_${userId}`) ?? '')
-      setDarkMode(localStorage.getItem('dark_mode') === '1')
+setDarkMode(localStorage.getItem('dark_mode') === '1')
     }
     return () => { if (tasksIntervalRef.current) { clearInterval(tasksIntervalRef.current); tasksIntervalRef.current = null } }
   }, [activeTab])
@@ -444,11 +441,6 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
     setDarkMode(next)
     localStorage.setItem('dark_mode', next ? '1' : '0')
     window.dispatchEvent(new Event('dark-mode-changed'))
-  }
-  function saveIcal() {
-    localStorage.setItem(`ical_${userId}`, icalUrl.trim())
-    setIcalSaved(true)
-    setTimeout(() => setIcalSaved(false), 2000)
   }
 
   if (!profile) return (
@@ -959,19 +951,6 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
               </div>
             </div>
 
-            {/* Google Calendar */}
-            <div className="px-4 mt-5 mb-4">
-              <p className="text-[13px] text-gray-500 mb-1 ml-1">Google Calendar</p>
-              <div className="bg-white rounded-2xl overflow-hidden px-4 py-3.5 space-y-3">
-                <p className="text-xs text-gray-400">Feed iCal para el resumen diario</p>
-                <input type="url" value={icalUrl} onChange={e => setIcalUrl(e.target.value)}
-                  placeholder="https://calendar.google.com/calendar/ical/…"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 transition-colors" />
-                <button onClick={saveIcal} className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${icalSaved ? 'bg-green-100 text-green-700' : 'bg-[#2563EB] text-white active:scale-95'}`}>
-                  {icalSaved ? 'Guardado ✓' : 'Guardar'}
-                </button>
-              </div>
-            </div>
 
           </div>
         </>
