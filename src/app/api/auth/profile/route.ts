@@ -154,7 +154,7 @@ export async function PATCH(req: NextRequest) {
   if (!name || name.length < 2) return NextResponse.json({ error: 'Name too short' }, { status: 400 })
 
   const db = admin()
-  const updates: Record<string, string> = { name }
+  const updates: Record<string, string | null> = { name }
 
   if (emoji !== undefined) {
     const emojiIndex = EMOJIS.indexOf(emoji)
@@ -163,7 +163,7 @@ export async function PATCH(req: NextRequest) {
     updates.bg = bg
   }
 
-  if (avatar_url) updates.avatar_url = avatar_url
+  if (avatar_url !== undefined) updates.avatar_url = avatar_url ?? null
 
   if (username) {
     const clean = username.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20)
