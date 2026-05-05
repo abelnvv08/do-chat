@@ -2,6 +2,7 @@
 
 import { use, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { usersCache, type Room } from '@/lib/demo'
 import { formatMessageTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
@@ -583,10 +584,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* ── CHATS TAB ── */}
       {activeTab === 'mensajes' && (
         <>
-          <div className="bg-[#075E54] px-4 pb-0 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
+          <div className="bg-[#0f172a] px-4 pb-0 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
             <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-2xl font-bold text-white">DO Chat</h1>
+              <Image src="/dochatlogo.png" alt="DO Chat" width={36} height={36} className="rounded-xl" />
               <div className="relative">
                 <button onClick={() => setShowNewMenu(v => !v)} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 active:scale-95 transition-all">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -1017,10 +1018,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* ── PERFIL TAB ── */}
       {activeTab === 'tu' && (
         <>
-          <div className="bg-[#f0f2f5] border-b border-gray-200 px-4 pt-12 pb-4 sticky top-0 z-10">
+          <div className="bg-[#f8fafc] border-b border-gray-200 px-4 pt-12 pb-4 sticky top-0 z-10">
             <h1 className="text-xl font-bold text-gray-900 text-center">Perfil</h1>
           </div>
-          <div className="flex-1 overflow-y-auto pb-24 bg-[#f0f2f5]">
+          <div className="flex-1 overflow-y-auto pb-24 bg-[#f8fafc]">
 
             {/* Avatar */}
             <div className="flex flex-col items-center pt-8 pb-2">
@@ -1752,7 +1753,7 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
     <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 z-10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onTabChange(t.id)}
-          className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-[#25D366]' : 'text-gray-400'}`}>
+          className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-[#1a56db]' : 'text-gray-400'}`}>
           {t.icon}
           <span className="text-[9px] font-medium">{t.label}</span>
         </button>
