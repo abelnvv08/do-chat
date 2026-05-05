@@ -13,12 +13,12 @@ export async function GET(req: NextRequest) {
   const { data: room } = await supabase.from('demo_rooms').select('*').eq('id', room_id).single()
   const { data: members } = await supabase
     .from('demo_room_members')
-    .select('user_id, demo_profiles(id, name, emoji, bg)')
+    .select('user_id, demo_profiles(id, name, emoji, bg, avatar_url)')
     .eq('room_id', room_id)
 
   const memberList = (members ?? []).map((m: any) => {
     const p = Array.isArray(m.demo_profiles) ? m.demo_profiles[0] : m.demo_profiles
-    return p ? { id: p.id, name: p.name, emoji: p.emoji, bg: p.bg } : null
+    return p ? { id: p.id, name: p.name, emoji: p.emoji, bg: p.bg, avatar_url: p.avatar_url ?? null } : null
   }).filter(Boolean)
 
   return NextResponse.json({ room, members: memberList })

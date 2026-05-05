@@ -17,9 +17,10 @@ function UserIcon({ className }: { className?: string }) {
   )
 }
 
-function Avatar({ emoji, bg, size = 'md' }: { emoji: string; bg: string; size?: 'sm' | 'md' | 'lg' }) {
+function Avatar({ emoji, bg, size = 'md', avatarUrl }: { emoji: string; bg: string; size?: 'sm' | 'md' | 'lg'; avatarUrl?: string | null }) {
   const sizeClass = size === 'lg' ? 'w-12 h-12 text-xl' : size === 'sm' ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-lg'
   const iconClass = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
+  if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
   return (
     <div className={`${sizeClass} rounded-full flex items-center justify-center shrink-0 ${bg} text-white`}>
       {emoji ? emoji : <UserIcon className={`${iconClass} text-white/80`} />}
@@ -38,7 +39,7 @@ type SearchResult = {
   sender_name: string; sender_emoji: string; preview: string
   type: string; created_at: string; fileInfo: { name: string; url: string } | null
 }
-type Contact = { id: string; name: string; firstName: string; lastName: string; emoji: string; bg: string; room_id: string }
+type Contact = { id: string; name: string; firstName: string; lastName: string; emoji: string; bg: string; avatar_url?: string | null; room_id: string }
 type Task = { id: string; content: string; done: boolean; created_at: string; source_room: string | null; due_date: string | null }
 type Reminder = { id: string; content: string; remind_at: string }
 type Invite = { id: string; from_user_id: string; from_name: string; from_emoji: string; content: string; invite_type: 'task' | 'reminder'; due_date: string | null; remind_at: string | null; created_at: string }
@@ -945,9 +946,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               <div className="divide-y divide-gray-100">
                 {contacts.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
                   <div key={c.id} className="flex items-center gap-3 px-4 py-3">
-                    <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>
-                      {c.emoji}
-                    </div>
+                    {c.avatar_url
+                      ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+                      : <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
+                    }
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
                     </div>
@@ -990,9 +992,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="divide-y divide-gray-100">
                   {contacts.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
                     <div key={c.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>
-                        {c.emoji}
-                      </div>
+                      {c.avatar_url
+                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+                        : <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
+                      }
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
                         <p className="text-xs text-gray-400">Chat privado</p>
@@ -1627,7 +1630,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 return (
                   <button key={c.id} onClick={() => setNgSelected(prev => selected ? prev.filter(id => id !== c.id) : [...prev, c.id])}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left transition-colors">
-                    <Avatar emoji={c.emoji} bg={c.bg} size="lg" />
+                    <Avatar emoji={c.emoji} bg={c.bg} size="lg" avatarUrl={c.avatar_url} />
                     <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-900">{c.name}</p></div>
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
                       {selected && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
@@ -1692,12 +1695,12 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors">
       <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => onOpenRoom(room.id)}>
         <div className="relative shrink-0">
-          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl">
-            {room.emoji
-              ? room.emoji
-              : <UserIcon className="w-6 h-6 text-gray-400" />
-            }
-          </div>
+          {room.otherAvatarUrl
+            ? <img src={room.otherAvatarUrl} alt="" className="w-12 h-12 rounded-full object-cover" />
+            : <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl">
+                {room.emoji ? room.emoji : <UserIcon className="w-6 h-6 text-gray-400" />}
+              </div>
+          }
           {room.unread > 0 && !muted && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center px-1">{room.unread > 99 ? '99+' : room.unread}</span>}
           {muted && <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gray-200 border border-white flex items-center justify-center"><svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg></span>}
         </div>

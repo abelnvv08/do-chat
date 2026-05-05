@@ -11,7 +11,7 @@ async function attachUsers(supabase: ReturnType<typeof admin>, messages: any[]) 
   const ids = [...new Set(messages.map(m => m.user_id).filter(Boolean))]
   const { data: profiles } = await supabase
     .from('demo_profiles')
-    .select('id, name, emoji, bg')
+    .select('id, name, emoji, bg, avatar_url')
     .in('id', ids)
   const map: Record<string, any> = {}
   for (const p of profiles ?? []) map[p.id] = p

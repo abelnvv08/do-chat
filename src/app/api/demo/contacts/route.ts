@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const supabase = admin()
   const { data } = await supabase
     .from('demo_contacts')
-    .select('contact_id, first_name, last_name, demo_profiles!demo_contacts_contact_id_fkey(id, name, emoji, bg)')
+    .select('contact_id, first_name, last_name, demo_profiles!demo_contacts_contact_id_fkey(id, name, emoji, bg, avatar_url)')
     .eq('user_id', user_id)
     .order('first_name', { ascending: true })
 
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       lastName: row.last_name ?? '',
       emoji: p.emoji,
       bg: p.bg ?? 'bg-gray-400',
+      avatar_url: p.avatar_url ?? null,
       room_id: getDMRoom(user_id, p.id),
     }
   }).filter(Boolean)
@@ -48,23 +49,23 @@ export async function POST(req: NextRequest) {
   if (!user_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const supabase = admin()
-  let profile: { id: string; name: string; emoji: string; bg: string } | null = null
+  let profile: { id: string; name: string; emoji: string; bg: string; avatar_url?: string | null } | null = null
 
   if (contact_id) {
-    const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('id', contact_id).single()
+    const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg, avatar_url').eq('id', contact_id).single()
     profile = data
   } else if (phone) {
     const digits = phone.replace(/\D/g, '')
     // Try exact, with +, and suffix match (last 10 digits) to handle different country code formats
     const variants = [phone.trim(), `+${digits}`, digits]
     for (const v of variants) {
-      const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('phone', v).neq('id', user_id).single()
+      const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg, avatar_url').eq('phone', v).neq('id', user_id).single()
       if (data) { profile = data; break }
     }
     // Last resort: match by last 10 digits
     if (!profile && digits.length >= 10) {
       const last10 = digits.slice(-10)
-      const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg').ilike('phone', `%${last10}`).neq('id', user_id).single()
+      const { data } = await supabase.from('demo_profiles').select('id, name, emoji, bg, avatar_url').ilike('phone', `%${last10}`).neq('id', user_id).single()
       if (data) profile = data
     }
   }
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
   await supabase.from('demo_room_members').upsert({ room_id: roomId, user_id: profile.id })
 
   return NextResponse.json({
-    contact: { id: profile.id, name: customName, emoji: profile.emoji, bg: profile.bg, room_id: roomId }
+    contact: { id: profile.id, name: customName, emoji: profile.emoji, bg: profile.bg, avatar_url: profile.avatar_url ?? null, room_id: roomId }
   })
 }
 

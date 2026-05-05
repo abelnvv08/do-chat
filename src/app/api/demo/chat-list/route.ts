@@ -25,7 +25,7 @@ async function getRoomsForUser(user_id: string): Promise<Room[]> {
     const dmRoomIds = dmRooms.map(r => r.id)
     const { data: otherMembers } = await supabase
       .from('demo_room_members')
-      .select('room_id, user_id, demo_profiles!demo_room_members_user_id_fkey(name, emoji)')
+      .select('room_id, user_id, demo_profiles!demo_room_members_user_id_fkey(name, emoji, avatar_url)')
       .in('room_id', dmRoomIds)
       .neq('user_id', user_id)
 
@@ -35,7 +35,7 @@ async function getRoomsForUser(user_id: string): Promise<Room[]> {
       if (other) {
         room.otherUserId = other.user_id
         const p = Array.isArray(other.demo_profiles) ? other.demo_profiles[0] : other.demo_profiles
-        if (p) { room.name = p.name; room.emoji = p.emoji }
+        if (p) { room.name = p.name; room.emoji = p.emoji; room.otherAvatarUrl = p.avatar_url ?? null }
       }
     }
   }

@@ -1,5 +1,5 @@
 // Dynamic cache — populated at runtime from Supabase
-export const usersCache: Record<string, { name: string; emoji: string; bg: string; text: string; border: string }> = {}
+export const usersCache: Record<string, { name: string; emoji: string; bg: string; text: string; border: string; avatar_url?: string | null }> = {}
 
 export function getUser(userId: string) {
   return usersCache[userId] ?? null
@@ -19,6 +19,7 @@ export type Room = {
   emoji: string
   type: 'group' | 'dm' | 'ai'
   otherUserId?: string
+  otherAvatarUrl?: string | null
 }
 
 export type DemoMessage = {
@@ -28,7 +29,7 @@ export type DemoMessage = {
   type: string
   room_id: string
   created_at: string
-  user: { name: string; emoji: string } | null
+  user: { name: string; emoji: string; avatar_url?: string | null } | null
   reactions: { emoji: string; user_ids: string[] }[]
   reply_to_id: string | null
   reply_preview: string | null

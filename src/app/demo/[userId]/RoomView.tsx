@@ -383,8 +383,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const [tableLoadingMsgId, setTableLoadingMsgId] = useState<string | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [showGroupInfo, setShowGroupInfo] = useState(false)
-  const [groupMembers, setGroupMembers] = useState<{ id: string; name: string; emoji: string; bg: string }[]>([])
-  const [groupContacts, setGroupContacts] = useState<{ id: string; name: string; emoji: string; bg: string; room_id: string }[]>([])
+  const [groupMembers, setGroupMembers] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null }[]>([])
+  const [groupContacts, setGroupContacts] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null; room_id: string }[]>([])
   const [groupCreatedBy, setGroupCreatedBy] = useState<string | null>(null)
   const [addingMembers, setAddingMembers] = useState(false)
   const [selectedToAdd, setSelectedToAdd] = useState<string[]>([])
@@ -1468,12 +1468,14 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-end gap-1.5 py-0.5 ${isOwn ? 'flex-row-reverse' : ''} ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>
               <div className="w-6 shrink-0">
                 {showAvatar && !isOwn && (
-                  <div className={`w-6 h-6 rounded-full ${sender?.bg ?? 'bg-gray-300'} flex items-center justify-center text-xs`}>
-                    {sender?.emoji
-                      ? sender.emoji
-                      : <svg className="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                    }
-                  </div>
+                  (msg.user?.avatar_url || sender?.avatar_url)
+                    ? <img src={msg.user?.avatar_url ?? sender?.avatar_url ?? undefined} alt="" className="w-6 h-6 rounded-full object-cover" />
+                    : <div className={`w-6 h-6 rounded-full ${sender?.bg ?? 'bg-gray-300'} flex items-center justify-center text-xs`}>
+                        {sender?.emoji
+                          ? sender.emoji
+                          : <svg className="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        }
+                      </div>
                 )}
               </div>
               <div className={`max-w-[75%] sm:max-w-[60%] lg:max-w-[50%] space-y-0.5 ${isOwn ? 'items-end flex flex-col' : ''}`}>
@@ -1846,7 +1848,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                       return (
                         <button key={c.id} onClick={() => setSelectedToAdd(prev => sel ? prev.filter(id => id !== c.id) : [...prev, c.id])}
                           className="w-full flex items-center gap-3 py-2 text-left">
-                          <div className={`w-8 h-8 rounded-full ${c.bg} flex items-center justify-center text-sm text-white shrink-0`}>{c.emoji}</div>
+                          {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" /> : <div className={`w-8 h-8 rounded-full ${c.bg} flex items-center justify-center text-sm text-white shrink-0`}>{c.emoji}</div>}
                           <span className="flex-1 text-sm text-gray-800">{c.name}</span>
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${sel ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
                             {sel && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
@@ -1871,7 +1873,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               <div className="divide-y divide-gray-50">
                 {groupMembers.map(member => (
                   <div key={member.id} className="flex items-center gap-3 px-5 py-3">
-                    <div className={`w-10 h-10 rounded-full ${member.bg} flex items-center justify-center text-lg text-white shrink-0`}>{member.emoji}</div>
+                    {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className={`w-10 h-10 rounded-full ${member.bg} flex items-center justify-center text-lg text-white shrink-0`}>{member.emoji}</div>}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900">{member.name}</p>
                       {member.id === groupCreatedBy && <p className="text-xs text-blue-500">Admin</p>}
