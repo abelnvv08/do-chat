@@ -42,7 +42,7 @@ type Reminder = { id: string; content: string; remind_at: string }
 type Project = { id: string; title: string; content: string; created_at: string }
 type FileEntry = { id: string; name: string; url: string; size: number | null; type: 'file' | 'image'; room_id: string; created_at: string; sender: string; sender_emoji: string }
 
-type Tab = 'chats' | 'projects' | 'docs' | 'tu'
+type Tab = 'chats' | 'projects' | 'tu'
 
 const COUNTRY_CODES = [
   { code: '+52', label: '🇲🇽 +52' },
@@ -99,20 +99,21 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [addingTask, setAddingTask] = useState(false)
   const [showDailyPanel, setShowDailyPanel] = useState(false)
 
-  // Projects tab
+  // Archivos tab (merged projects + docs)
   const [projects, setProjects] = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(false)
   const [projectsFetched, setProjectsFetched] = useState(false)
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
-
-  // Docs tab
   const [files, setFiles] = useState<FileEntry[]>([])
   const [filesLoading, setFilesLoading] = useState(false)
   const [filesFetched, setFilesFetched] = useState(false)
-  const [fileFilter, setFileFilter] = useState<'all' | 'file' | 'image'>('all')
-  const [fileSearch, setFileSearch] = useState('')
+  const [archivosFilter, setArchivosFilter] = useState<'all' | 'proyectos' | 'archivos' | 'imagenes'>('all')
+  const [archivosSearch, setArchivosSearch] = useState('')
   const [docsUploading, setDocsUploading] = useState(false)
   const docsFileRef = useRef<HTMLInputElement>(null)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [forwardingItems, setForwardingItems] = useState(false)
 
   // Perfil tab
   const [icalUrl, setIcalUrl] = useState('')
@@ -164,8 +165,10 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
     } else {
       if (tasksIntervalRef.current) { clearInterval(tasksIntervalRef.current); tasksIntervalRef.current = null }
     }
-    if (activeTab === 'projects' && !projectsFetched) { setProjectsFetched(true); setProjectsLoading(true); fetchProjects() }
-    if (activeTab === 'docs' && !filesFetched) { setFilesFetched(true); setFilesLoading(true); fetchFiles() }
+    if (activeTab === 'projects') {
+      if (!projectsFetched) { setProjectsFetched(true); setProjectsLoading(true); fetchProjects() }
+      if (!filesFetched) { setFilesFetched(true); setFilesLoading(true); fetchFiles() }
+    }
     if (activeTab === 'tu') {
       setIcalUrl(localStorage.getItem(`ical_${userId}`) ?? '')
       setDarkMode(localStorage.getItem('dark_mode') === '1')
@@ -471,9 +474,6 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
     if (a.due_date) return -1; if (b.due_date) return 1; return 0
   })
   const doneTasks = tasks.filter(t => t.done)
-  const filteredFiles = files
-    .filter(f => fileFilter === 'all' || f.type === fileFilter)
-    .filter(f => !fileSearch || f.name.toLowerCase().includes(fileSearch.toLowerCase()) || f.sender.toLowerCase().includes(fileSearch.toLowerCase()))
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
       {/* Reminder toast */}
@@ -635,124 +635,201 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
         </>
       )}
 
-      {/* ── PROJECTS TAB ── */}
-      {activeTab === 'projects' && (
-        <>
-          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-            <div className="flex items-center justify-between mb-1">
-              <h1 className="text-2xl font-bold text-gray-900">Proyectos</h1>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-600 font-semibold">{projects.length} docs</span>
-            </div>
-            <p className="text-sm text-gray-400">Reportes y resúmenes generados por do AI</p>
-          </div>
-          <div className="flex-1 overflow-y-auto pb-20 bg-gray-50">
-            {projectsLoading && <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
-            {!projectsLoading && projects.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
-                <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center"><svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg></div>
-                <p className="text-gray-600 font-medium">Sin proyectos aún</p>
-                <p className="text-sm text-gray-400">Pedile a @do que genere un reporte o acta de tus conversaciones</p>
-              </div>
-            )}
-            {projects.length > 0 && (
-              <div className="px-4 py-3 space-y-3">
-                {projects.map(proj => (
-                  <div key={proj.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <button onClick={() => setExpandedProject(expandedProject === proj.id ? null : proj.id)}
-                      className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors">
-                      <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">{proj.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{formatMessageTime(proj.created_at)} · por do AI</p>
-                      </div>
-                      <svg className={`w-4 h-4 text-gray-400 mt-1 shrink-0 transition-transform ${expandedProject === proj.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-                    </button>
-                    {expandedProject === proj.id && (
-                      <div className="border-t border-gray-100 px-4 py-3">
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{proj.content}</p>
-                        <div className="flex justify-end mt-3">
-                          <button onClick={() => deleteProject(proj.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Eliminar</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="h-4" />
-          </div>
-        </>
-      )}
+      {/* ── ARCHIVOS TAB (merged projects + docs) ── */}
+      {activeTab === 'projects' && (() => {
+        const filteredProjects = archivosFilter === 'all' || archivosFilter === 'proyectos'
+          ? projects.filter(p => !archivosSearch || p.title.toLowerCase().includes(archivosSearch.toLowerCase()))
+          : []
+        const filteredFiles = archivosFilter === 'all' || archivosFilter === 'archivos' || archivosFilter === 'imagenes'
+          ? files
+              .filter(f => archivosFilter === 'imagenes' ? f.type === 'image' : archivosFilter === 'archivos' ? f.type === 'file' : true)
+              .filter(f => !archivosSearch || f.name.toLowerCase().includes(archivosSearch.toLowerCase()) || f.sender.toLowerCase().includes(archivosSearch.toLowerCase()))
+          : []
+        const totalSelected = selectedIds.size
+        const isLoading = projectsLoading || filesLoading
 
-      {/* ── DOCS TAB ── */}
-      {activeTab === 'docs' && (
-        <>
-          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
-            <div className="flex items-center justify-between mb-3">
-              <h1 className="text-2xl font-bold text-gray-900">Documentos</h1>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-600 font-semibold">{files.length} archivos</span>
-                <button
-                  onClick={() => docsFileRef.current?.click()}
-                  disabled={docsUploading}
-                  className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all"
-                >
-                  {docsUploading
-                    ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  }
-                </button>
-                <input ref={docsFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.mp4,.zip" className="hidden" onChange={uploadDocFile} />
+        async function deleteSelected() {
+          const toDelete = [...selectedIds]
+          for (const id of toDelete) {
+            const proj = projects.find(p => p.id === id)
+            if (proj) { await fetch('/api/demo/projects', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); setProjects(prev => prev.filter(p => p.id !== id)) }
+            const file = files.find(f => f.id === id)
+            if (file) { await fetch('/api/demo/messages', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message_id: id }) }); setFiles(prev => prev.filter(f => f.id !== id)) }
+          }
+          setSelectedIds(new Set()); setSelectionMode(false)
+        }
+
+        async function askAISelected() {
+          const selectedFiles = files.filter(f => selectedIds.has(f.id))
+          const selectedProjs = projects.filter(p => selectedIds.has(p.id))
+          const parts: string[] = []
+          if (selectedFiles.length) parts.push(`Archivos: ${selectedFiles.map(f => `"${f.name}"`).join(', ')}`)
+          if (selectedProjs.length) parts.push(`Proyectos: ${selectedProjs.map(p => `"${p.title}"`).join(', ')}`)
+          setSelectedIds(new Set()); setSelectionMode(false)
+          setActiveTab('chats')
+          setActiveRoomId(`ai-${userId}`)
+        }
+
+        function toggleSelect(id: string) {
+          setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
+        }
+
+        return (
+          <>
+            {/* Header */}
+            <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-2xl font-bold text-gray-900">Archivos</h1>
+                <div className="flex items-center gap-2">
+                  {selectionMode ? (
+                    <button onClick={() => { setSelectionMode(false); setSelectedIds(new Set()) }}
+                      className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl bg-blue-50">Cancelar</button>
+                  ) : (
+                    <>
+                      <button onClick={() => setSelectionMode(true)}
+                        className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl bg-blue-50">Seleccionar</button>
+                      <button onClick={() => docsFileRef.current?.click()} disabled={docsUploading}
+                        className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
+                        {docsUploading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
+                      </button>
+                      <input ref={docsFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.zip" className="hidden" onChange={uploadDocFile} />
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-            <input value={fileSearch} onChange={e => setFileSearch(e.target.value)} placeholder="Buscar archivos…"
-              className="w-full bg-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 mb-3" />
-            <div className="flex gap-2">
-              {(['all', 'file', 'image'] as const).map(f => (
-                <button key={f} onClick={() => setFileFilter(f)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${fileFilter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                  {f === 'all' ? 'Todos' : f === 'file' ? 'Archivos' : 'Imágenes'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto pb-20 bg-gray-50">
-            {filesLoading && <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
-            {!filesLoading && filteredFiles.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
-                <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center"><svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg></div>
-                <p className="text-gray-600 font-medium">{fileSearch ? 'Sin resultados' : 'Sin archivos compartidos'}</p>
-                <p className="text-sm text-gray-400">{fileSearch ? 'Probá con otro término' : 'Los archivos e imágenes de tus chats aparecerán aquí'}</p>
-              </div>
-            )}
-            {filteredFiles.length > 0 && (
-              <div className="px-4 py-3 space-y-2">
-                {filteredFiles.map(file => (
-                  <a key={file.id} href={file.url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm hover:border-blue-300 hover:shadow-md transition-all active:scale-[0.98]">
-                    {file.type === 'image' ? (
-                      <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-100"><img src={file.url} alt={file.name} className="w-full h-full object-cover" /></div>
-                    ) : (
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${fileColor(file.name)}`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{file.sender_emoji} {file.sender}{file.size ? ` · ${Math.round(file.size / 1024)} KB` : ''}</p>
-                      <p className="text-xs text-gray-300 mt-0.5">{formatMessageTime(file.created_at)}</p>
-                    </div>
-                    <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
-                  </a>
+              <input value={archivosSearch} onChange={e => setArchivosSearch(e.target.value)} placeholder="Buscar…"
+                className="w-full bg-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+                {(['all', 'proyectos', 'archivos', 'imagenes'] as const).map(f => (
+                  <button key={f} onClick={() => setArchivosFilter(f)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-[#2563EB] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                    {f === 'all' ? 'Todo' : f === 'proyectos' ? 'Proyectos' : f === 'archivos' ? 'Archivos' : 'Imágenes'}
+                  </button>
                 ))}
               </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto pb-28 bg-gray-50">
+              {isLoading && <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
+
+              {!isLoading && filteredProjects.length === 0 && filteredFiles.length === 0 && (
+                <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
+                  <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                  </div>
+                  <p className="text-gray-600 font-medium">Sin contenido aún</p>
+                  <p className="text-sm text-gray-400">Sube un archivo con + o pídele a do AI que genere reportes</p>
+                </div>
+              )}
+
+              {/* Proyectos */}
+              {filteredProjects.length > 0 && (
+                <div className="px-4 pt-4">
+                  {(archivosFilter === 'all') && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Proyectos</p>}
+                  <div className="space-y-2.5">
+                    {filteredProjects.map(proj => (
+                      <div key={proj.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${selectedIds.has(proj.id) ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
+                        <button onClick={() => selectionMode ? toggleSelect(proj.id) : setExpandedProject(expandedProject === proj.id ? null : proj.id)}
+                          className="w-full flex items-start gap-3 px-4 py-3.5 text-left">
+                          {selectionMode && (
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                              {selectedIds.has(proj.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
+                            </div>
+                          )}
+                          <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{proj.title}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{formatMessageTime(proj.created_at)} · do AI</p>
+                          </div>
+                          {!selectionMode && <svg className={`w-4 h-4 text-gray-400 mt-1 shrink-0 transition-transform ${expandedProject === proj.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>}
+                        </button>
+                        {!selectionMode && expandedProject === proj.id && (
+                          <div className="border-t border-gray-100 px-4 py-3">
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{proj.content}</p>
+                            <div className="flex justify-end mt-3">
+                              <button onClick={() => deleteProject(proj.id)} className="text-xs text-red-400 hover:text-red-600">Eliminar</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Archivos e Imágenes */}
+              {filteredFiles.length > 0 && (
+                <div className="px-4 pt-4">
+                  {(archivosFilter === 'all') && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 mt-2">Archivos e imágenes</p>}
+                  {archivosFilter === 'imagenes' ? (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {filteredFiles.map(file => (
+                        <div key={file.id} className={`relative aspect-square rounded-xl overflow-hidden ${selectedIds.has(file.id) ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}>
+                          {selectionMode && (
+                            <button onClick={() => toggleSelect(file.id)} className="absolute inset-0 z-10 w-full h-full">
+                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'bg-white/80 border-white'}`}>
+                                {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
+                              </div>
+                            </button>
+                          )}
+                          <a href={!selectionMode ? file.url : undefined} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredFiles.map(file => (
+                        <div key={file.id} className={`flex items-center gap-3 bg-white rounded-2xl border px-4 py-3 shadow-sm transition-all ${selectedIds.has(file.id) ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
+                          {selectionMode && (
+                            <button onClick={() => toggleSelect(file.id)}>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                                {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
+                              </div>
+                            </button>
+                          )}
+                          {file.type === 'image'
+                            ? <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-100"><img src={file.url} alt={file.name} className="w-full h-full object-cover" /></div>
+                            : <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${fileColor(file.name)}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg></div>
+                          }
+                          <a href={!selectionMode ? file.url : undefined} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0" onClick={selectionMode ? (e) => { e.preventDefault(); toggleSelect(file.id) } : undefined}>
+                            <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{file.sender_emoji} {file.sender}{file.size ? ` · ${Math.round(file.size / 1024)} KB` : ''}</p>
+                          </a>
+                          {!selectionMode && <a href={file.url} target="_blank" rel="noopener noreferrer"><svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg></a>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="h-4" />
+            </div>
+
+            {/* Selection action bar */}
+            {selectionMode && totalSelected > 0 && (
+              <div className="fixed bottom-16 left-0 right-0 max-w-md mx-auto z-20 px-4 pb-2">
+                <div className="bg-gray-900 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-xl">
+                  <span className="text-white text-sm font-medium flex-1">{totalSelected} seleccionado{totalSelected > 1 ? 's' : ''}</span>
+                  <button onClick={askAISelected}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold active:scale-95 transition-all">
+                    <span>✦</span> Preguntar a IA
+                  </button>
+                  <button onClick={deleteSelected}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500 text-white text-xs font-semibold active:scale-95 transition-all">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                    Eliminar
+                  </button>
+                </div>
+              </div>
             )}
-            <div className="h-4" />
-          </div>
-        </>
-      )}
+          </>
+        )
+      })()}
 
       {/* ── PERFIL TAB ── */}
       {activeTab === 'tu' && (
@@ -1260,8 +1337,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
 export function BottomNav({ active, onTabChange }: { active: string; onTabChange: (tab: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'chats', label: 'Chats', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg> },
-    { id: 'projects', label: 'Proyectos', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg> },
-    { id: 'docs', label: 'Docs', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> },
+    { id: 'projects', label: 'Archivos', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> },
     { id: 'tu', label: 'Tú', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> },
   ]
   return (
