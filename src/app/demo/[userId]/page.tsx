@@ -111,6 +111,8 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [filesFetched, setFilesFetched] = useState(false)
   const [fileFilter, setFileFilter] = useState<'all' | 'file' | 'image'>('all')
   const [fileSearch, setFileSearch] = useState('')
+  const [docsUploading, setDocsUploading] = useState(false)
+  const docsFileRef = useRef<HTMLInputElement>(null)
 
   // Perfil tab
   const [icalUrl, setIcalUrl] = useState('')
@@ -347,6 +349,22 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
       const { files: f } = await res.json()
       setFiles(f ?? [])
     } finally { setFilesLoading(false) }
+  }
+
+  async function uploadDocFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setDocsUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('user_id', userId)
+    fd.append('room_id', `ai-${userId}`)
+    await fetch('/api/demo/upload', { method: 'POST', body: fd })
+    const res = await fetch(`/api/demo/files?user_id=${userId}`)
+    const { files: f } = await res.json()
+    setFiles(f ?? [])
+    setDocsUploading(false)
+    e.target.value = ''
   }
 
   // Profile functions
@@ -674,7 +692,20 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
           <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-2xl font-bold text-gray-900">Documentos</h1>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-600 font-semibold">{files.length} archivos</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-600 font-semibold">{files.length} archivos</span>
+                <button
+                  onClick={() => docsFileRef.current?.click()}
+                  disabled={docsUploading}
+                  className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all"
+                >
+                  {docsUploading
+                    ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  }
+                </button>
+                <input ref={docsFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.mp4,.zip" className="hidden" onChange={uploadDocFile} />
+              </div>
             </div>
             <input value={fileSearch} onChange={e => setFileSearch(e.target.value)} placeholder="Buscar archivos…"
               className="w-full bg-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 mb-3" />
