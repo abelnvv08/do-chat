@@ -597,8 +597,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     }
   }, [messages, aiTyping])
 
-  const cleanedEncryptedRef = useRef(false)
-
   async function fetchMessages() {
     if (fetchingRef.current) { pendingFetchRef.current = true; return }
     fetchingRef.current = true
@@ -607,16 +605,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       const res = await fetch(`/api/demo/messages?room=${encodeURIComponent(roomId)}`)
       if (!res.ok) return
       const { messages: msgs } = await res.json()
-      const hasEncrypted = (msgs ?? []).some((m: DemoMessage) => isEncrypted(m.content))
-      if (hasEncrypted && !cleanedEncryptedRef.current) {
-        cleanedEncryptedRef.current = true
-        fetch('/api/demo/cleanup-encrypted', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room_id: roomId }),
-        }).then(() => fetchMessages()).catch(() => {})
-        return
-      }
       setMessages(msgs ?? [])
       markRead()
     } catch {
@@ -1044,10 +1032,41 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   function DecryptedText({ content, isOwn }: { content: string; isOwn: boolean }) {
     const [text, setText] = useState<string | null>(null)
     useEffect(() => {
-      if (!encKey) { setText('🔒 Mensaje cifrado'); return }
-      decryptMsg(content, encKey).then(setText).catch(() => setText('🔒 Mensaje cifrado'))
-    }, [content, encKey])
-    if (text === null) return <span className="text-sm opacity-50">Descifrando…</span>
+      // Wait until key initialization is complete before deciding anything
+      if (!encReady) return
+      if (!encKey) {
+        // Key derivation failed (other user has no key or localStorage cleared)
+        // Try one more time by re-deriving inline
+        const tryDecrypt = async () => {
+          const isDM = roomId.startsWith('dm-')
+          if (isDM) {
+            const withoutPrefix = roomId.slice(3)
+            const uuid1 = withoutPrefix.slice(0, 36)
+            const uuid2 = withoutPrefix.slice(37)
+            const otherUserId = uuid1 === userId ? uuid2 : uuid1
+            try {
+              const res = await fetch(`/api/demo/e2ee?user_id=${otherUserId}`)
+              const d = await res.json()
+              if (d.public_key) {
+                const { deriveSharedKey: dsk } = await import('@/lib/e2ee')
+                const key = await dsk(userId, d.public_key)
+                if (key) {
+                  const plain = await decryptMsg(content, key)
+                  setText(plain)
+                  return
+                }
+              }
+            } catch { /* fall through */ }
+          }
+          setText('') // no key available
+        }
+        tryDecrypt()
+        return
+      }
+      decryptMsg(content, encKey).then(setText).catch(() => setText(''))
+    }, [content, encKey, encReady])
+    if (text === null) return <span className="text-sm opacity-50 italic">…</span>
+    if (!text) return <span className="text-sm opacity-40 italic">Mensaje cifrado</span>
     const urlMatch = text.match(/https?:\/\/[^\s]+/)
     return (
       <div>
