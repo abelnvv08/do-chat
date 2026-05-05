@@ -211,7 +211,12 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   async function fetchContacts() {
     const res = await fetch(`/api/demo/contacts?user_id=${userId}`)
     const data = await res.json()
-    setContacts(data.contacts ?? [])
+    const list: Contact[] = data.contacts ?? []
+    setContacts(list)
+    // Populate cache with the name the current user saved for each contact
+    for (const c of list) {
+      usersCache[c.id] = { name: c.name, emoji: c.emoji, bg: c.bg, text: 'text-white', border: 'border-white/20', avatar_url: c.avatar_url }
+    }
   }
   async function fetchPrefs() {
     try {
@@ -1083,39 +1088,6 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
             </div>
 
-            {/* Nombre de usuario */}
-            <div className="px-4 mt-5">
-              <p className="text-[13px] text-gray-500 mb-1 ml-1">Nombre de usuario</p>
-              <div className="bg-white rounded-2xl overflow-hidden">
-                {editingUsername ? (
-                  <div className="px-4 py-3.5">
-                    <input
-                      type="text"
-                      value={newUsername}
-                      onChange={e => { setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setUsernameError('') }}
-                      maxLength={20}
-                      placeholder="nuevo_usuario"
-                      autoFocus
-                      className="w-full text-[15px] text-gray-900 focus:outline-none bg-transparent"
-                    />
-                    {usernameError && <p className="text-xs text-red-500 mt-1">{usernameError}</p>}
-                    <div className="flex justify-end gap-4 mt-2">
-                      <button onClick={() => { setEditingUsername(false); setUsernameError('') }} className="text-sm text-gray-400 font-medium">Cancelar</button>
-                      <button onClick={saveUsername} disabled={usernameChecking || newUsername.length < 3}
-                        className="text-sm text-[#2563EB] font-semibold disabled:opacity-40">
-                        {usernameChecking ? '…' : 'Guardar'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button onClick={() => { setNewUsername(profile.username ?? ''); setEditingUsername(true); setUsernameError('') }}
-                    className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-gray-50">
-                    <span className="text-[15px] text-gray-900">{profile.username ? `@${profile.username}` : 'Sin usuario'}</span>
-                    <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-                  </button>
-                )}
-              </div>
-            </div>
 
             {/* Número de teléfono */}
             {(profile as any).phone && (

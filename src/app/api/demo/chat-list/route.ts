@@ -19,7 +19,7 @@ async function getRoomsForUser(user_id: string): Promise<Room[]> {
     return { id: r.id as string, name: (r.name ?? r.id) as string, emoji: (r.emoji ?? '💬') as string, type: r.type as Room['type'] }
   }).filter(Boolean)) as Room[]
 
-  // For DM rooms, resolve the other user's name/emoji from their profile
+  // For DM rooms, resolve the other user's name/emoji — prefer saved contact name
   const dmRooms = baseRooms.filter(r => r.type === 'dm')
   if (dmRooms.length > 0) {
     const dmRoomIds = dmRooms.map(r => r.id)
@@ -29,13 +29,28 @@ async function getRoomsForUser(user_id: string): Promise<Room[]> {
       .in('room_id', dmRoomIds)
       .neq('user_id', user_id)
 
+    // Load saved contact names for this user
+    const otherUserIds = (otherMembers ?? []).map((m: any) => m.user_id).filter(Boolean)
+    const { data: savedContacts } = otherUserIds.length
+      ? await supabase.from('demo_contacts').select('contact_id, first_name, last_name').eq('user_id', user_id).in('contact_id', otherUserIds)
+      : { data: [] }
+    const savedNameMap: Record<string, string> = {}
+    for (const c of savedContacts ?? []) {
+      const n = [c.first_name, c.last_name].filter(Boolean).join(' ')
+      if (n) savedNameMap[c.contact_id] = n
+    }
+
     for (const room of baseRooms) {
       if (room.type !== 'dm') continue
       const other = (otherMembers ?? []).find((m: any) => m.room_id === room.id)
       if (other) {
         room.otherUserId = other.user_id
         const p = Array.isArray(other.demo_profiles) ? other.demo_profiles[0] : other.demo_profiles
-        if (p) { room.name = p.name; room.emoji = p.emoji; room.otherAvatarUrl = p.avatar_url ?? null }
+        if (p) {
+          room.name = savedNameMap[other.user_id] || p.name
+          room.emoji = p.emoji
+          room.otherAvatarUrl = p.avatar_url ?? null
+        }
       }
     }
   }
