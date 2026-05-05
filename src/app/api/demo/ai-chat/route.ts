@@ -11,47 +11,45 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-type CountryCtx = { name: string; currency: string; tone: string }
+type CountryCtx = { name: string; currency: string }
 const COUNTRY_CTX: Record<string, CountryCtx> = {
-  MX: { name: 'México', currency: 'Peso mexicano (MXN, $)', tone: 'Usa vocabulario mexicano de forma natural cuando aplique: "ahorita", "chido", "órale", "wey" (solo en tono casual), "¿mande?". Nunca uses "vos". Usa "tú".' },
-  AR: { name: 'Argentina', currency: 'Peso argentino (ARS, $)', tone: 'Usa vos, che, re, copado, boludo (en tono amistoso). Tutea con vos: "vos sabés", "¿cómo estás vos?". Acento rioplatense.' },
-  CO: { name: 'Colombia', currency: 'Peso colombiano (COP, $)', tone: 'Colombiano cordial: "parcero", "bacano", "listo", "chévere". Usa tú.' },
-  CL: { name: 'Chile', currency: 'Peso chileno (CLP, $)', tone: 'Chileno: "po", "cachai", "al tiro", "fome", "weon" (casual). Usa tú.' },
-  ES: { name: 'España', currency: 'Euro (EUR, €)', tone: 'Español peninsular: usa vosotros, "tío/tía" en tono casual, "guay", "mola". Tuteo con tú.' },
-  PE: { name: 'Perú', currency: 'Sol peruano (PEN, S/.)', tone: 'Peruano cordial: "causa", "pata", "bacán". Usa tú.' },
-  VE: { name: 'Venezuela', currency: 'Bolívar venezolano (VES, Bs.)', tone: 'Venezolano: "chamo", "pana", "chévere". Usa tú.' },
-  EC: { name: 'Ecuador', currency: 'Dólar estadounidense (USD, $)', tone: 'Ecuatoriano cordial. Usa tú.' },
-  BO: { name: 'Bolivia', currency: 'Boliviano (BOB, Bs.)', tone: 'Boliviano cordial. Usa tú.' },
-  PY: { name: 'Paraguay', currency: 'Guaraní (PYG, ₲)', tone: 'Paraguayo cordial. Usa tú.' },
-  UY: { name: 'Uruguay', currency: 'Peso uruguayo (UYU, $)', tone: 'Uruguayo: usa vos similar al argentino, "che", cordial y relajado.' },
-  US: { name: 'Estados Unidos', currency: 'Dólar estadounidense (USD, $)', tone: 'Adapta al idioma del usuario. Si escribe en español, responde en español neutro.' },
-  GT: { name: 'Guatemala', currency: 'Quetzal (GTQ, Q)', tone: 'Guatemalteco cordial. Usa tú.' },
-  CR: { name: 'Costa Rica', currency: 'Colón costarricense (CRC, ₡)', tone: 'Tico: "mae", "tuanis", "pura vida". Usa tú.' },
-  DO: { name: 'República Dominicana', currency: 'Peso dominicano (DOP, $)', tone: 'Dominicano: "vaina", "tiguere", "qué lo qué". Usa tú.' },
-  PA: { name: 'Panamá', currency: 'Balboa (PAB, B/.)', tone: 'Panameño cordial. Usa tú.' },
-  HN: { name: 'Honduras', currency: 'Lempira (HNL, L)', tone: 'Hondureño cordial. Usa tú.' },
-  SV: { name: 'El Salvador', currency: 'Dólar (USD, $)', tone: 'Salvadoreño cordial. Usa tú.' },
-  NI: { name: 'Nicaragua', currency: 'Córdoba (NIO, C$)', tone: 'Nicaragüense cordial. Usa tú.' },
-  CU: { name: 'Cuba', currency: 'Peso cubano (CUP, $)', tone: 'Cubano: "asere", "chévere", "yuma". Usa tú.' },
-  BR: { name: 'Brasil', currency: 'Real brasileño (BRL, R$)', tone: 'Si el usuario escribe en portugués, responde en portugués brasileño. Si en español, responde en español.' },
-  CA: { name: 'Canadá', currency: 'Dólar canadiense (CAD, $)', tone: 'Neutral. Adapta al idioma del usuario.' },
-  GB: { name: 'Reino Unido', currency: 'Libra esterlina (GBP, £)', tone: 'Si escribe en español, responde en español neutro.' },
-  DE: { name: 'Alemania', currency: 'Euro (EUR, €)', tone: 'Si escribe en español, responde en español neutro.' },
-  FR: { name: 'Francia', currency: 'Euro (EUR, €)', tone: 'Si escribe en español, responde en español neutro.' },
+  MX: { name: 'México', currency: 'Peso mexicano (MXN, $)' },
+  AR: { name: 'Argentina', currency: 'Peso argentino (ARS, $)' },
+  CO: { name: 'Colombia', currency: 'Peso colombiano (COP, $)' },
+  CL: { name: 'Chile', currency: 'Peso chileno (CLP, $)' },
+  ES: { name: 'España', currency: 'Euro (EUR, €)' },
+  PE: { name: 'Perú', currency: 'Sol peruano (PEN, S/.)' },
+  VE: { name: 'Venezuela', currency: 'Bolívar venezolano (VES, Bs.)' },
+  EC: { name: 'Ecuador', currency: 'Dólar estadounidense (USD, $)' },
+  BO: { name: 'Bolivia', currency: 'Boliviano (BOB, Bs.)' },
+  PY: { name: 'Paraguay', currency: 'Guaraní (PYG, ₲)' },
+  UY: { name: 'Uruguay', currency: 'Peso uruguayo (UYU, $)' },
+  US: { name: 'Estados Unidos', currency: 'Dólar estadounidense (USD, $)' },
+  GT: { name: 'Guatemala', currency: 'Quetzal (GTQ, Q)' },
+  CR: { name: 'Costa Rica', currency: 'Colón costarricense (CRC, ₡)' },
+  DO: { name: 'República Dominicana', currency: 'Peso dominicano (DOP, $)' },
+  PA: { name: 'Panamá', currency: 'Balboa (PAB, B/.)' },
+  HN: { name: 'Honduras', currency: 'Lempira (HNL, L)' },
+  SV: { name: 'El Salvador', currency: 'Dólar (USD, $)' },
+  NI: { name: 'Nicaragua', currency: 'Córdoba (NIO, C$)' },
+  CU: { name: 'Cuba', currency: 'Peso cubano (CUP, $)' },
+  BR: { name: 'Brasil', currency: 'Real brasileño (BRL, R$)' },
+  CA: { name: 'Canadá', currency: 'Dólar canadiense (CAD, $)' },
+  GB: { name: 'Reino Unido', currency: 'Libra esterlina (GBP, £)' },
+  DE: { name: 'Alemania', currency: 'Euro (EUR, €)' },
+  FR: { name: 'Francia', currency: 'Euro (EUR, €)' },
 }
 
 function buildLocationContext(countryCode: string | null, city: string | null): string {
-  const geo = countryCode ? COUNTRY_CTX[countryCode] : null
-  if (!geo && !countryCode) return ''
-  const lines: string[] = []
-  if (geo) {
-    lines.push(`UBICACIÓN DEL USUARIO: ${geo.name}${city ? `, ${city}` : ''}`)
-    lines.push(`MONEDA LOCAL: ${geo.currency} — usa esta moneda por defecto en precios, cotizaciones y conversiones salvo que el usuario especifique otra.`)
-    lines.push(`IDIOMA Y TONO: ${geo.tone}`)
-  } else {
-    lines.push(`PAÍS: ${countryCode}${city ? `, ${city}` : ''} — usa español neutro y la moneda local del país.`)
-  }
-  return lines.join('\n')
+  if (!countryCode) return ''
+  const geo = COUNTRY_CTX[countryCode]
+  const countryName = geo?.name ?? countryCode
+  const currency = geo?.currency ?? 'la moneda local'
+  return [
+    `UBICACIÓN DEL USUARIO: ${countryName}${city ? `, ${city}` : ''}`,
+    `MONEDA LOCAL: ${currency} — úsala por defecto en precios, cotizaciones y conversiones, salvo que el usuario indique otra.`,
+    `IDIOMA: español formal y neutro. Sin jerga, sin coloquialismos, sin expresiones regionales. Directo, claro y respetuoso.`,
+  ].join('\n')
 }
 
 async function tavilySearch(query: string): Promise<string | null> {
