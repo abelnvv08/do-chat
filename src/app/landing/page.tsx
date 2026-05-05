@@ -1,5 +1,4 @@
 'use client'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
@@ -18,10 +17,7 @@ export default function LandingPage() {
       {/* NAV */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Image src="/dochatlogo.png" alt="DO Chat" width={34} height={34} className="rounded-xl" />
-            <Image src="/dologo.png" alt="DO Chat" width={100} height={30} className="object-contain" />
-          </div>
+          <span className="text-lg font-extrabold text-white tracking-tight">DO Chat</span>
           <Link href="/login"
             className="px-5 py-2.5 rounded-full bg-[#1a56db] text-white text-sm font-semibold hover:bg-[#1648c8] transition-colors shadow-sm">
             Abrir DO Chat
@@ -204,10 +200,7 @@ export default function LandingPage() {
       {/* CTA BANNER */}
       <section className="py-20 bg-gradient-to-r from-[#0f172a] to-[#1a56db]">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Image src="/dochatlogo.png" alt="DO Chat" width={48} height={48} className="rounded-2xl" />
-            <Image src="/dologo.png" alt="DO Chat" width={120} height={36} className="object-contain brightness-0 invert" />
-          </div>
+          <p className="text-3xl font-extrabold text-white mb-6 tracking-tight">DO Chat</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">Empieza a chatear hoy</h2>
           <p className="text-blue-200 text-lg mb-8">Sin instalación. Sin tarjeta. Abre DO Chat desde cualquier dispositivo.</p>
           <Link href="/login"
@@ -220,10 +213,7 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer className="bg-[#0f172a] py-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Image src="/dochatlogo.png" alt="" width={28} height={28} className="rounded-lg opacity-60" />
-            <Image src="/dologo.png" alt="DO Chat" width={90} height={28} className="object-contain brightness-0 invert opacity-60" />
-          </div>
+          <span className="text-sm font-bold text-white opacity-60 tracking-tight">DO Chat</span>
           <p className="text-gray-500 text-xs text-center">© 2026 DO Chat. Todos los derechos reservados.</p>
           <div className="flex gap-5 text-gray-500 text-xs">
             <a href="#" className="hover:text-white transition-colors">Privacidad</a>
