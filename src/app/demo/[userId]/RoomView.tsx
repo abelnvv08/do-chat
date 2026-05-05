@@ -367,6 +367,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; userName: string } | null>(null)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [editingMsg, setEditingMsg] = useState<{ id: string; content: string } | null>(null)
   const [editInput, setEditInput] = useState('')
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -467,32 +468,61 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   }
 
   async function send() {
-    if (!input.trim() || loading) return
+    if ((!input.trim() && pendingFiles.length === 0) || loading) return
     const content = input.trim()
     const reply = replyingTo
+    const filesToSend = [...pendingFiles]
     setInput('')
     setReplyingTo(null)
+    setPendingFiles([])
     setLoading(true)
     try {
       const broadcast = () => channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
 
       if (isAIRoom) {
-        await fetch('/api/demo/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
-        })
+        // Upload pending files first, collect their metadata for AI context
+        const uploadedFiles: { name: string; url: string; type: string }[] = []
+        for (const file of filesToSend) {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('user_id', userId)
+          fd.append('room_id', roomId)
+          const res = await fetch('/api/demo/upload', { method: 'POST', body: fd })
+          const data = await res.json()
+          if (data.message?.content) {
+            try {
+              const meta = JSON.parse(data.message.content)
+              uploadedFiles.push({ name: file.name, url: meta.url, type: file.type })
+            } catch { /* skip */ }
+          }
+        }
+
+        if (content) {
+          await fetch('/api/demo/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
+          })
+        }
         broadcast()
         await fetchMessages()
         setLoading(false)
-        setAiTyping(true)
-        await fetch('/api/demo/ai-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, query: content }),
-        })
-        broadcast()
-        await fetchMessages()
+        if (content || uploadedFiles.length > 0) {
+          setAiTyping(true)
+          const fileNames = uploadedFiles.map(f => `"${f.name}"`).join(', ')
+          const query = uploadedFiles.length > 0 && content
+            ? `${content}\n\n[Archivos adjuntos: ${fileNames}]`
+            : uploadedFiles.length > 0
+            ? `[Archivos adjuntos: ${fileNames}] ¿Qué contienen estos archivos?`
+            : content
+          await fetch('/api/demo/ai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, query }),
+          })
+          broadcast()
+          await fetchMessages()
+        }
       } else {
         await fetch('/api/demo/messages', {
           method: 'POST',
@@ -694,17 +724,22 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('user_id', userId)
-    formData.append('room_id', roomId)
-    await fetch('/api/demo/upload', { method: 'POST', body: formData })
-    channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
-    await fetchMessages()
-    setUploading(false)
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    if (isAIRoom) {
+      // In AI room: attach as pending files, let user type their question first
+      setPendingFiles(prev => [...prev, ...files])
+    } else {
+      setUploading(true)
+      const formData = new FormData()
+      formData.append('file', files[0])
+      formData.append('user_id', userId)
+      formData.append('room_id', roomId)
+      await fetch('/api/demo/upload', { method: 'POST', body: formData })
+      channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
+      await fetchMessages()
+      setUploading(false)
+    }
     e.target.value = ''
   }
 
@@ -1225,42 +1260,55 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
             </button>
           </div>
         ) : (
-          <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 px-3.5 py-2 transition-colors">
-            {!isAIRoom && (
-              <>
-                <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-blue-500 disabled:opacity-40 flex items-center justify-center transition-colors">
-                  <PaperclipIcon className="h-4 w-4" />
-                </button>
-                <input ref={fileRef} type="file" accept="*/*" className="hidden" onChange={handleFile} />
-              </>
+          <div className="rounded-2xl border border-gray-200 focus-within:border-blue-400 bg-gray-50 transition-colors overflow-hidden">
+            {/* Pending file chips — AI room only */}
+            {pendingFiles.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 px-3 pt-2.5 pb-1">
+                {pendingFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-xl px-2.5 py-1 max-w-[200px]">
+                    <FileIcon className="h-3 w-3 text-blue-500 shrink-0" />
+                    <span className="text-xs text-blue-700 truncate font-medium">{f.name}</span>
+                    <button onClick={() => setPendingFiles(prev => prev.filter((_, j) => j !== i))}
+                      className="text-blue-400 hover:text-blue-600 shrink-0">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-            <TextareaAutosize
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder={isAIRoom ? 'Preguntame algo…' : 'Escribe un mensaje…'}
-              className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none min-h-[20px] max-h-32 py-1"
-              minRows={1}
-              maxRows={4}
-              autoFocus
-            />
-            {input.trim() ? (
-              <button onClick={send} disabled={loading}
-                className="h-8 w-8 mb-0.5 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
-                <SendHorizonalIcon className="h-4 w-4 text-white" />
-              </button>
-            ) : !isAIRoom ? (
-              <button onClick={startRecording} disabled={uploading}
+            <div className="flex items-end gap-2 px-3.5 py-2">
+              <button onClick={() => fileRef.current?.click()} disabled={uploading || aiTyping}
                 className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-blue-500 disabled:opacity-40 flex items-center justify-center transition-colors">
-                <MicIcon className="h-4 w-4" />
+                <PaperclipIcon className="h-4 w-4" />
               </button>
-            ) : (
-              <button onClick={send} disabled={!input.trim() || loading}
-                className="h-8 w-8 mb-0.5 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
-                <SendHorizonalIcon className="h-4 w-4 text-white" />
-              </button>
-            )}
+              <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" multiple className="hidden" onChange={handleFile} />
+              <TextareaAutosize
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder={isAIRoom ? (pendingFiles.length > 0 ? '¿Qué quieres hacer con este archivo?' : 'Adjunta un archivo o pregúntame algo…') : 'Escribe un mensaje…'}
+                className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none min-h-[20px] max-h-32 py-1"
+                minRows={1}
+                maxRows={4}
+                autoFocus
+              />
+              {(input.trim() || pendingFiles.length > 0) ? (
+                <button onClick={send} disabled={loading}
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  <SendHorizonalIcon className="h-4 w-4 text-white" />
+                </button>
+              ) : !isAIRoom ? (
+                <button onClick={startRecording} disabled={uploading}
+                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-blue-500 disabled:opacity-40 flex items-center justify-center transition-colors">
+                  <MicIcon className="h-4 w-4" />
+                </button>
+              ) : (
+                <button onClick={send} disabled={!input.trim() || loading}
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  <SendHorizonalIcon className="h-4 w-4 text-white" />
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

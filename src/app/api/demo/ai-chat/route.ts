@@ -82,12 +82,27 @@ function buildMessageContent(
 export async function POST(req: NextRequest) {
   const { user_id, query, room_id: replyRoomId } = await req.json()
   const supabase = admin()
+  const aiRoomId = `ai-${user_id}`
 
   const { data: roomMembers } = await supabase.from('demo_room_members').select('room_id, demo_rooms(id, name, type, emoji)').eq('user_id', user_id)
   const rooms = ((roomMembers ?? []).map((m: any) => { const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms; return r ? { id: r.id, name: r.name ?? r.id, type: r.type, emoji: r.emoji ?? '💬' } : null }).filter((r: any) => r && r.type !== 'ai')) as { id: string; name: string; type: string; emoji: string }[]
   const allChatsContext: string[] = []
   const allImages: { url: string; sender: string; room: string }[] = []
   const allFiles: { name: string; url: string; sender: string; room: string }[] = []
+
+  // Files uploaded directly to the AI chat (highest priority — always parsed)
+  const aiRoomFiles: { name: string; url: string }[] = []
+  const aiMsgs = await getMessagesFromRoom(aiRoomId, 20)
+  for (const m of aiMsgs) {
+    if (m.type === 'file') {
+      try {
+        const meta = JSON.parse(m.content)
+        aiRoomFiles.push({ name: meta.name, url: meta.url })
+      } catch { /* skip */ }
+    } else if (m.type === 'image') {
+      allImages.push({ url: m.content, sender: 'tú', room: 'do AI' })
+    }
+  }
 
   for (const room of rooms) {
     const msgs = await getMessagesFromRoom(room.id, 30)
@@ -117,9 +132,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Parse file contents when the query mentions documents/files
-  const queryMentionsFiles = /archivo|excel|word|pdf|csv|documento|contenido|tabla|hoja|dato/i.test(query)
+  // Always parse files uploaded directly to AI chat
   const parsedFilesContext: string[] = []
+  for (const f of aiRoomFiles.slice(0, 3)) {
+    const content = await parseFile(f.url, f.name)
+    if (content) {
+      parsedFilesContext.push(`\n--- Archivo subido por el usuario: "${f.name}" ---\n${content}`)
+    }
+  }
+
+  // Also parse files from other chats when query mentions them
+  const queryMentionsFiles = /archivo|excel|word|pdf|csv|documento|contenido|tabla|hoja|dato/i.test(query)
   if (allFiles.length > 0 && (queryMentionsFiles || /analiz|lee|mostr|resum/i.test(query))) {
     for (const f of allFiles.slice(0, 3)) {
       const content = await parseFile(f.url, f.name)
@@ -141,9 +164,12 @@ export async function POST(req: NextRequest) {
     ? `CONTEXTO DE TODOS LOS CHATS:\n${allChatsContext.join('\n\n')}${filesListContext}${parsedFilesBlock}`
     : '(No hay mensajes en los chats aún)'
 
+  const hasDirectFiles = aiRoomFiles.length > 0
   const systemPrompt = `Eres do, una IA accionable con acceso completo a todos los chats, imágenes y archivos.
 Tienes visión — puedes ver y analizar las imágenes que se comparten en los chats.
-Puedes leer mensajes, ver imágenes, leer el contenido de archivos (PDF, Excel, Word, CSV), resumir conversaciones, extraer tareas, crear proyectos y enviar mensajes.
+Puedes leer mensajes, ver imágenes, leer el contenido de archivos (PDF, Excel, Word, CSV, TXT), resumir conversaciones, extraer tareas, crear proyectos y enviar mensajes.
+${hasDirectFiles ? 'El usuario adjuntó archivos directamente en este chat — su contenido está disponible en el contexto.' : ''}
+Si el usuario menciona un documento o archivo pero no lo adjuntó y no hay archivos disponibles en el contexto, pregúntale amablemente: ¿lo tiene en uno de sus chats o puede adjuntarlo directamente aquí usando el ícono de clip (📎)?
 
 ACCIONES DISPONIBLES — incluirlas al final de tu respuesta:
 
