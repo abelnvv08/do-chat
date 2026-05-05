@@ -16,6 +16,17 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const user_id = req.nextUrl.searchParams.get('user_id')
+  const room_id = req.nextUrl.searchParams.get('room_id')
+
+  // Fetch all readers of a specific room (for read receipts UI)
+  if (room_id) {
+    const { data } = await admin()
+      .from('demo_reads')
+      .select('user_id, last_read_at')
+      .eq('room_id', room_id)
+    return NextResponse.json({ reads: data ?? [] })
+  }
+
   if (!user_id) return NextResponse.json({ reads: [] })
   const { data } = await admin()
     .from('demo_reads')

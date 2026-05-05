@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getRoomsForUser, USERS } from '@/lib/demo'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getRooms(user_id: string) {
+  const supabase = admin()
+  const { data: members } = await supabase
+    .from('demo_room_members')
+    .select('room_id, demo_rooms(id, name, type, emoji)')
+    .eq('user_id', user_id)
+
+  return ((members ?? []).map((m: any) => {
+    const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms
+    if (!r) return null
+    return { id: r.id as string, name: (r.name ?? r.id) as string, emoji: (r.emoji ?? '💬') as string, type: r.type as string }
+  }).filter(Boolean)) as { id: string; name: string; emoji: string; type: string }[]
 }
 
 export async function GET(req: NextRequest) {
@@ -11,11 +24,12 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim()
   if (!user_id || !q || q.length < 2) return NextResponse.json({ results: [] })
 
-  const rooms = getRoomsForUser(user_id)
+  const rooms = await getRooms(user_id)
   const roomIds = rooms.map(r => r.id)
   const roomMap = Object.fromEntries(rooms.map(r => [r.id, r]))
+  if (roomIds.length === 0) return NextResponse.json({ results: [] })
 
-  const { data } = await admin()
+  const { data: messages } = await admin()
     .from('demo_messages')
     .select('id, content, type, room_id, created_at, user_id')
     .in('room_id', roomIds)
@@ -23,9 +37,15 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(60)
 
-  const results = (data ?? [])
+  const senderIds = [...new Set((messages ?? []).map(m => m.user_id).filter(Boolean))]
+  const { data: profiles } = senderIds.length
+    ? await admin().from('demo_profiles').select('id, name, emoji').in('id', senderIds)
+    : { data: [] }
+  const profileMap: Record<string, { name: string; emoji: string }> = {}
+  for (const p of profiles ?? []) profileMap[p.id] = p
+
+  const results = (messages ?? [])
     .filter(m => {
-      // For file type, search in the name inside JSON
       if (m.type === 'file') {
         try { return JSON.parse(m.content).name?.toLowerCase().includes(q.toLowerCase()) }
         catch { return false }
@@ -34,16 +54,13 @@ export async function GET(req: NextRequest) {
     })
     .map(m => {
       const room = roomMap[m.room_id]
-      const sender = m.user_id ? USERS[m.user_id] : null
+      const sender = m.user_id ? profileMap[m.user_id] : null
       let preview = m.content
       let fileInfo: { name: string; url: string } | null = null
 
       if (m.type === 'file') {
-        try {
-          const meta = JSON.parse(m.content)
-          preview = `📎 ${meta.name}`
-          fileInfo = { name: meta.name, url: meta.url }
-        } catch { preview = '📎 Archivo' }
+        try { const meta = JSON.parse(m.content); preview = `📎 ${meta.name}`; fileInfo = { name: meta.name, url: meta.url } }
+        catch { preview = '📎 Archivo' }
       } else if (m.type === 'image') {
         preview = '📷 Imagen'
       } else if (m.type === 'ai') {

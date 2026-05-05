@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const { data: recentMessages } = await supabase
     .from('demo_messages')
-    .select('content, type, user:demo_users(name)')
+    .select('content, type, user:demo_profiles(name)')
     .order('created_at', { ascending: false })
     .limit(40)
 

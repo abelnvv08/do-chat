@@ -3,7 +3,6 @@
 import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { USERS } from '@/lib/demo'
 import { formatMessageTime } from '@/lib/utils'
 
 type SearchResult = {
@@ -36,7 +35,6 @@ function Highlighted({ text, query }: { text: string; query: string }) {
 export default function BuscarPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
   const router = useRouter()
-  const me = USERS[userId]
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -46,7 +44,6 @@ export default function BuscarPage({ params }: { params: Promise<{ userId: strin
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!me) { router.push('/demo'); return }
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
 
@@ -77,7 +74,6 @@ export default function BuscarPage({ params }: { params: Promise<{ userId: strin
     }
   }
 
-  if (!me) return null
 
   // Group results by room
   const grouped: Record<string, SearchResult[]> = {}

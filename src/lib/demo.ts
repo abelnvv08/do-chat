@@ -1,8 +1,8 @@
-export const USERS: Record<string, { name: string; emoji: string; bg: string; text: string; border: string }> = {
-  '001': { name: 'Abel',   emoji: '🟣', bg: 'bg-violet-600',  text: 'text-violet-400',  border: 'border-violet-500/40'  },
-  '002': { name: 'Santi',  emoji: '🟢', bg: 'bg-emerald-600', text: 'text-emerald-400', border: 'border-emerald-500/40' },
-  '003': { name: 'Hernan', emoji: '🟡', bg: 'bg-amber-500',   text: 'text-amber-400',   border: 'border-amber-500/40'   },
-  '004': { name: 'Walter', emoji: '🔵', bg: 'bg-blue-600',    text: 'text-blue-400',    border: 'border-blue-500/40'    },
+// Dynamic cache — populated at runtime from Supabase
+export const usersCache: Record<string, { name: string; emoji: string; bg: string; text: string; border: string }> = {}
+
+export function getUser(userId: string) {
+  return usersCache[userId] ?? null
 }
 
 export function getDMRoom(a: string, b: string) {
@@ -21,21 +21,6 @@ export type Room = {
   otherUserId?: string
 }
 
-export function getRoomsForUser(userId: string): Room[] {
-  const others = Object.keys(USERS).filter(id => id !== userId)
-  return [
-    { id: 'group', name: 'Grupo general', emoji: '👥', type: 'group' },
-    { id: getAIRoom(userId), name: 'do AI', emoji: '🤖', type: 'ai' },
-    ...others.map(otherId => ({
-      id: getDMRoom(userId, otherId),
-      name: USERS[otherId].name,
-      emoji: USERS[otherId].emoji,
-      type: 'dm' as const,
-      otherUserId: otherId,
-    })),
-  ]
-}
-
 export type DemoMessage = {
   id: string
   user_id: string
@@ -44,4 +29,9 @@ export type DemoMessage = {
   room_id: string
   created_at: string
   user: { name: string; emoji: string } | null
+  reactions: { emoji: string; user_ids: string[] }[]
+  reply_to_id: string | null
+  reply_preview: string | null
+  reply_user_name: string | null
+  edited?: boolean
 }

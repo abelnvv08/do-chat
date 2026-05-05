@@ -27,13 +27,14 @@ export async function POST(req: NextRequest) {
   const { data: { publicUrl } } = supabase.storage.from('demo-files').getPublicUrl(path)
 
   const isImage = file.type.startsWith('image/')
-  const type = isImage ? 'image' : 'file'
-  const content = isImage ? publicUrl : JSON.stringify({ url: publicUrl, name: file.name, size: file.size })
+  const isAudio = file.type.startsWith('audio/')
+  const type = isImage ? 'image' : isAudio ? 'audio' : 'file'
+  const content = isImage ? publicUrl : isAudio ? publicUrl : JSON.stringify({ url: publicUrl, name: file.name, size: file.size })
 
   const { data: msg } = await supabase
     .from('demo_messages')
     .insert({ user_id: userId, content, type, room_id: roomId })
-    .select('*, user:demo_users(*)')
+    .select('*, user:demo_profiles(*)')
     .single()
 
   return NextResponse.json({ message: msg })

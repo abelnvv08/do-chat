@@ -18,6 +18,8 @@ body {
   color: var(--foreground);
 }
 
+/* Dark mode styles are injected dynamically by DarkModeProvider */
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

@@ -17,22 +17,24 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user_id, content, source_room } = await req.json()
+  const { user_id, content, source_room, due_date } = await req.json()
   if (!user_id || !content) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   const { data } = await admin()
     .from('demo_tasks')
-    .insert({ user_id, content, source_room })
+    .insert({ user_id, content, source_room, due_date: due_date ?? null })
     .select()
     .single()
   return NextResponse.json({ task: data })
 }
 
 export async function PATCH(req: NextRequest) {
-  const { id, done } = await req.json()
+  const { id, done, due_date } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  const update: Record<string, unknown> = { done }
+  if (due_date !== undefined) update.due_date = due_date
   const { data } = await admin()
     .from('demo_tasks')
-    .update({ done })
+    .update(update)
     .eq('id', id)
     .select()
     .single()

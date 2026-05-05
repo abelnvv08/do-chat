@@ -1,9 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getRoomsForUser, USERS } from '@/lib/demo'
+import { type Room } from '@/lib/demo'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getRoomsForUser(user_id: string): Promise<Room[]> {
+  const supabase = admin()
+  const { data: members } = await supabase
+    .from('demo_room_members')
+    .select('room_id, demo_rooms(id, name, type, emoji)')
+    .eq('user_id', user_id)
+
+  const baseRooms: Room[] = ((members ?? []).map((m: any) => {
+    const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms
+    if (!r) return null
+    return { id: r.id as string, name: (r.name ?? r.id) as string, emoji: (r.emoji ?? '💬') as string, type: r.type as Room['type'] }
+  }).filter(Boolean)) as Room[]
+
+  // For DM rooms, resolve the other user's name/emoji from their profile
+  const dmRooms = baseRooms.filter(r => r.type === 'dm')
+  if (dmRooms.length > 0) {
+    const dmRoomIds = dmRooms.map(r => r.id)
+    const { data: otherMembers } = await supabase
+      .from('demo_room_members')
+      .select('room_id, user_id, demo_profiles!demo_room_members_user_id_fkey(name, emoji)')
+      .in('room_id', dmRoomIds)
+      .neq('user_id', user_id)
+
+    for (const room of baseRooms) {
+      if (room.type !== 'dm') continue
+      const other = (otherMembers ?? []).find((m: any) => m.room_id === room.id)
+      if (other) {
+        room.otherUserId = other.user_id
+        const p = Array.isArray(other.demo_profiles) ? other.demo_profiles[0] : other.demo_profiles
+        if (p) { room.name = p.name; room.emoji = p.emoji }
+      }
+    }
+  }
+
+  return baseRooms
 }
 
 export async function GET(req: NextRequest) {
@@ -11,17 +48,18 @@ export async function GET(req: NextRequest) {
   if (!user_id) return NextResponse.json({ rooms: [] })
 
   const supabase = admin()
-  const rooms = getRoomsForUser(user_id)
+  const rooms = await getRoomsForUser(user_id)
   const roomIds = rooms.map(r => r.id)
+  if (roomIds.length === 0) return NextResponse.json({ rooms: [] })
 
-  // Get last message per room
+  // Get all messages for these rooms
   const { data: allMessages } = await supabase
     .from('demo_messages')
     .select('id, content, type, room_id, created_at, user_id')
     .in('room_id', roomIds)
     .order('created_at', { ascending: false })
 
-  // Get reads for this user
+  // Get this user's reads
   const { data: reads } = await supabase
     .from('demo_reads')
     .select('room_id, last_read_at')
@@ -30,12 +68,20 @@ export async function GET(req: NextRequest) {
   const readsMap: Record<string, string> = {}
   for (const r of reads ?? []) readsMap[r.room_id] = r.last_read_at
 
-  // Get reads of OTHER users (for "visto" on own messages)
+  // Get other users' reads (for "visto")
   const { data: allReads } = await supabase
     .from('demo_reads')
     .select('user_id, room_id, last_read_at')
     .in('room_id', roomIds)
     .neq('user_id', user_id)
+
+  // Get sender names from demo_profiles for messages
+  const senderIds = [...new Set((allMessages ?? []).map(m => m.user_id))]
+  const { data: profiles } = senderIds.length
+    ? await supabase.from('demo_profiles').select('id, name').in('id', senderIds)
+    : { data: [] }
+  const profileMap: Record<string, string> = {}
+  for (const p of profiles ?? []) profileMap[p.id] = p.name
 
   const result = rooms.map(room => {
     const msgs = (allMessages ?? []).filter(m => m.room_id === room.id)
@@ -45,27 +91,21 @@ export async function GET(req: NextRequest) {
       ? msgs.filter(m => m.user_id !== user_id && m.created_at > lastReadAt).length
       : msgs.filter(m => m.user_id !== user_id).length
 
-    // For "visto": check if others read past last own message
     const lastOwnMsg = msgs.find(m => m.user_id === user_id)
     let seenByOthers = false
-    if (lastOwnMsg) {
-      const othersInRoom = room.type === 'dm'
-        ? [room.otherUserId].filter(Boolean)
-        : Object.keys(USERS).filter(id => id !== user_id)
-      seenByOthers = othersInRoom.every(otherId => {
-        const read = (allReads ?? []).find(r => r.user_id === otherId && r.room_id === room.id)
-        return read && read.last_read_at >= lastOwnMsg.created_at
-      })
+    if (lastOwnMsg && room.type === 'dm' && room.otherUserId) {
+      const read = (allReads ?? []).find(r => r.user_id === room.otherUserId && r.room_id === room.id)
+      seenByOthers = !!(read && read.last_read_at >= lastOwnMsg.created_at)
     }
 
     let lastMsgPreview = ''
     if (lastMsg) {
       const isOwn = lastMsg.user_id === user_id
-      const senderName = isOwn ? 'Tú' : USERS[lastMsg.user_id]?.name ?? 'Usuario'
-      if (lastMsg.type === 'image') lastMsgPreview = `${senderName}: 📷 Imagen`
+      const senderName = isOwn ? 'Tú' : (profileMap[lastMsg.user_id] ?? 'Usuario')
+      if (lastMsg.type === 'image') lastMsgPreview = `${senderName}: Imagen`
       else if (lastMsg.type === 'file') {
-        try { lastMsgPreview = `${senderName}: 📎 ${JSON.parse(lastMsg.content).name}` }
-        catch { lastMsgPreview = `${senderName}: 📎 Archivo` }
+        try { lastMsgPreview = `${senderName}: ${JSON.parse(lastMsg.content).name}` }
+        catch { lastMsgPreview = `${senderName}: Archivo` }
       } else if (lastMsg.type === 'ai') lastMsgPreview = `do AI: ${lastMsg.content}`
       else lastMsgPreview = `${senderName}: ${lastMsg.content}`
     }
@@ -76,6 +116,13 @@ export async function GET(req: NextRequest) {
       unread,
       seenByOthers,
     }
+  })
+
+  result.sort((a, b) => {
+    if (a.lastMsg && b.lastMsg) return new Date(b.lastMsg.created_at).getTime() - new Date(a.lastMsg.created_at).getTime()
+    if (a.lastMsg) return -1
+    if (b.lastMsg) return 1
+    return 0
   })
 
   return NextResponse.json({ rooms: result })
