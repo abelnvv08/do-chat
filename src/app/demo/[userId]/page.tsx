@@ -7,6 +7,7 @@ import { formatMessageTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
 import { RoomView } from './RoomView'
 import { ProjectWorkspace } from './ProjectWorkspace'
+import { initKeyPair, getLocalPublicKey } from '@/lib/e2ee'
 
 function UserIcon({ className }: { className?: string }) {
   return (
@@ -141,6 +142,11 @@ const [darkMode, setDarkMode] = useState(false)
       } else {
         router.push('/onboarding')
       }
+    })
+    initKeyPair(userId).then(pubKey => {
+      if (!pubKey) return
+      const stored = getLocalPublicKey(userId)
+      if (stored) fetch('/api/demo/e2ee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, public_key: stored }) }).catch(() => {})
     })
     fetchRooms()
     fetchPrefs()

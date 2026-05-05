@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, KeyboardEvent } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import { SendHorizonalIcon, ArrowLeftIcon, PaperclipIcon, FileIcon, XIcon, MicIcon, StopCircleIcon } from 'lucide-react'
 import { usersCache, getAIRoom, DemoMessage } from '@/lib/demo'
+import { deriveSharedKey, deriveRoomKey, encryptMsg, decryptMsg, isEncrypted } from '@/lib/e2ee'
 import { formatMessageTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
 
@@ -389,6 +390,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const [matchIdx, setMatchIdx] = useState(0)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [encKey, setEncKey] = useState<CryptoKey | null>(null)
+  const [encReady, setEncReady] = useState(false)
 
   useEffect(() => {
     if (!isAIRoom && !room) {
@@ -397,6 +400,31 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
         if (found) setRoom(found)
       })
     }
+
+    // Initialize encryption key for non-AI rooms
+    if (!isAIRoom) {
+      const isDM = roomId.startsWith('dm-')
+      if (isDM) {
+        // DM: derive ECDH shared key with the other user
+        const parts = roomId.replace('dm-', '').split('-')
+        const otherUserId = parts[0] === userId ? parts[1] : parts[0]
+        fetch(`/api/demo/e2ee?user_id=${otherUserId}`)
+          .then(r => r.json())
+          .then(async d => {
+            if (d.public_key) {
+              const key = await deriveSharedKey(userId, d.public_key)
+              setEncKey(key)
+            }
+            setEncReady(true)
+          }).catch(() => setEncReady(true))
+      } else {
+        // Group: derive per-room key from user's private key + roomId
+        deriveRoomKey(userId, roomId).then(key => { setEncKey(key); setEncReady(true) }).catch(() => setEncReady(true))
+      }
+    } else {
+      setEncReady(true)
+    }
+
     markRead()
     fetchMessages()
     fetchReads()
@@ -568,15 +596,25 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           await fetchMessages()
         }
       } else {
-        await fetch('/api/demo/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: userId, content, room_id: roomId,
-            reply_to_id: reply?.id ?? null,
-            reply_preview: reply?.preview ?? null,
-          }),
-        })
+        // Encrypt content if key is available
+        const finalContent = (encKey && content) ? await encryptMsg(content, encKey) : content
+        // For file uploads in encrypted rooms — still upload as-is (files are at secure URLs)
+        for (const file of filesToSend) {
+          const fd = new FormData()
+          fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
+          await fetch('/api/demo/upload', { method: 'POST', body: fd })
+        }
+        if (finalContent) {
+          await fetch('/api/demo/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId, content: finalContent, room_id: roomId,
+              reply_to_id: reply?.id ?? null,
+              reply_preview: reply?.preview ?? null,
+            }),
+          })
+        }
         broadcast()
         await fetchMessages()
       }
@@ -791,6 +829,22 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
 
+  function DecryptedText({ content, isOwn }: { content: string; isOwn: boolean }) {
+    const [text, setText] = useState<string | null>(null)
+    useEffect(() => {
+      if (!encKey) { setText('🔒 Mensaje cifrado'); return }
+      decryptMsg(content, encKey).then(setText).catch(() => setText('🔒 Mensaje cifrado'))
+    }, [content, encKey])
+    if (text === null) return <span className="text-sm opacity-50">Descifrando…</span>
+    const urlMatch = text.match(/https?:\/\/[^\s]+/)
+    return (
+      <div>
+        <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(text)}</span>
+        {urlMatch && <LinkPreview url={urlMatch[0]} isOwn={isOwn} />}
+      </div>
+    )
+  }
+
   function renderContent(msg: DemoMessage, isOwn: boolean) {
     if (msg.type === 'audio') {
       return <AudioMessage url={msg.content} isOwn={isOwn} />
@@ -859,6 +913,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
         return <span className="text-sm text-gray-600">archivo adjunto</span>
       }
     }
+    if (isEncrypted(msg.content)) return <DecryptedText content={msg.content} isOwn={isOwn} />
     const urlMatch = msg.content.match(/https?:\/\/[^\s]+/)
     return (
       <div>
@@ -952,8 +1007,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               }}
             >
               <h1 className="text-sm font-semibold text-gray-900">{isAIRoom ? 'do AI' : roomData.name}</h1>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 flex items-center gap-1">
                 {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : 'Chat privado'}
+                {!isAIRoom && encReady && encKey && <span className="text-green-500 font-medium">· 🔒 Cifrado E2E</span>}
+                {!isAIRoom && encReady && !encKey && <span className="text-yellow-500">· Sin cifrar</span>}
               </p>
             </button>
 
