@@ -119,7 +119,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col max-w-md mx-auto" style={{ animation: 'slideInFromRight 0.22s cubic-bezier(0.4,0,0.2,1)' }}>
+    <div className="fixed inset-0 z-50 bg-white flex flex-col" style={{ animation: 'slideInFromRight 0.22s cubic-bezier(0.4,0,0.2,1)' }}>
 
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 shrink-0">

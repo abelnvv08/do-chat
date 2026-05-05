@@ -49,7 +49,7 @@ function PinScreen({ userId, mode, onSuccess, onCancel }: {
   function handleDelete() { setPin(p => p.slice(0, -1)); setError('') }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center max-w-md mx-auto px-8">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-8">
       <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mb-6"><svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg></div>
       <h2 className="text-xl font-bold text-gray-900 mb-1">{titles[step]}</h2>
       {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
@@ -124,7 +124,7 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
         <h1 className="text-2xl font-bold text-gray-900">Tú</h1>
@@ -272,7 +272,7 @@ function BottomNav({ userId, active }: { userId: string; active: string }) {
     { id: 'tu', label: 'Tú', href: `/demo/${userId}/perfil`, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> },
   ]
   return (
-    <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 max-w-md mx-auto z-10">
+    <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 z-10">
       {tabs.map(t => (
         <Link key={t.id} href={t.href} className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-blue-600' : 'text-gray-400'}`}>
           {t.icon}

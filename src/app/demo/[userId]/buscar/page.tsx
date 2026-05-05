@@ -84,7 +84,7 @@ export default function BuscarPage({ params }: { params: Promise<{ userId: strin
   const groupEntries = Object.entries(grouped)
 
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
         <div className="flex items-center gap-3">

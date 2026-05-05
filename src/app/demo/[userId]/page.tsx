@@ -558,7 +558,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   })
   const doneTasks = tasks.filter(t => t.done)
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Reminder toast */}
       {dueReminder && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm transition-all duration-300 ${reminderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
@@ -579,6 +579,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {activeTab === 'mensajes' && (
         <>
           <div className="bg-[#075E54] px-4 pt-12 pb-0 sticky top-0 z-10">
+            <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-2xl font-bold text-white">DO Chat</h1>
               <div className="relative">
@@ -619,10 +620,12 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 </button>
               )}
             </div>
+            </div>
           </div>
 
           {isSearching ? (
             <div className="flex-1 overflow-y-auto pb-20">
+            <div className="max-w-3xl mx-auto">
               {searchLoading && <div className="flex items-center justify-center py-10"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
               {!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-8">
@@ -653,8 +656,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 </div>
               ))}
             </div>
+            </div>
           ) : (
             <div className="flex-1 pb-20">
+            <div className="max-w-3xl mx-auto">
               {loading && <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
               {aiRoom && (
                 <div className="px-4 pt-4 pb-2">
@@ -713,6 +718,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <p className="text-gray-500 text-sm">Toca <strong>+</strong> para agregar contactos y empezar a chatear</p>
                 </div>
               )}
+            </div>
             </div>
           )}
         </>
@@ -889,7 +895,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
             {/* Selection action bar */}
             {selectionMode && totalSelected > 0 && (
-              <div className="fixed bottom-16 left-0 right-0 max-w-md mx-auto z-20 px-4 pb-2">
+              <div className="fixed bottom-16 left-0 right-0 z-20 px-4 pb-2">
                 <div className="bg-gray-900 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-xl">
                   <span className="text-white text-sm font-medium flex-1">{totalSelected} seleccionado{totalSelected > 1 ? 's' : ''}</span>
                   <button onClick={askAISelected}
@@ -1138,7 +1144,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
       {/* Daily panel — Lo importante de hoy */}
       {showDailyPanel && (
-        <div className="fixed inset-0 z-40 max-w-md mx-auto flex flex-col bg-white"
+        <div className="fixed inset-0 z-40 flex flex-col bg-white"
           style={{ animation: 'slideInFromRight 0.22s cubic-bezier(0.4,0,0.2,1)' }}>
           {/* Header */}
           <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10 flex items-center gap-3">
@@ -1352,7 +1358,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
       {/* Camera modal */}
       {showCamera && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col max-w-md mx-auto">
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
           <div className="flex items-center justify-between px-4 pt-12 pb-3">
             <button onClick={closeCamera} className="text-white p-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -1379,7 +1385,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* Avatar action sheet */}
       {showAvatarMenu && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setShowAvatarMenu(false)}>
-          <div className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden shadow-2xl pb-8" onClick={e => e.stopPropagation()}>
+          <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl pb-8" onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-4" />
             <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-5">Foto de perfil</p>
             <button onClick={() => avatarInputRef.current?.click()}
@@ -1414,7 +1420,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       )}
 
       {activeRoomId && (
-        <div className="fixed inset-0 z-40 max-w-md mx-auto bg-white"
+        <div className="fixed inset-0 z-40 bg-white"
           style={{ animation: 'slideInFromRight 0.22s cubic-bezier(0.4,0,0.2,1)' }}>
           <style>{`@keyframes slideInFromRight { from { transform: translateX(100%) } to { transform: translateX(0) } }`}</style>
           <RoomView
@@ -1438,7 +1444,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* Action sheet */}
       {actionRoom && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setActionRoom(null)}>
-          <div className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${actionRoom.type === 'ai' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{actionRoom.type === 'ai' ? '✦' : actionRoom.emoji}</div>
               <p className="font-semibold text-gray-900">{actionRoom.type === 'ai' ? 'do AI' : actionRoom.name}</p>
@@ -1507,7 +1513,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
       {/* Nuevo contacto modal */}
       {showNewContact && (
-        <div className="fixed inset-0 z-50 bg-white flex flex-col max-w-md mx-auto">
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
           <div className="flex items-center gap-3 px-4 pt-12 pb-4 border-b border-gray-100">
             <button onClick={() => { setShowNewContact(false); resetNc() }} className="text-blue-600 font-medium text-sm">Cancelar</button>
             <h2 className="flex-1 text-center text-base font-semibold text-gray-900">Nuevo contacto</h2>
@@ -1557,7 +1563,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
       {/* Nuevo grupo modal */}
       {showNewGroup && (
-        <div className="fixed inset-0 z-50 bg-white flex flex-col max-w-md mx-auto">
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
           <div className="flex items-center gap-3 px-4 pt-12 pb-4 border-b border-gray-100">
             <button onClick={() => setShowNewGroup(false)} className="text-blue-600 font-medium text-sm">Cancelar</button>
             <h2 className="flex-1 text-center text-base font-semibold text-gray-900">Nuevo grupo</h2>
@@ -1701,7 +1707,7 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
     },
   ]
   return (
-    <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 max-w-md mx-auto z-10">
+    <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 z-10">
       {tabs.map(t => (
         <button key={t.id} onClick={() => onTabChange(t.id)}
           className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-[#25D366]' : 'text-gray-400'}`}>
