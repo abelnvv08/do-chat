@@ -108,9 +108,8 @@ export async function GET(req: NextRequest) {
         catch { lastMsgPreview = `${senderName}: Archivo` }
       } else if (lastMsg.type === 'ai') lastMsgPreview = `do AI: ${lastMsg.content}`
       else {
-        // Detect E2EE encrypted content
         const isEnc = (() => { try { const p = JSON.parse(lastMsg.content); return p?.v === 1 && !!p?.iv && !!p?.ct } catch { return false } })()
-        lastMsgPreview = isEnc ? `${senderName}: 🔒 Mensaje cifrado` : `${senderName}: ${lastMsg.content}`
+        lastMsgPreview = isEnc ? `${senderName}: Mensaje` : `${senderName}: ${lastMsg.content}`
       }
     }
 

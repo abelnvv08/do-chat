@@ -703,7 +703,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     }
 
     try {
-      const finalContent = (encKey && content) ? await encryptMsg(content, encKey) : content
+      const finalContent = content
       for (const file of filesToSend) {
         const fd = new FormData()
         fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
@@ -873,7 +873,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   async function saveEdit() {
     if (!editingMsg || !editInput.trim()) return
     const plainContent = editInput.trim()
-    const finalContent = (encKey && !isAIRoom) ? await encryptMsg(plainContent, encKey) : plainContent
+    const finalContent = plainContent
     setMessages(prev => prev.map(m => m.id === editingMsg.id ? { ...m, content: finalContent, edited: true } : m))
     setEditingMsg(null)
     await fetch('/api/demo/messages', {
@@ -1333,8 +1333,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               <h1 className="text-sm font-semibold text-gray-900">{isAIRoom ? 'do AI' : roomData.name}</h1>
               <p className="text-xs text-gray-400 flex items-center gap-1">
                 {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : 'Chat privado'}
-                {!isAIRoom && encReady && encKey && <span className="text-green-500 font-medium">· 🔒 Cifrado E2E</span>}
-                {!isAIRoom && encReady && !encKey && <span className="text-yellow-500">· Sin cifrar</span>}
               </p>
             </button>
 
