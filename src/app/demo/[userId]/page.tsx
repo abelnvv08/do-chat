@@ -1195,20 +1195,13 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
             )}
 
-            {!tasksLoading && tasks.length === 0 && taskReminders.length === 0 && invites.length === 0 && sentInvites.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
-                <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                </div>
-                <p className="text-gray-700 font-semibold">Sin pendientes por ahora</p>
-                <p className="text-sm text-gray-400">Usa el campo de arriba o pide a alguien que te envíe una tarea</p>
-              </div>
-            )}
 
             {/* Tareas recibidas */}
-            {invites.length > 0 && (
-              <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📥 Recibidas</p>
+            <div className="px-4 py-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📥 Recibidas</p>
+              {invites.length === 0 ? (
+                <p className="text-sm text-gray-400 italic px-1">Sin tareas recibidas</p>
+              ) : (
                 <div className="space-y-2">
                   {invites.map(inv => (
                     <div key={inv.id} className="bg-white rounded-2xl border border-blue-200 px-4 py-3 shadow-sm">
@@ -1238,13 +1231,15 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Tareas enviadas */}
-            {sentInvites.length > 0 && (
-              <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📤 Enviadas</p>
+            <div className="px-4 py-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">📤 Enviadas</p>
+              {sentInvites.length === 0 ? (
+                <p className="text-sm text-gray-400 italic px-1">Sin tareas enviadas</p>
+              ) : (
                 <div className="space-y-2">
                   {sentInvites.map(inv => (
                     <div key={inv.id} className="bg-white rounded-2xl border border-gray-200 px-4 py-3 shadow-sm">
@@ -1264,8 +1259,8 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {!tasksLoading && taskReminders.length > 0 && (
               <div className="px-4 py-3">
