@@ -138,6 +138,8 @@ const [darkMode, setDarkMode] = useState(false)
   const [usernameChecking, setUsernameChecking] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -464,6 +466,18 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       })
       setProfile(prev => prev ? { ...prev, avatar_url: data.url } as any : prev)
     }
+    setAvatarUploading(false)
+  }
+
+  async function deleteAvatar() {
+    setShowAvatarMenu(false)
+    setAvatarUploading(true)
+    await fetch('/api/auth/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', avatar_url: null }),
+    })
+    setProfile(prev => prev ? { ...prev, avatar_url: null } as any : prev)
     setAvatarUploading(false)
   }
 
@@ -897,14 +911,18 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 )}
               </div>
               <button
-                onClick={() => avatarInputRef.current?.click()}
+                onClick={() => setShowAvatarMenu(true)}
                 disabled={avatarUploading}
                 className="mt-3 text-[15px] text-[#2563EB] font-medium disabled:opacity-40"
               >
-                Editar
+                {avatarUploading ? 'Subiendo…' : 'Editar'}
               </button>
+              {/* Gallery picker */}
               <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f) }} />
+                onChange={e => { const f = e.target.files?.[0]; if (f) { setShowAvatarMenu(false); uploadAvatar(f) } e.target.value = '' }} />
+              {/* Camera capture */}
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) { setShowAvatarMenu(false); uploadAvatar(f) } e.target.value = '' }} />
             </div>
 
             {/* Nombre */}
@@ -1218,6 +1236,43 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Avatar action sheet */}
+      {showAvatarMenu && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setShowAvatarMenu(false)}>
+          <div className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden shadow-2xl pb-8" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-4" />
+            <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-5">Foto de perfil</p>
+            <button onClick={() => avatarInputRef.current?.click()}
+              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+              </div>
+              <span className="text-[15px] text-gray-800 font-medium">Abrir galería</span>
+            </button>
+            <button onClick={() => cameraInputRef.current?.click()}
+              className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
+              </div>
+              <span className="text-[15px] text-gray-800 font-medium">Tomar foto</span>
+            </button>
+            {(profile as any)?.avatar_url && (
+              <button onClick={deleteAvatar}
+                className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors border-t border-gray-100">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                </div>
+                <span className="text-[15px] text-red-500 font-medium">Eliminar foto de perfil</span>
+              </button>
+            )}
+            <button onClick={() => setShowAvatarMenu(false)}
+              className="w-full flex items-center justify-center px-6 py-3.5 mt-2 mx-5 rounded-2xl bg-gray-100 text-gray-700 font-semibold text-[15px]" style={{width: 'calc(100% - 40px)'}}>
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 
