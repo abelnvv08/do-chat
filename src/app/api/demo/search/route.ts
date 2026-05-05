@@ -44,8 +44,10 @@ export async function GET(req: NextRequest) {
   const profileMap: Record<string, { name: string; emoji: string }> = {}
   for (const p of profiles ?? []) profileMap[p.id] = p
 
+  const isEnc = (c: string) => { try { const p = JSON.parse(c); return p?.v === 1 && !!p?.iv && !!p?.ct } catch { return false } }
   const results = (messages ?? [])
     .filter(m => {
+      if (isEnc(m.content)) return false // skip encrypted messages from search
       if (m.type === 'file') {
         try { return JSON.parse(m.content).name?.toLowerCase().includes(q.toLowerCase()) }
         catch { return false }
