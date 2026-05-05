@@ -10,9 +10,9 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-function displayName(row: { first_name?: string; last_name?: string }, profileName: string) {
+function displayName(row: { first_name?: string; last_name?: string }, phone: string | null, profileName: string) {
   const parts = [row.first_name, row.last_name].filter(Boolean).join(' ')
-  return parts || profileName
+  return parts || phone || profileName
 }
 
 export async function GET(req: NextRequest) {
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const supabase = admin()
   const { data } = await supabase
     .from('demo_contacts')
-    .select('contact_id, first_name, last_name, demo_profiles!demo_contacts_contact_id_fkey(id, name, emoji, bg, avatar_url)')
+    .select('contact_id, first_name, last_name, demo_profiles!demo_contacts_contact_id_fkey(id, name, phone, emoji, bg, avatar_url)')
     .eq('user_id', user_id)
     .order('first_name', { ascending: true })
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (!p) return null
     return {
       id: p.id,
-      name: displayName(row, p.name),
+      name: displayName(row, p.phone ?? null, p.name),
       firstName: row.first_name ?? '',
       lastName: row.last_name ?? '',
       emoji: p.emoji,

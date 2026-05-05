@@ -29,7 +29,7 @@ export type DemoMessage = {
   type: string
   room_id: string
   created_at: string
-  user: { name: string; emoji: string; avatar_url?: string | null } | null
+  user: { name: string; phone?: string | null; emoji: string; avatar_url?: string | null } | null
   reactions: { emoji: string; user_ids: string[] }[]
   reply_to_id: string | null
   reply_preview: string | null

@@ -1481,7 +1481,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               <div className={`max-w-[75%] sm:max-w-[60%] lg:max-w-[50%] space-y-0.5 ${isOwn ? 'items-end flex flex-col' : ''}`}>
                 {showAvatar && !isOwn && room?.type === 'group' && (
                   <p className={`text-xs font-semibold px-1 ${sender?.text ?? 'text-[#1a56db]'}`}>
-                    {sender?.name ?? msg.user?.name}
+                    {sender?.name ?? msg.user?.phone ?? msg.user?.name}
                   </p>
                 )}
                 <div
