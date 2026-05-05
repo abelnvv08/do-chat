@@ -558,7 +558,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   })
   const doneTasks = tasks.filter(t => t.done)
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="bg-white flex flex-col" style={{ minHeight: '100dvh' }}>
       {/* Reminder toast */}
       {dueReminder && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm transition-all duration-300 ${reminderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
@@ -578,7 +578,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* ── CHATS TAB ── */}
       {activeTab === 'mensajes' && (
         <>
-          <div className="bg-[#075E54] px-4 pt-12 pb-0 sticky top-0 z-10">
+          <div className="bg-[#075E54] px-4 pb-0 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
             <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-2xl font-bold text-white">DO Chat</h1>
@@ -1707,7 +1707,7 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
     },
   ]
   return (
-    <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 z-10">
+    <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 z-10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onTabChange(t.id)}
           className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${active === t.id ? 'text-[#25D366]' : 'text-gray-400'}`}>

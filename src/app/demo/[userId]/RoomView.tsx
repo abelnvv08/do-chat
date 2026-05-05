@@ -1131,7 +1131,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const isDMRoom = !isAIRoom && (room?.type === 'dm' || roomId.startsWith('dm-'))
 
   return (
-    <div className="flex flex-col h-screen bg-[#e5ddd5]">
+    <div className="flex flex-col bg-[#e5ddd5]" style={{ height: '100dvh' }}>
       {/* Hidden remote audio element */}
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
 
@@ -1242,7 +1242,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Header */}
-      <div className="bg-[#075E54] px-4 pt-12 pb-3 sticky top-0 z-10">
+      <div className="bg-[#075E54] px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
         {showSearch ? (
           /* Search mode — full header replaced */
           (() => {
@@ -1637,7 +1637,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Input bar */}
-      <div className="bg-[#f0f2f5] px-3 py-2 pb-6">
+      <div className="bg-[#f0f2f5] px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
       <div className="max-w-3xl mx-auto">
         {editingMsg && (
           <div className="flex items-end gap-2 bg-blue-50 rounded-2xl border border-blue-200 px-3.5 py-2 mb-2">
