@@ -726,146 +726,144 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
       {/* ── PERFIL TAB ── */}
       {activeTab === 'tu' && (
         <>
-          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Tú</h1>
-              {editingProfile ? (
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setEditingProfile(false)} className="text-sm text-gray-400 font-medium">Cancelar</button>
-                  <button onClick={saveProfile} disabled={profileSaving || editName.trim().length < 2}
-                    className="text-sm text-blue-600 font-semibold disabled:opacity-40">
-                    {profileSaving ? 'Guardando…' : 'Guardar'}
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => { setEditName(profile.name); setEditingProfile(true) }}
-                  className="text-sm text-blue-600 font-medium">Editar</button>
-              )}
-            </div>
+          <div className="bg-[#f0f2f5] border-b border-gray-200 px-4 pt-12 pb-4 sticky top-0 z-10">
+            <h1 className="text-xl font-bold text-gray-900 text-center">Perfil</h1>
           </div>
-          <div className="flex-1 overflow-y-auto pb-24 bg-gray-50">
-            <div className="flex flex-col items-center py-10 bg-white border-b border-gray-100">
-              <div className="relative mb-1">
-                <div className="w-24 h-24 rounded-full shadow-sm overflow-hidden bg-gray-200 flex items-center justify-center">
-                  {avatarUploading ? (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : (profile as any).avatar_url ? (
-                    <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-14 h-14 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12Zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8Z"/>
-                    </svg>
-                  )}
-                </div>
+          <div className="flex-1 overflow-y-auto pb-24 bg-[#f0f2f5]">
+
+            {/* Avatar */}
+            <div className="flex flex-col items-center pt-8 pb-2">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-[#d9d0f0] flex items-center justify-center shadow-sm">
+                {avatarUploading ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <div className="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (profile as any).avatar_url ? (
+                  <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <svg className="w-20 h-20 text-[#6b5fbd]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12Zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8Z"/>
+                  </svg>
+                )}
               </div>
               <button
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="text-xs text-blue-600 font-medium mb-4 disabled:opacity-40"
+                className="mt-3 text-[15px] text-[#2563EB] font-medium disabled:opacity-40"
               >
-                Editar foto
+                Editar
               </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f) }}
-              />
-              {editingProfile ? (
-                <>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    maxLength={30}
-                    className="text-xl font-bold text-gray-900 text-center bg-transparent border-b-2 border-blue-400 focus:outline-none px-2 pb-1 w-full max-w-[240px]"
-                    autoFocus
-                  />
-                  <p className="text-sm text-gray-400 mt-2">do-chat</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xl font-bold text-gray-900">{profile.name}</p>
-                  {profile.username && (
-                    <p className="text-sm text-blue-500 font-medium mt-0.5">@{profile.username}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-0.5">do-chat</p>
-                </>
-              )}
+              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f) }} />
             </div>
-            <div className="mt-3 bg-white divide-y divide-gray-100">
-              <div className="flex items-center gap-4 px-5 py-4">
-                <div className="w-8 flex items-center justify-center"><svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg></div>
-                <div><p className="text-xs text-gray-400">Nombre</p><p className="text-sm text-gray-700">{profile.name}</p></div>
+
+            {/* Nombre */}
+            <div className="px-4 mt-5">
+              <p className="text-[13px] text-gray-500 mb-1 ml-1">Nombre</p>
+              <div className="bg-white rounded-2xl overflow-hidden">
+                {editingProfile ? (
+                  <div className="px-4 py-3.5">
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      maxLength={30}
+                      autoFocus
+                      className="w-full text-[15px] text-gray-900 focus:outline-none bg-transparent"
+                    />
+                    <p className="text-[11px] text-gray-400 text-right mt-1">{editName.length}/30</p>
+                    <div className="flex justify-end gap-4 mt-2">
+                      <button onClick={() => setEditingProfile(false)} className="text-sm text-gray-400 font-medium">Cancelar</button>
+                      <button onClick={saveProfile} disabled={profileSaving || editName.trim().length < 2}
+                        className="text-sm text-[#2563EB] font-semibold disabled:opacity-40">
+                        {profileSaving ? 'Guardando…' : 'Guardar'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => { setEditName(profile.name); setEditingProfile(true) }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-gray-50">
+                    <span className="text-[15px] text-gray-900">{profile.name}</span>
+                    <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                  </button>
+                )}
               </div>
-              <div className="flex items-center gap-4 px-5 py-4">
-                <div className="w-8 flex items-center justify-center"><svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Zm0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 1 0-2.636 6.364M16.5 12V8.25" /></svg></div>
+            </div>
+
+            {/* Nombre de usuario */}
+            <div className="px-4 mt-5">
+              <p className="text-[13px] text-gray-500 mb-1 ml-1">Nombre de usuario</p>
+              <div className="bg-white rounded-2xl overflow-hidden">
                 {editingUsername ? (
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-400 mb-1">Nombre de usuario</p>
+                  <div className="px-4 py-3.5">
                     <input
                       type="text"
                       value={newUsername}
                       onChange={e => { setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setUsernameError('') }}
                       maxLength={20}
                       placeholder="nuevo_usuario"
-                      className="w-full text-sm text-gray-900 border-b border-blue-400 focus:outline-none bg-transparent pb-0.5"
                       autoFocus
+                      className="w-full text-[15px] text-gray-900 focus:outline-none bg-transparent"
                     />
                     {usernameError && <p className="text-xs text-red-500 mt-1">{usernameError}</p>}
+                    <div className="flex justify-end gap-4 mt-2">
+                      <button onClick={() => { setEditingUsername(false); setUsernameError('') }} className="text-sm text-gray-400 font-medium">Cancelar</button>
+                      <button onClick={saveUsername} disabled={usernameChecking || newUsername.length < 3}
+                        className="text-sm text-[#2563EB] font-semibold disabled:opacity-40">
+                        {usernameChecking ? '…' : 'Guardar'}
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-400">Usuario</p>
-                    <p className="text-sm text-gray-700 font-medium">{profile.username ? `@${profile.username}` : '—'}</p>
-                  </div>
-                )}
-                {editingUsername ? (
-                  <div className="flex gap-2">
-                    <button onClick={() => { setEditingUsername(false); setUsernameError('') }} className="text-xs text-gray-400 font-medium">Cancelar</button>
-                    <button onClick={saveUsername} disabled={usernameChecking || newUsername.length < 3}
-                      className="text-xs text-blue-600 font-semibold disabled:opacity-40">
-                      {usernameChecking ? '…' : 'Guardar'}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => { setNewUsername(profile.username ?? ''); setEditingUsername(true); setUsernameError('') }}
-                    className="text-xs text-blue-500 font-medium px-2 py-1 rounded-lg bg-blue-50 active:bg-blue-100"
-                  >
-                    Editar
+                  <button onClick={() => { setNewUsername(profile.username ?? ''); setEditingUsername(true); setUsernameError('') }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-gray-50">
+                    <span className="text-[15px] text-gray-900">{profile.username ? `@${profile.username}` : 'Sin usuario'}</span>
+                    <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                   </button>
                 )}
               </div>
             </div>
-            <div className="mt-3 bg-white divide-y divide-gray-100">
-              <div className="px-5 py-3"><p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Apariencia</p></div>
-              <div className="flex items-center gap-4 px-5 py-4">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0"><svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg></div>
-                <p className="text-sm text-gray-700 font-medium flex-1">Modo oscuro</p>
-                <button onClick={toggleDark} className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-blue-600' : 'bg-gray-200'}`}>
-                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
-                </button>
+
+            {/* Número de teléfono */}
+            {(profile as any).phone && (
+              <div className="px-4 mt-5">
+                <p className="text-[13px] text-gray-500 mb-1 ml-1">Número de teléfono</p>
+                <div className="bg-white rounded-2xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <span className="text-[15px] text-gray-900">{(profile as any).phone}</span>
+                    <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Apariencia */}
+            <div className="px-4 mt-5">
+              <p className="text-[13px] text-gray-500 mb-1 ml-1">Apariencia</p>
+              <div className="bg-white rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3.5">
+                  <span className="text-[15px] text-gray-900">Modo oscuro</span>
+                  <button onClick={toggleDark} className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-[#2563EB]' : 'bg-gray-200'}`}>
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="mt-3 bg-white divide-y divide-gray-100">
-              <div className="px-5 py-3"><p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Integraciones</p></div>
-              <div className="px-5 py-4 space-y-3">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0"><svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-                  <div><p className="text-sm font-medium text-gray-800">Google Calendar</p><p className="text-xs text-gray-400">Feed iCal para el resumen diario</p></div>
-                </div>
+
+            {/* Google Calendar */}
+            <div className="px-4 mt-5 mb-4">
+              <p className="text-[13px] text-gray-500 mb-1 ml-1">Google Calendar</p>
+              <div className="bg-white rounded-2xl overflow-hidden px-4 py-3.5 space-y-3">
+                <p className="text-xs text-gray-400">Feed iCal para el resumen diario</p>
                 <input type="url" value={icalUrl} onChange={e => setIcalUrl(e.target.value)}
                   placeholder="https://calendar.google.com/calendar/ical/…"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 transition-colors" />
-                <button onClick={saveIcal} className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${icalSaved ? 'bg-green-100 text-green-700' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'}`}>
-                  {icalSaved ? 'Guardado' : 'Guardar'}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 transition-colors" />
+                <button onClick={saveIcal} className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${icalSaved ? 'bg-green-100 text-green-700' : 'bg-[#2563EB] text-white active:scale-95'}`}>
+                  {icalSaved ? 'Guardado ✓' : 'Guardar'}
                 </button>
               </div>
             </div>
+
           </div>
         </>
       )}
