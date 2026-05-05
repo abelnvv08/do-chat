@@ -189,7 +189,7 @@ function LinkPreview({ url, isOwn }: { url: string; isOwn: boolean }) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer"
         className={`mt-1.5 flex items-center gap-2.5 rounded-xl px-3 py-2 border text-left no-underline ${
-          isOwn ? 'border-[#25D366]/40 bg-[#b2dfba]/30' : 'border-gray-200 bg-gray-50'
+          isOwn ? 'border-[#1a56db]/40 bg-[#bfdbfe]/30' : 'border-gray-200 bg-gray-50'
         }`}>
         <svg className={`w-4 h-4 shrink-0 ${isOwn ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -205,7 +205,7 @@ function LinkPreview({ url, isOwn }: { url: string; isOwn: boolean }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
       className={`mt-1.5 flex flex-col rounded-xl overflow-hidden border text-left no-underline ${
-        isOwn ? 'border-[#25D366]/40 bg-[#b2dfba]/30' : 'border-gray-200 bg-gray-50'
+        isOwn ? 'border-[#1a56db]/40 bg-[#bfdbfe]/30' : 'border-gray-200 bg-gray-50'
       }`}>
       {data!.image && (
         <img src={data!.image} alt="" className="w-full max-h-32 object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
@@ -274,7 +274,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
 
   return (
     <div className={`rounded-2xl min-w-[220px] max-w-[280px] overflow-hidden ${
-      isOwn ? 'bg-[#dcf8c6]' : 'bg-white border border-gray-100 shadow-sm'
+      isOwn ? 'bg-[#dbeafe]' : 'bg-white border border-gray-100 shadow-sm'
     }`}>
       <div className="flex items-center gap-2.5 px-3.5 py-2.5">
         <audio
@@ -285,7 +285,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
           onEnded={() => { setPlaying(false); setCurrent(0) }}
         />
         <button onClick={toggle} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-          isOwn ? 'bg-[#25D366]/40 text-gray-700' : 'bg-[#25D366] text-white'
+          isOwn ? 'bg-[#1a56db]/40 text-gray-700' : 'bg-[#1a56db] text-white'
         }`}>
           {playing
             ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
@@ -308,7 +308,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
                   key={idx}
                   className={`flex-1 rounded-full transition-colors ${
                     filled
-                      ? isOwn ? 'bg-[#25D366]' : 'bg-[#25D366]'
+                      ? isOwn ? 'bg-[#1a56db]' : 'bg-[#1a56db]'
                       : isOwn ? 'bg-gray-400/40' : 'bg-gray-200'
                   } ${playing && filled ? 'animate-pulse' : ''}`}
                   style={{ height: `${h}px` }}
@@ -1162,7 +1162,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const isDMRoom = !isAIRoom && (room?.type === 'dm' || roomId.startsWith('dm-'))
 
   return (
-    <div className="flex flex-col bg-[#e5ddd5]" style={{ height: '100dvh' }}>
+    <div className="flex flex-col bg-[#f1f5f9]" style={{ height: '100dvh' }}>
       {/* Hidden remote audio element */}
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
 
@@ -1273,7 +1273,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Header */}
-      <div className="bg-[#075E54] px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
+      <div className="bg-[#0f172a] px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
         {showSearch ? (
           /* Search mode — full header replaced */
           (() => {
@@ -1411,7 +1411,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       </div>
 
       {/* Messages */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto bg-[#e5ddd5]">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto bg-[#f1f5f9]">
       <div className="max-w-3xl mx-auto px-3 py-3 space-y-1 pb-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
@@ -1480,7 +1480,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               </div>
               <div className={`max-w-[75%] sm:max-w-[60%] lg:max-w-[50%] space-y-0.5 ${isOwn ? 'items-end flex flex-col' : ''}`}>
                 {showAvatar && !isOwn && room?.type === 'group' && (
-                  <p className={`text-xs font-semibold px-1 ${sender?.text ?? 'text-[#06CF9C]'}`}>
+                  <p className={`text-xs font-semibold px-1 ${sender?.text ?? 'text-[#1a56db]'}`}>
                     {msg.user?.name}
                   </p>
                 )}
@@ -1494,7 +1494,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                   {isMedia(msg.type) ? (
                     <div>
                       {msg.reply_preview && (
-                        <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#b2dfba]/50 border-[#25D366]/70 text-gray-600' : 'bg-gray-100 border-[#25D366] text-gray-500'}`}>
+                        <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#bfdbfe]/50 border-[#1a56db]/70 text-gray-600' : 'bg-gray-100 border-[#1a56db] text-gray-500'}`}>
                           <p className="font-semibold">{msg.reply_user_name}</p>
                           <p className="truncate">{msg.reply_preview}</p>
                         </div>
@@ -1504,7 +1504,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                         {msg.edited && <span className="text-[10px] text-gray-500 italic">Editado ·</span>}
                         <span className="text-[10px] text-gray-500">{formatMessageTime(msg.created_at)}</span>
                         {isOwn && (anyReaderAfter(msg.created_at)
-                          ? <span className="text-[11px] text-[#53bdeb] font-medium">✓✓</span>
+                          ? <span className="text-[11px] text-[#1a56db] font-medium">✓✓</span>
                           : <span className="text-[11px] text-gray-400 font-medium">✓✓</span>
                         )}
                       </div>
@@ -1512,11 +1512,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                   ) : (
                     <div className={`px-3 py-2 rounded-2xl ${
                       isOwn
-                        ? `bg-[#dcf8c6] text-gray-900 rounded-tr-sm${isActiveMatch ? ' outline outline-2 outline-yellow-400 outline-offset-1' : ''}`
+                        ? `bg-[#dbeafe] text-gray-900 rounded-tr-sm${isActiveMatch ? ' outline outline-2 outline-yellow-400 outline-offset-1' : ''}`
                         : `bg-white text-gray-800 rounded-tl-sm shadow-sm${isActiveMatch ? ' border-2 border-yellow-400' : ''}`
                     }`}>
                       {msg.reply_preview && (
-                        <div className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#b2dfba]/40 border-[#25D366]/70 text-gray-600' : 'bg-gray-100 border-[#25D366] text-gray-500'}`}>
+                        <div className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#bfdbfe]/40 border-[#1a56db]/70 text-gray-600' : 'bg-gray-100 border-[#1a56db] text-gray-500'}`}>
                           <p className="font-semibold">{msg.reply_user_name}</p>
                           <p className="truncate">{msg.reply_preview}</p>
                         </div>
@@ -1526,7 +1526,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                         {msg.edited && <span className="text-[10px] text-gray-400 italic">Editado ·</span>}
                         <span className="text-[10px] text-gray-400">{formatMessageTime(msg.created_at)}</span>
                         {isOwn && (anyReaderAfter(msg.created_at)
-                          ? <span className="text-[11px] text-[#53bdeb] font-medium">✓✓</span>
+                          ? <span className="text-[11px] text-[#1a56db] font-medium">✓✓</span>
                           : <span className="text-[11px] text-gray-400 font-medium">✓✓</span>
                         )}
                       </div>
@@ -1670,7 +1670,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Input bar */}
-      <div className="bg-[#f0f2f5] px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
+      <div className="bg-[#f8fafc] px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
       <div className="max-w-3xl mx-auto">
         {editingMsg && (
           <div className="flex items-end gap-2 bg-blue-50 rounded-2xl border border-blue-200 px-3.5 py-2 mb-2">
@@ -1771,17 +1771,17 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               />
               {(input.trim() || pendingFiles.length > 0) ? (
                 <button onClick={send} disabled={loading}
-                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#1a56db] hover:bg-[#1648c8] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
               ) : !isAIRoom ? (
                 <button onClick={startRecording} disabled={uploading}
-                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-[#25D366] disabled:opacity-40 flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-[#1a56db] disabled:opacity-40 flex items-center justify-center transition-colors">
                   <MicIcon className="h-4 w-4" />
                 </button>
               ) : (
                 <button onClick={send} disabled={!input.trim() || loading}
-                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#1a56db] hover:bg-[#1648c8] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
               )}
