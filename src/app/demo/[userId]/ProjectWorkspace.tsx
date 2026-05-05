@@ -30,7 +30,8 @@ function FileIcon({ name }: { name: string }) {
 
 function renderContent(text: string) {
   return text.split('\n').map((line, i) => {
-    const bold = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const bold = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     return <p key={i} className="text-sm text-gray-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: bold || '&nbsp;' }} />
   })
 }

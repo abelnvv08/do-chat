@@ -15,13 +15,16 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ files: [] })
 
   const roomIds = await getRoomIds(userId)
-  if (roomIds.length === 0) return NextResponse.json({ files: [] })
 
-  const { data } = await admin()
+  const query = admin()
     .from('demo_messages')
     .select('id, content, type, room_id, created_at, user_id')
-    .in('room_id', roomIds)
     .in('type', ['file', 'image'])
+
+  const { data } = await (roomIds.length
+    ? query.or(`room_id.in.(${roomIds.map(id => `"${id}"`).join(',')}),user_id.eq.${userId}`)
+    : query.eq('user_id', userId)
+  )
     .order('created_at', { ascending: false })
     .limit(100)
 

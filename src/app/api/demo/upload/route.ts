@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!file || !userId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const supabase = admin()
-  const ext = file.name.split('.').pop()
+  const ext = file.name.split('.').pop() ?? 'bin'
   const path = `${roomId}/${userId}/${Date.now()}.${ext}`
   const bytes = await file.arrayBuffer()
 

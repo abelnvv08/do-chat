@@ -46,7 +46,7 @@ type ProjectFile = { name: string; url: string; size: number; fileType: string }
 type Project = { id: string; title: string; content?: string; instructions: string; project_files: ProjectFile[]; created_at: string }
 type FileEntry = { id: string; name: string; url: string; size: number | null; type: 'file' | 'image'; room_id: string; created_at: string; sender: string; sender_emoji: string }
 
-type Tab = 'chats' | 'projects' | 'tu'
+type Tab = 'contactos' | 'llamadas' | 'archivos' | 'mensajes' | 'tu'
 
 const COUNTRY_CODES = [
   { code: '+52', label: '🇲🇽 +52' },
@@ -61,7 +61,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const router = useRouter()
 
   // Core
-  const [activeTab, setActiveTab] = useState<Tab>('chats')
+  const [activeTab, setActiveTab] = useState<Tab>('mensajes')
   const [profile, setProfile] = useState<{ name: string; username?: string; emoji: string; bg: string } | null>(null)
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
 
@@ -185,7 +185,7 @@ const [darkMode, setDarkMode] = useState(false)
     } else {
       if (tasksIntervalRef.current) { clearInterval(tasksIntervalRef.current); tasksIntervalRef.current = null }
     }
-    if (activeTab === 'projects') {
+    if (activeTab === 'archivos') {
       if (!projectsFetched) { setProjectsFetched(true); setProjectsLoading(true); fetchProjects() }
       if (!filesFetched) { setFilesFetched(true); setFilesLoading(true); fetchFiles() }
     }
@@ -588,7 +588,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       )}
 
       {/* ── CHATS TAB ── */}
-      {activeTab === 'chats' && (
+      {activeTab === 'mensajes' && (
         <>
           <div className="bg-white px-4 pt-12 pb-0 sticky top-0 z-10 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
@@ -731,7 +731,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       )}
 
       {/* ── ARCHIVOS TAB (merged projects + docs) ── */}
-      {activeTab === 'projects' && (() => {
+      {activeTab === 'archivos' && (() => {
         const filteredProjects = archivosFilter === 'all' || archivosFilter === 'proyectos'
           ? projects.filter(p => !archivosSearch || p.title.toLowerCase().includes(archivosSearch.toLowerCase()))
           : []
@@ -761,7 +761,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           if (selectedFiles.length) parts.push(`Archivos: ${selectedFiles.map(f => `"${f.name}"`).join(', ')}`)
           if (selectedProjs.length) parts.push(`Proyectos: ${selectedProjs.map(p => `"${p.title}"`).join(', ')}`)
           setSelectedIds(new Set()); setSelectionMode(false)
-          setActiveTab('chats')
+          setActiveTab('mensajes')
           setActiveRoomId(`ai-${userId}`)
         }
 
@@ -919,6 +919,99 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           </>
         )
       })()}
+
+      {/* ── CONTACTOS TAB ── */}
+      {activeTab === 'contactos' && (
+        <>
+          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Contactos</h1>
+              <button onClick={() => { setShowNewContact(true); setShowNewMenu(false) }}
+                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 active:scale-95 transition-all">
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto pb-24">
+            {contacts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-8">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">👥</div>
+                <p className="text-gray-500 text-sm font-medium">Sin contactos aún</p>
+                <p className="text-xs text-gray-400">Agrega contactos por su @usuario</p>
+                <button onClick={() => setShowNewContact(true)}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-full">
+                  Agregar contacto
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {contacts.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
+                  <div key={c.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>
+                      {c.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => { setActiveTab('mensajes'); setActiveRoomId(c.room_id) }}
+                        className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
+                      </button>
+                      <button
+                        onClick={() => { setActiveTab('mensajes'); setActiveRoomId(c.room_id) }}
+                        className="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center hover:bg-green-100 transition-colors">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── LLAMADAS TAB ── */}
+      {activeTab === 'llamadas' && (
+        <>
+          <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
+            <h1 className="text-2xl font-bold text-gray-900">Llamadas</h1>
+          </div>
+          <div className="flex-1 overflow-y-auto pb-24">
+            {contacts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-8">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">📞</div>
+                <p className="text-gray-500 text-sm font-medium">Sin contactos para llamar</p>
+                <p className="text-xs text-gray-400">Agrega contactos para hacer llamadas</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-4 pt-4 pb-2">Contactos</p>
+                <div className="divide-y divide-gray-100">
+                  {contacts.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
+                    <div key={c.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>
+                        {c.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
+                        <p className="text-xs text-gray-400">Chat privado</p>
+                      </div>
+                      <button
+                        onClick={() => { setActiveTab('mensajes'); setActiveRoomId(c.room_id) }}
+                        className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center hover:bg-green-100 active:scale-95 transition-all">
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* ── PERFIL TAB ── */}
       {activeTab === 'tu' && (
@@ -1592,9 +1685,26 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
 
 export function BottomNav({ active, onTabChange }: { active: string; onTabChange: (tab: Tab) => void }) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'chats', label: 'Chats', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg> },
-    { id: 'projects', label: 'Archivos', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> },
-    { id: 'tu', label: 'Tú', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> },
+    {
+      id: 'contactos', label: 'Contactos',
+      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>,
+    },
+    {
+      id: 'llamadas', label: 'Llamadas',
+      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>,
+    },
+    {
+      id: 'archivos', label: 'Archivos',
+      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>,
+    },
+    {
+      id: 'mensajes', label: 'Mensajes',
+      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>,
+    },
+    {
+      id: 'tu', label: 'Tú',
+      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>,
+    },
   ]
   return (
     <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 max-w-md mx-auto z-10">

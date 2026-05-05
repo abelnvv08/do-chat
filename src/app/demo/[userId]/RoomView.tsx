@@ -339,6 +339,13 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
   )
 }
 
+const RTC_CONFIG: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ],
+}
+
 export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: string; roomId: string; onBack: () => void; initialRoom?: { id: string; name: string; emoji: string; type: string; otherUserId?: string } | null }) {
   const me = usersCache[userId]
   const isAIRoom = roomId === getAIRoom(userId)
@@ -393,6 +400,19 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const [encKey, setEncKey] = useState<CryptoKey | null>(null)
   const [encReady, setEncReady] = useState(false)
 
+  // ── Call state ──────────────────────────────────────────────────────────────
+  const [callState, _setCallState] = useState<'idle' | 'calling' | 'incoming' | 'active'>('idle')
+  const callStateRef = useRef<'idle' | 'calling' | 'incoming' | 'active'>('idle')
+  function setCallState(s: typeof callState) { callStateRef.current = s; _setCallState(s) }
+  const [incomingOffer, setIncomingOffer] = useState<{ sdp: string; callerId: string; callerName: string } | null>(null)
+  const [muted, setMuted] = useState(false)
+  const [callSeconds, setCallSeconds] = useState(0)
+  const pcRef = useRef<RTCPeerConnection | null>(null)
+  const localStreamRef = useRef<MediaStream | null>(null)
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
+
   useEffect(() => {
     if (!isAIRoom && !room) {
       fetch(`/api/demo/chat-list?user_id=${userId}`).then(r => r.json()).then(d => {
@@ -406,8 +426,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       const isDM = roomId.startsWith('dm-')
       if (isDM) {
         // DM: derive ECDH shared key with the other user
-        const parts = roomId.replace('dm-', '').split('-')
-        const otherUserId = parts[0] === userId ? parts[1] : parts[0]
+        // Room ID format: dm-{uuid1}-{uuid2}. UUIDs are 36 chars each, joined by one extra dash.
+        const withoutPrefix = roomId.slice(3)
+        const uuid1 = withoutPrefix.slice(0, 36)
+        const uuid2 = withoutPrefix.slice(37)
+        const otherUserId = initialRoom?.otherUserId ?? (uuid1 === userId ? uuid2 : uuid1)
         fetch(`/api/demo/e2ee?user_id=${otherUserId}`)
           .then(r => r.json())
           .then(async d => {
@@ -439,12 +462,57 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       .channel(`room:${roomId}`)
       .on('broadcast', { event: 'msg' }, () => { fetchMessages(); fetchReads() })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_messages', filter: `room_id=eq.${roomId}` }, () => { fetchMessages(); fetchReads() })
+      // ── Call signaling ──────────────────────────────────────────
+      .on('broadcast', { event: 'call-offer' }, ({ payload }) => {
+        if (payload.from === userId) return
+        if (callStateRef.current !== 'idle') {
+          // Busy — auto-reject
+          channel.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
+          return
+        }
+        setIncomingOffer({ sdp: payload.sdp, callerId: payload.from, callerName: payload.callerName ?? 'Usuario' })
+        setCallState('incoming')
+      })
+      .on('broadcast', { event: 'call-answer' }, async ({ payload }) => {
+        if (payload.from === userId) return
+        const pc = pcRef.current
+        if (!pc) return
+        await pc.setRemoteDescription({ type: 'answer', sdp: payload.sdp })
+        for (const c of pendingCandidatesRef.current) await pc.addIceCandidate(c).catch(() => {})
+        pendingCandidatesRef.current = []
+        setCallState('active')
+        setCallSeconds(0)
+        callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000)
+      })
+      .on('broadcast', { event: 'call-ice' }, async ({ payload }) => {
+        if (payload.from === userId) return
+        const pc = pcRef.current
+        if (!pc || !pc.remoteDescription) { pendingCandidatesRef.current.push(payload.candidate); return }
+        await pc.addIceCandidate(payload.candidate).catch(() => {})
+      })
+      .on('broadcast', { event: 'call-end' }, ({ payload }) => {
+        if (payload.from === userId) return
+        cleanupCall()
+      })
+      .on('broadcast', { event: 'call-reject' }, ({ payload }) => {
+        if (payload.from === userId) return
+        cleanupCall()
+      })
       .subscribe()
     channelRef.current = channel
 
     // Fallback every 3s in case websocket drops
     const interval = setInterval(() => { fetchMessages(); fetchReads() }, 3000)
-    return () => { supabase.removeChannel(channel); channelRef.current = null; clearInterval(interval) }
+    return () => {
+      // Signal the other side before tearing down the channel
+      if (callStateRef.current !== 'idle') {
+        channel.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
+      }
+      supabase.removeChannel(channel)
+      channelRef.current = null
+      clearInterval(interval)
+      cleanupCall()
+    }
   }, [roomId])
 
   async function exportChat(format: 'docx' | 'pdf') {
@@ -805,6 +873,105 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     })
   }
 
+  // ── WebRTC call functions ───────────────────────────────────────────────────
+  function cleanupCall() {
+    localStreamRef.current?.getTracks().forEach(t => t.stop())
+    localStreamRef.current = null
+    pcRef.current?.close()
+    pcRef.current = null
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null
+    if (callTimerRef.current) { clearInterval(callTimerRef.current); callTimerRef.current = null }
+    setCallState('idle')
+    setIncomingOffer(null)
+    setMuted(false)
+    setCallSeconds(0)
+    pendingCandidatesRef.current = []
+  }
+
+  function buildPC(): RTCPeerConnection {
+    const pc = new RTCPeerConnection(RTC_CONFIG)
+    pcRef.current = pc
+    pc.onicecandidate = ({ candidate }) => {
+      if (candidate) {
+        channelRef.current?.send({ type: 'broadcast', event: 'call-ice', payload: { candidate: candidate.toJSON(), from: userId } })
+      }
+    }
+    pc.ontrack = e => {
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = e.streams[0]
+        remoteAudioRef.current.play().catch(() => {})
+      }
+    }
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+        channelRef.current?.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
+        cleanupCall()
+      }
+    }
+    return pc
+  }
+
+  async function startCall() {
+    if (callStateRef.current !== 'idle') return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      localStreamRef.current = stream
+      const pc = buildPC()
+      stream.getTracks().forEach(t => pc.addTrack(t, stream))
+      const offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
+      setCallState('calling')
+      channelRef.current?.send({ type: 'broadcast', event: 'call-offer', payload: { sdp: offer.sdp, from: userId, callerName: me?.name ?? 'Usuario' } })
+    } catch {
+      cleanupCall()
+      alert('No se pudo acceder al micrófono')
+    }
+  }
+
+  async function acceptCall() {
+    if (!incomingOffer) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      localStreamRef.current = stream
+      const pc = buildPC()
+      stream.getTracks().forEach(t => pc.addTrack(t, stream))
+      await pc.setRemoteDescription({ type: 'offer', sdp: incomingOffer.sdp })
+      for (const c of pendingCandidatesRef.current) await pc.addIceCandidate(c).catch(() => {})
+      pendingCandidatesRef.current = []
+      const answer = await pc.createAnswer()
+      await pc.setLocalDescription(answer)
+      channelRef.current?.send({ type: 'broadcast', event: 'call-answer', payload: { sdp: answer.sdp, from: userId } })
+      setIncomingOffer(null)
+      setCallState('active')
+      setCallSeconds(0)
+      callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000)
+    } catch {
+      rejectCall()
+    }
+  }
+
+  function rejectCall() {
+    channelRef.current?.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
+    cleanupCall()
+  }
+
+  function endCall() {
+    channelRef.current?.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
+    cleanupCall()
+  }
+
+  function toggleMute() {
+    const track = localStreamRef.current?.getAudioTracks()[0]
+    if (!track) return
+    track.enabled = !track.enabled
+    setMuted(!track.enabled)
+  }
+
+  function fmtDuration(s: number) {
+    const m = Math.floor(s / 60)
+    return `${m}:${(s % 60).toString().padStart(2, '0')}`
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
@@ -871,7 +1038,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{name}</p>
-                <p className="text-xs text-gray-400">{Math.round(size / 1024)} KB</p>
+                <p className="text-xs text-gray-400">{size != null ? `${Math.round(size / 1024)} KB` : 'Archivo'}</p>
               </div>
             </a>
             {canConvert && (
@@ -928,8 +1095,119 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
 
   const isMedia = (type: string) => type === 'image' || type === 'file' || type === 'audio'
 
+  const isDMRoom = !isAIRoom && (room?.type === 'dm' || roomId.startsWith('dm-'))
+
   return (
     <div className="flex flex-col h-screen bg-gray-50 max-w-md mx-auto">
+      {/* Hidden remote audio element */}
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
+
+      {/* ── Incoming call sheet ───────────────────────────────────── */}
+      {callState === 'incoming' && incomingOffer && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-t-3xl shadow-2xl p-6 pb-10">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-4xl animate-pulse">
+                📞
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Llamada entrante</p>
+                <p className="text-xl font-bold text-gray-900">{incomingOffer.callerName}</p>
+              </div>
+              <div className="flex items-center justify-center gap-12 mt-2">
+                <button
+                  onClick={rejectCall}
+                  className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                >
+                  <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8Z"/>
+                    <line x1="4" y1="4" x2="20" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={acceptCall}
+                  className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                >
+                  <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8Z"/>
+                  </svg>
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">Rechazar · Aceptar</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Active call overlay ───────────────────────────────────── */}
+      {callState === 'active' && (
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gray-900">
+          <div className="flex flex-col items-center gap-5">
+            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl">
+              {room?.emoji ?? '👤'}
+            </div>
+            <div className="text-center">
+              <p className="text-white text-xl font-semibold">{room?.name ?? 'Llamada'}</p>
+              <p className="text-white/60 text-sm mt-1">{fmtDuration(callSeconds)}</p>
+            </div>
+          </div>
+          <div className="absolute bottom-16 flex items-center gap-8">
+            <button
+              onClick={toggleMute}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${muted ? 'bg-white/20' : 'bg-white/10'}`}
+            >
+              {muted ? (
+                <svg className="w-7 h-7 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63Zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71ZM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3ZM12 4 9.91 6.09 12 8.18V4Z"/>
+                </svg>
+              ) : (
+                <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3Zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V21h2v-2.28c3.28-.49 6-3.3 6-6.72h-1.7Z"/>
+                </svg>
+              )}
+              <span className="sr-only">{muted ? 'Activar mic' : 'Silenciar'}</span>
+            </button>
+            <button
+              onClick={endCall}
+              className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-xl active:scale-95 transition-transform"
+            >
+              <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8Z"/>
+                <line x1="3" y1="3" x2="21" y2="21" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <div className="w-16 h-16" /> {/* spacer for symmetry */}
+          </div>
+          <p className="absolute bottom-6 text-white/30 text-xs">{muted ? 'Micrófono silenciado' : 'Micrófono activo'}</p>
+        </div>
+      )}
+
+      {/* ── Calling (ringing) overlay ─────────────────────────────── */}
+      {callState === 'calling' && (
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gray-900">
+          <div className="flex flex-col items-center gap-5">
+            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl animate-pulse">
+              {room?.emoji ?? '👤'}
+            </div>
+            <div className="text-center">
+              <p className="text-white text-xl font-semibold">{room?.name ?? '…'}</p>
+              <p className="text-white/60 text-sm mt-1">Llamando…</p>
+            </div>
+          </div>
+          <div className="absolute bottom-16">
+            <button
+              onClick={endCall}
+              className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-xl active:scale-95 transition-transform"
+            >
+              <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8Z"/>
+                <line x1="3" y1="3" x2="21" y2="21" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-3 sticky top-0 z-10">
         {showSearch ? (
@@ -1013,6 +1291,19 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 {!isAIRoom && encReady && !encKey && <span className="text-yellow-500">· Sin cifrar</span>}
               </p>
             </button>
+
+            {/* Call button — DM rooms only */}
+            {isDMRoom && callState === 'idle' && (
+              <button
+                onClick={startCall}
+                className="text-gray-400 hover:text-green-600 transition-colors p-1 shrink-0"
+                title="Llamar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                </svg>
+              </button>
+            )}
 
             <button
               onClick={() => { setShowSearch(true); setSearchQuery(''); setMatchIdx(0); setTimeout(() => searchRef.current?.focus(), 50) }}

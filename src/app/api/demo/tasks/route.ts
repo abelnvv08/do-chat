@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const { id, done, due_date } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-  const update: Record<string, unknown> = { done }
+  const update: Record<string, unknown> = {}
+  if (done !== undefined) update.done = done
   if (due_date !== undefined) update.due_date = due_date
   const { data } = await admin()
     .from('demo_tasks')

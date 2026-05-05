@@ -79,90 +79,110 @@ function buildMessageContent(
   return parts
 }
 
+const DAILY_AI_LIMIT = 40 // free queries per user per day
+
 export async function POST(req: NextRequest) {
   const { user_id, query, room_id: replyRoomId } = await req.json()
   const supabase = admin()
   const aiRoomId = `ai-${user_id}`
 
-  const { data: roomMembers } = await supabase.from('demo_room_members').select('room_id, demo_rooms(id, name, type, emoji)').eq('user_id', user_id)
-  const rooms = ((roomMembers ?? []).map((m: any) => { const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms; return r ? { id: r.id, name: r.name ?? r.id, type: r.type, emoji: r.emoji ?? '💬' } : null }).filter((r: any) => r && r.type !== 'ai')) as { id: string; name: string; type: string; emoji: string }[]
-  const allChatsContext: string[] = []
+  // ── Rate limiting ────────────────────────────────────────────────────────────
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const { count } = await supabase
+    .from('demo_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user_id)
+    .eq('type', 'ai')
+    .gte('created_at', todayStart.toISOString())
+
+  if ((count ?? 0) >= DAILY_AI_LIMIT) {
+    const limitMsg = `Alcanzaste el límite de ${DAILY_AI_LIMIT} consultas diarias. El límite se reinicia a medianoche. 🌙`
+    await supabase.from('demo_messages').insert({ user_id, content: limitMsg, type: 'ai', room_id: replyRoomId || aiRoomId })
+    return NextResponse.json({ reply: limitMsg, actions: [] })
+  }
+
+  // ── Determine which rooms to include in context ──────────────────────────────
+  // Only load all chats if the query explicitly references them — saves tokens
+  const queryWantsAllChats = /chat|convers|mensaje|resumi|todos|todas/i.test(query)
+
   const allImages: { url: string; sender: string; room: string }[] = []
   const allFiles: { name: string; url: string; sender: string; room: string }[] = []
+  const allChatsContext: string[] = []
 
-  // Files uploaded directly to the AI chat (highest priority — always parsed)
+  // Always load AI room files (last 10 messages — reduced from 20)
   const aiRoomFiles: { name: string; url: string }[] = []
-  const aiMsgs = await getMessagesFromRoom(aiRoomId, 20)
+  const aiMsgs = await getMessagesFromRoom(aiRoomId, 10)
   for (const m of aiMsgs) {
     if (m.type === 'file') {
-      try {
-        const meta = JSON.parse(m.content)
-        aiRoomFiles.push({ name: meta.name, url: meta.url })
-      } catch { /* skip */ }
+      try { aiRoomFiles.push(JSON.parse(m.content)) } catch { /* skip */ }
     } else if (m.type === 'image') {
       allImages.push({ url: m.content, sender: 'tú', room: 'do AI' })
     }
   }
 
-  for (const room of rooms) {
-    const msgs = await getMessagesFromRoom(room.id, 30)
-    if (msgs.length === 0) continue
+  if (queryWantsAllChats) {
+    // Load other rooms — capped at 8 messages each (reduced from 30) and max 5 rooms
+    const { data: roomMembers } = await supabase
+      .from('demo_room_members')
+      .select('room_id, demo_rooms(id, name, type, emoji)')
+      .eq('user_id', user_id)
+    const rooms = ((roomMembers ?? []).map((m: any) => {
+      const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms
+      return r && r.type !== 'ai' ? { id: r.id, name: r.name ?? r.id, type: r.type, emoji: r.emoji ?? '💬' } : null
+    }).filter(Boolean)) as { id: string; name: string; type: string; emoji: string }[]
 
-    const lines: string[] = []
-    for (const m of msgs) {
-      const sender = getSenderName(m)
-      if (m.type === 'text' || m.type === 'ai') {
-        lines.push(`  [${sender}]: ${m.content}`)
-      } else if (m.type === 'image') {
-        lines.push(`  [${sender}]: [📷 imagen adjunta]`)
-        allImages.push({ url: m.content, sender, room: room.name })
-      } else if (m.type === 'file') {
-        try {
-          const meta = JSON.parse(m.content)
-          lines.push(`  [${sender}]: [📎 archivo: ${meta.name} (${Math.round(meta.size / 1024)}KB)]`)
-          allFiles.push({ name: meta.name, url: meta.url, sender, room: room.name })
-        } catch {
-          lines.push(`  [${sender}]: [📎 archivo adjunto]`)
+    for (const room of rooms.slice(0, 5)) {
+      const msgs = await getMessagesFromRoom(room.id, 8)
+      if (!msgs.length) continue
+      const lines: string[] = []
+      for (const m of msgs) {
+        const sender = getSenderName(m)
+        if (m.type === 'text' || m.type === 'ai') {
+          lines.push(`  [${sender}]: ${m.content.slice(0, 300)}`)
+        } else if (m.type === 'image') {
+          lines.push(`  [${sender}]: [📷 imagen]`)
+          allImages.push({ url: m.content, sender, room: room.name })
+        } else if (m.type === 'file') {
+          try {
+            const meta = JSON.parse(m.content)
+            lines.push(`  [${sender}]: [📎 ${meta.name}]`)
+            allFiles.push({ name: meta.name, url: meta.url, sender, room: room.name })
+          } catch { lines.push(`  [${sender}]: [📎 archivo]`) }
         }
       }
-    }
-
-    if (lines.length > 0) {
-      allChatsContext.push(`--- ${room.emoji} ${room.name} ---\n${lines.join('\n')}`)
+      if (lines.length) allChatsContext.push(`--- ${room.emoji} ${room.name} ---\n${lines.join('\n')}`)
     }
   }
 
-  // Always parse files uploaded directly to AI chat
+  // ── Parse files ──────────────────────────────────────────────────────────────
   const parsedFilesContext: string[] = []
-  for (const f of aiRoomFiles.slice(0, 3)) {
+  for (const f of aiRoomFiles.slice(0, 2)) {
     const content = await parseFile(f.url, f.name)
-    if (content) {
-      parsedFilesContext.push(`\n--- Archivo subido por el usuario: "${f.name}" ---\n${content}`)
-    }
+    if (content) parsedFilesContext.push(`\n--- Archivo: "${f.name}" ---\n${content}`)
   }
 
-  // Also parse files from other chats when query mentions them
-  const queryMentionsFiles = /archivo|excel|word|pdf|csv|documento|contenido|tabla|hoja|dato/i.test(query)
-  if (allFiles.length > 0 && (queryMentionsFiles || /analiz|lee|mostr|resum/i.test(query))) {
-    for (const f of allFiles.slice(0, 3)) {
+  const queryMentionsFiles = /archivo|excel|word|pdf|csv|documento|tabla|dato/i.test(query)
+  if (queryMentionsFiles && allFiles.length > 0) {
+    for (const f of allFiles.slice(0, 2)) {
       const content = await parseFile(f.url, f.name)
-      if (content) {
-        parsedFilesContext.push(`\n--- Contenido de "${f.name}" (enviado por ${f.sender} en ${f.room}) ---\n${content}`)
-      }
+      if (content) parsedFilesContext.push(`\n--- "${f.name}" (${f.room}) ---\n${content}`)
     }
   }
-
-  const filesListContext = allFiles.length > 0
-    ? `\n\nARCHIVOS COMPARTIDOS EN LOS CHATS:\n${allFiles.map(f => `- "${f.name}" — enviado por ${f.sender} en ${f.room}`).join('\n')}`
-    : ''
-
-  const parsedFilesBlock = parsedFilesContext.length > 0
-    ? `\n\nCONTENIDO DE ARCHIVOS ANALIZADOS:${parsedFilesContext.join('\n')}`
-    : ''
 
   const contextBlock = allChatsContext.length > 0
-    ? `CONTEXTO DE TODOS LOS CHATS:\n${allChatsContext.join('\n\n')}${filesListContext}${parsedFilesBlock}`
-    : '(No hay mensajes en los chats aún)'
+    ? `CONTEXTO DE CHATS:\n${allChatsContext.join('\n\n')}${parsedFilesContext.length ? `\n\nARCHIVOS:${parsedFilesContext.join('\n')}` : ''}`
+    : parsedFilesContext.length > 0
+      ? `ARCHIVOS ANALIZADOS:${parsedFilesContext.join('\n')}`
+      : '(Sin contexto de chats)'
+
+  // ── Smart model routing ──────────────────────────────────────────────────────
+  const needsSonnet =
+    aiRoomFiles.length > 0 ||
+    allImages.length > 0 ||
+    parsedFilesContext.length > 0 ||
+    /analiz|resum|reporte|extrae|genera|excel|tabla|proyecto/i.test(query)
+  const model = needsSonnet ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001'
 
   const hasDirectFiles = aiRoomFiles.length > 0
   const systemPrompt = `Eres do, una IA accionable con acceso completo a todos los chats, imágenes y archivos.
@@ -222,12 +242,13 @@ Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomas
   )
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1500,
+    model,
+    max_tokens: 1024,
     system: systemPrompt,
     messages: [{ role: 'user', content: userContent }]
   })
 
+  if (!response.content?.length) return NextResponse.json({ error: 'Empty AI response' }, { status: 500 })
   let reply = response.content[0].type === 'text' ? response.content[0].text : ''
 
   // Process BUSCAR action — web search via Tavily (2-pass)
@@ -238,8 +259,8 @@ Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomas
     const searchResults = await tavilySearch(searchQuery)
     if (searchResults) {
       const response2 = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        model: 'claude-sonnet-4-6', // always Sonnet for web search (needs quality)
+        max_tokens: 1024,
         system: systemPrompt,
         messages: [
           { role: 'user', content: userContent },
@@ -247,7 +268,7 @@ Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomas
           { role: 'user', content: `RESULTADOS DE BÚSQUEDA WEB para "${searchQuery}":\n\n${searchResults}\n\nAhora respondé la pregunta original usando estos resultados. Citá las fuentes al final con sus URLs.` },
         ],
       })
-      reply = response2.content[0].type === 'text' ? response2.content[0].text : reply
+      reply = response2.content?.[0]?.type === 'text' ? (response2.content[0] as { type: 'text'; text: string }).text : reply
     } else {
       reply = reply || 'No pude obtener resultados de búsqueda. Intentá de nuevo más tarde.'
     }
@@ -389,7 +410,7 @@ Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomas
   reply = reply.replace(/\[ACCION:CALENDARIO:[^\]]+\]/g, '').trim()
 
   for (const event of calendarEvents) {
-    const fmt = (s: string) => s.replace(/[-:]/g, '').replace('T', 'T').padEnd(15, '0')
+    const fmt = (s: string) => s.replace(/[-:]/g, '').padEnd(15, '0')
     const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${fmt(event.start)}/${fmt(event.end)}&details=${encodeURIComponent(event.description)}`
     const startDt = new Date(event.start)
     const dateStr = startDt.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
