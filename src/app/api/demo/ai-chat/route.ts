@@ -103,14 +103,15 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Determine which rooms to include in context ──────────────────────────────
-  // Only load all chats if the query explicitly references them — saves tokens
-  const queryWantsAllChats = /chat|convers|mensaje|resumi|todos|todas/i.test(query)
+  const queryWantsAllChats = /chat|convers|mensaje|resumi|todos|todas|cuánt|cuant|cuánto|cuanto|conta|lee|leer|leé|dime|hay|busca|buscar|encuentr|encontr/i.test(query)
+  // If asked from inside a specific chat (replyRoomId is not the AI room), always load it
+  const activeRoom = replyRoomId && replyRoomId !== aiRoomId ? replyRoomId : null
 
   const allImages: { url: string; sender: string; room: string }[] = []
   const allFiles: { name: string; url: string; sender: string; room: string }[] = []
   const allChatsContext: string[] = []
 
-  // Always load AI room files (last 10 messages — reduced from 20)
+  // Always load AI room files (last 10 messages)
   const aiRoomFiles: { name: string; url: string }[] = []
   const aiMsgs = await getMessagesFromRoom(aiRoomId, 10)
   for (const m of aiMsgs) {
@@ -121,8 +122,37 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Helper to format room messages into context lines
+  async function loadRoomContext(roomId: string, roomName: string, roomEmoji: string, limit: number) {
+    const msgs = await getMessagesFromRoom(roomId, limit)
+    if (!msgs.length) return
+    const lines: string[] = []
+    for (const m of msgs) {
+      const sender = getSenderName(m)
+      if (m.type === 'text' || m.type === 'ai') {
+        lines.push(`  [${sender}]: ${m.content.slice(0, 500)}`)
+      } else if (m.type === 'image') {
+        lines.push(`  [${sender}]: [📷 imagen]`)
+        allImages.push({ url: m.content, sender, room: roomName })
+      } else if (m.type === 'file') {
+        try {
+          const meta = JSON.parse(m.content)
+          lines.push(`  [${sender}]: [📎 ${meta.name}]`)
+          allFiles.push({ name: meta.name, url: meta.url, sender, room: roomName })
+        } catch { lines.push(`  [${sender}]: [📎 archivo]`) }
+      }
+    }
+    if (lines.length) allChatsContext.push(`--- ${roomEmoji} ${roomName} (room_id: ${roomId}) ---\n${lines.join('\n')}`)
+  }
+
+  // Always load the active chat room with generous limit
+  if (activeRoom) {
+    const { data: roomData } = await supabase.from('demo_rooms').select('name, emoji').eq('id', activeRoom).single()
+    await loadRoomContext(activeRoom, roomData?.name ?? activeRoom, roomData?.emoji ?? '💬', 100)
+  }
+
   if (queryWantsAllChats) {
-    // Load other rooms — capped at 8 messages each (reduced from 30) and max 5 rooms
+    // Load all other rooms — capped at 30 messages each, max 8 rooms
     const { data: roomMembers } = await supabase
       .from('demo_room_members')
       .select('room_id, demo_rooms(id, name, type, emoji)')
@@ -132,26 +162,9 @@ export async function POST(req: NextRequest) {
       return r && r.type !== 'ai' ? { id: r.id, name: r.name ?? r.id, type: r.type, emoji: r.emoji ?? '💬' } : null
     }).filter(Boolean)) as { id: string; name: string; type: string; emoji: string }[]
 
-    for (const room of rooms.slice(0, 5)) {
-      const msgs = await getMessagesFromRoom(room.id, 8)
-      if (!msgs.length) continue
-      const lines: string[] = []
-      for (const m of msgs) {
-        const sender = getSenderName(m)
-        if (m.type === 'text' || m.type === 'ai') {
-          lines.push(`  [${sender}]: ${m.content.slice(0, 300)}`)
-        } else if (m.type === 'image') {
-          lines.push(`  [${sender}]: [📷 imagen]`)
-          allImages.push({ url: m.content, sender, room: room.name })
-        } else if (m.type === 'file') {
-          try {
-            const meta = JSON.parse(m.content)
-            lines.push(`  [${sender}]: [📎 ${meta.name}]`)
-            allFiles.push({ name: meta.name, url: meta.url, sender, room: room.name })
-          } catch { lines.push(`  [${sender}]: [📎 archivo]`) }
-        }
-      }
-      if (lines.length) allChatsContext.push(`--- ${room.emoji} ${room.name} ---\n${lines.join('\n')}`)
+    for (const room of rooms.slice(0, 8)) {
+      if (room.id === activeRoom) continue // already loaded
+      await loadRoomContext(room.id, room.name, room.emoji, 30)
     }
   }
 
@@ -185,11 +198,13 @@ export async function POST(req: NextRequest) {
   const model = needsSonnet ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001'
 
   const hasDirectFiles = aiRoomFiles.length > 0
-  const systemPrompt = `Eres do, una IA accionable con acceso completo a todos los chats, imágenes y archivos.
-Tienes visión — puedes ver y analizar las imágenes que se comparten en los chats.
-Puedes leer mensajes, ver imágenes, leer el contenido de archivos (PDF, Excel, Word, CSV, TXT), resumir conversaciones, extraer tareas, crear proyectos y enviar mensajes.
+  const systemPrompt = `Eres do, una IA accionable integrada en una app de mensajería.
+Tienes visión — puedes ver y analizar imágenes compartidas en los chats.
+Puedes leer mensajes, contar palabras o frases, resumir conversaciones, extraer tareas, crear proyectos y enviar mensajes.
+${activeRoom ? `El usuario te está consultando desde un chat específico (room_id: ${activeRoom}) — sus últimos 100 mensajes están en el contexto bajo ese room_id. Cuando el usuario dice "este chat" o "aquí", se refiere a ese chat.` : ''}
 ${hasDirectFiles ? 'El usuario adjuntó archivos directamente en este chat — su contenido está disponible en el contexto.' : ''}
-Si el usuario menciona un documento o archivo pero no lo adjuntó y no hay archivos disponibles en el contexto, pregúntale amablemente: ¿lo tiene en uno de sus chats o puede adjuntarlo directamente aquí usando el ícono de clip (📎)?
+Si el usuario menciona un documento o archivo pero no está en el contexto, pregúntale si puede adjuntarlo aquí con el ícono de clip (📎).
+Cuando cuentes palabras, frases o mensajes: hazlo de forma exacta basándote en el contexto provisto. Si no hay suficiente contexto, dilo claramente.
 
 ACCIONES DISPONIBLES — incluirlas al final de tu respuesta:
 
