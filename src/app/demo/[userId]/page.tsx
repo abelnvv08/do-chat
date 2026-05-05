@@ -6,6 +6,7 @@ import { usersCache, type Room } from '@/lib/demo'
 import { formatMessageTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
 import { RoomView } from './RoomView'
+import { ProjectWorkspace } from './ProjectWorkspace'
 
 function UserIcon({ className }: { className?: string }) {
   return (
@@ -39,7 +40,8 @@ type SearchResult = {
 type Contact = { id: string; name: string; firstName: string; lastName: string; emoji: string; bg: string; room_id: string }
 type Task = { id: string; content: string; done: boolean; created_at: string; source_room: string | null; due_date: string | null }
 type Reminder = { id: string; content: string; remind_at: string }
-type Project = { id: string; title: string; content: string; created_at: string }
+type ProjectFile = { name: string; url: string; size: number; fileType: string }
+type Project = { id: string; title: string; content?: string; instructions: string; project_files: ProjectFile[]; created_at: string }
 type FileEntry = { id: string; name: string; url: string; size: number | null; type: 'file' | 'image'; room_id: string; created_at: string; sender: string; sender_emoji: string }
 
 type Tab = 'chats' | 'projects' | 'tu'
@@ -103,7 +105,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [projects, setProjects] = useState<Project[]>([])
   const [projectsLoading, setProjectsLoading] = useState(false)
   const [projectsFetched, setProjectsFetched] = useState(false)
-  const [expandedProject, setExpandedProject] = useState<string | null>(null)
+  const [activeProject, setActiveProject] = useState<Project | null>(null)
   const [files, setFiles] = useState<FileEntry[]>([])
   const [filesLoading, setFilesLoading] = useState(false)
   const [filesFetched, setFilesFetched] = useState(false)
@@ -343,6 +345,11 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   async function deleteProject(id: string) {
     setProjects(prev => prev.filter(p => p.id !== id))
     await fetch('/api/demo/projects', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+  }
+  async function createProject() {
+    const res = await fetch('/api/demo/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, title: 'Nuevo proyecto', instructions: '', project_files: [] }) })
+    const { project } = await res.json()
+    if (project) { setProjects(prev => [project, ...prev]); setActiveProject(project) }
   }
 
   // Files functions
@@ -688,6 +695,8 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
                     <>
                       <button onClick={() => setSelectionMode(true)}
                         className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl bg-blue-50">Seleccionar</button>
+                      <button onClick={createProject}
+                        className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl border border-blue-200 bg-white">+ Proyecto</button>
                       <button onClick={() => docsFileRef.current?.click()} disabled={docsUploading}
                         className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
                         {docsUploading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
@@ -730,7 +739,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
                   <div className="space-y-2.5">
                     {filteredProjects.map(proj => (
                       <div key={proj.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${selectedIds.has(proj.id) ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
-                        <button onClick={() => selectionMode ? toggleSelect(proj.id) : setExpandedProject(expandedProject === proj.id ? null : proj.id)}
+                        <button onClick={() => selectionMode ? toggleSelect(proj.id) : setActiveProject(proj)}
                           className="w-full flex items-start gap-3 px-4 py-3.5 text-left">
                           {selectionMode && (
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
@@ -742,18 +751,10 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900">{proj.title}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{formatMessageTime(proj.created_at)} · do AI</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{formatMessageTime(proj.created_at)} · {proj.project_files?.length ? `${proj.project_files.length} archivo${proj.project_files.length !== 1 ? 's' : ''}` : 'do AI'}</p>
                           </div>
-                          {!selectionMode && <svg className={`w-4 h-4 text-gray-400 mt-1 shrink-0 transition-transform ${expandedProject === proj.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>}
+                          {!selectionMode && <svg className="w-4 h-4 text-gray-400 mt-1 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
                         </button>
-                        {!selectionMode && expandedProject === proj.id && (
-                          <div className="border-t border-gray-100 px-4 py-3">
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{proj.content}</p>
-                            <div className="flex justify-end mt-3">
-                              <button onClick={() => deleteProject(proj.id)} className="text-xs text-red-400 hover:text-red-600">Eliminar</button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -1096,6 +1097,15 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
             onBack={() => setActiveRoomId(null)}
           />
         </div>
+      )}
+
+      {activeProject && (
+        <ProjectWorkspace
+          userId={userId}
+          project={activeProject}
+          onClose={() => setActiveProject(null)}
+          onUpdate={p => { setActiveProject(p); setProjects(prev => prev.map(x => x.id === p.id ? p : x)) }}
+        />
       )}
 
       {/* Action sheet */}
