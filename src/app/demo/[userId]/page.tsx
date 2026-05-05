@@ -82,9 +82,10 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   // + menu
   const [showNewMenu, setShowNewMenu] = useState(false)
   const [showNewContact, setShowNewContact] = useState(false)
-  const [ncUsername, setNcUsername] = useState('')
+  const [ncFirstName, setNcFirstName] = useState('')
+  const [ncLastName, setNcLastName] = useState('')
+  const [ncPhone, setNcPhone] = useState('')
   const [ncFound, setNcFound] = useState<{ id: string; name: string; emoji: string; bg: string } | null>(null)
-  const [ncSearching, setNcSearching] = useState(false)
   const [ncError, setNcError] = useState('')
   const [ncSaving, setNcSaving] = useState(false)
   const [showNewGroup, setShowNewGroup] = useState(false)
@@ -273,23 +274,13 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   }
 
   // New contact
-  async function ncSearchUsername() {
-    const clean = ncUsername.replace(/^@/, '').trim()
-    if (clean.length < 3) { setNcError('Ingresa un usuario válido'); return }
-    setNcSearching(true); setNcError(''); setNcFound(null)
-    try {
-      const res = await fetch(`/api/auth/users?username=${encodeURIComponent(clean)}&exclude=${userId}`)
-      const data = await res.json()
-      if (data.user) setNcFound(data.user)
-      else setNcError('No se encontró ningún usuario con ese @')
-    } catch { setNcError('Error al buscar') }
-    finally { setNcSearching(false) }
-  }
   async function ncSave() {
-    if (!ncFound) { setNcError('Busca un usuario primero'); return }
+    if (!ncFirstName.trim()) { setNcError('Ingresa al menos el nombre'); return }
+    const phone = ncPhone.trim().replace(/\s/g, '')
+    if (phone.length < 7) { setNcError('Ingresa un número de teléfono válido'); return }
     setNcSaving(true); setNcError('')
     try {
-      const res = await fetch('/api/demo/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, contact_id: ncFound.id }) })
+      const res = await fetch('/api/demo/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, phone, first_name: ncFirstName.trim(), last_name: ncLastName.trim() || undefined }) })
       const data = await res.json()
       if (!res.ok) { setNcError(data.error ?? 'Error al guardar'); return }
       setShowNewContact(false)
@@ -298,7 +289,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       if (data.contact?.room_id) setActiveRoomId(data.contact.room_id)
     } finally { setNcSaving(false) }
   }
-  function resetNc() { setNcUsername(''); setNcFound(null); setNcError('') }
+  function resetNc() { setNcFirstName(''); setNcLastName(''); setNcPhone(''); setNcFound(null); setNcError('') }
 
   // New group
   async function createGroup() {
@@ -1523,40 +1514,55 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           <div className="flex items-center gap-3 px-4 pt-12 pb-4 border-b border-gray-100">
             <button onClick={() => { setShowNewContact(false); resetNc() }} className="text-blue-600 font-medium text-sm">Cancelar</button>
             <h2 className="flex-1 text-center text-base font-semibold text-gray-900">Nuevo contacto</h2>
-            <button onClick={ncSave} disabled={ncSaving || !ncFound} className="text-blue-600 font-semibold text-sm disabled:opacity-40">
+            <button onClick={ncSave} disabled={ncSaving || !ncFirstName.trim() || ncPhone.trim().length < 7}
+              className="text-blue-600 font-semibold text-sm disabled:opacity-40">
               {ncSaving ? 'Guardando…' : 'Agregar'}
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 pt-8 space-y-4">
-            <p className="text-sm text-gray-500 text-center">Busca a tu contacto por su @usuario</p>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">@</span>
-                <input
-                  type="text"
-                  placeholder="usuario"
-                  value={ncUsername.replace(/^@/, '')}
-                  onChange={e => { setNcUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '')); setNcFound(null); setNcError('') }}
-                  onKeyDown={e => e.key === 'Enter' && ncSearchUsername()}
-                  className="w-full text-sm bg-gray-100 rounded-xl pl-7 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 placeholder-gray-400"
-                  autoFocus
-                />
+          <div className="flex-1 overflow-y-auto">
+            {/* Avatar placeholder */}
+            <div className="flex flex-col items-center pt-8 pb-6">
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
               </div>
-              <button onClick={ncSearchUsername} disabled={ncSearching || ncUsername.replace(/^@/, '').length < 3}
-                className="px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl disabled:opacity-40 transition-colors shrink-0">
-                {ncSearching ? '…' : 'Buscar'}
-              </button>
             </div>
-            {ncError && <p className="text-red-500 text-sm text-center">{ncError}</p>}
+            {/* Name fields */}
+            <div className="bg-white border-t border-b border-gray-100 divide-y divide-gray-100">
+              <div className="flex items-center px-5 py-3.5 gap-3">
+                <svg className="w-5 h-5 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                <input type="text" placeholder="Nombre" value={ncFirstName}
+                  onChange={e => setNcFirstName(e.target.value)}
+                  className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none" autoFocus />
+              </div>
+              <div className="flex items-center px-5 py-3.5 gap-3">
+                <div className="w-5 shrink-0" />
+                <input type="text" placeholder="Apellido" value={ncLastName}
+                  onChange={e => setNcLastName(e.target.value)}
+                  className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none" />
+              </div>
+            </div>
+            {/* Phone field */}
+            <div className="bg-white border-t border-b border-gray-100 mt-6 flex items-center px-5 py-3.5 gap-3">
+              <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 6.75Z" /></svg>
+              <div className="flex-1 flex items-center gap-2">
+                <input type="tel" placeholder="Número de teléfono" value={ncPhone}
+                  onChange={e => { setNcPhone(e.target.value); setNcFound(null); setNcError('') }}
+                  className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none" />
+              </div>
+            </div>
+            {ncError && <p className="text-red-500 text-sm text-center mt-4 px-4">{ncError}</p>}
             {ncFound && (
-              <div className="bg-green-50 rounded-2xl px-4 py-3 flex items-center gap-3 border border-green-100">
+              <div className="mx-4 mt-4 bg-green-50 rounded-2xl px-4 py-3 flex items-center gap-3 border border-green-100">
                 <Avatar emoji={ncFound.emoji} bg={ncFound.bg} />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{ncFound.name}</p>
-                  <p className="text-xs text-green-600">Usuario registrado en do-chat ✓</p>
+                  <p className="text-xs text-green-600">Usuario en do-chat ✓</p>
                 </div>
               </div>
             )}
+            <p className="text-xs text-gray-400 text-center mt-6 px-8">
+              Si el número está registrado en do-chat, se agregará automáticamente como contacto.
+            </p>
           </div>
         </div>
       )}
