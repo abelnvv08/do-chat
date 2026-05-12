@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit } from '@/lib/rate-limit'
 
 const BG_COLORS = ['bg-violet-600', 'bg-emerald-600', 'bg-amber-500', 'bg-blue-600', 'bg-rose-500', 'bg-cyan-600', 'bg-orange-500', 'bg-purple-600']
 
@@ -17,6 +18,15 @@ async function getSession(email: string) {
 export async function POST(req: NextRequest) {
   const { phone, code } = await req.json()
   if (!phone || !code) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
+
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+  const rl = rateLimit(`verify:${ip}:${phone}`, 10, 60 * 60 * 1000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: `Too many attempts. Try again in ${rl.retryAfter}s.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    )
+  }
 
   const sid = process.env.TWILIO_ACCOUNT_SID!
   const token = process.env.TWILIO_AUTH_TOKEN!

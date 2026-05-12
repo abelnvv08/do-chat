@@ -19,6 +19,13 @@ const DARK_CSS = `
   .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,.5) !important; }
   .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,.6) !important; }
   .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,.7) !important; }
+  /* Active/hover states */
+  .active\\:bg-gray-50:active { background-color: #3f3f46 !important; }
+  .hover\\:bg-gray-50:hover { background-color: #3f3f46 !important; }
+  .active\\:bg-gray-100:active { background-color: #52525b !important; }
+  .hover\\:bg-gray-200:hover { background-color: #52525b !important; }
+  /* Profile inputs in dark mode */
+  .bg-transparent { background-color: transparent !important; }
   * { transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
 `
 

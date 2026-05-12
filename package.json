@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:smoke": "node tests/smoke.js",
+    "test:smoke:prod": "node tests/smoke.js https://getdochat.com"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
@@ -32,6 +34,7 @@
     "react-dom": "19.2.4",
     "react-textarea-autosize": "^8.5.9",
     "resend": "^6.12.2",
+    "stripe": "^22.1.1",
     "tailwind-merge": "^3.5.0",
     "web-push": "^3.6.7",
     "xlsx": "^0.18.5",

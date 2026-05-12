@@ -4,6 +4,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { getAIRoom } from '@/lib/demo'
 import { parseFile } from '@/lib/file-parser'
 import { broadcastToRoom } from '@/lib/realtime-broadcast'
+import { encrypt, decrypt } from '@/lib/encryption'
+
+export const maxDuration = 60
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -11,6 +14,120 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+// ── Agent type detection ──────────────────────────────────────────────────────
+type AgentType = 'general' | 'finance' | 'agenda' | 'writing' | 'search'
+
+function detectAgentType(roomId: string): AgentType {
+  if (roomId.includes('ai-finance-')) return 'finance'
+  if (roomId.includes('ai-agenda-')) return 'agenda'
+  if (roomId.includes('ai-writing-')) return 'writing'
+  if (roomId.includes('ai-search-')) return 'search'
+  return 'general'
+}
+
+// ── Tool definitions ──────────────────────────────────────────────────────────
+const ALL_TOOLS: Anthropic.Tool[] = [
+  {
+    name: 'send_message',
+    description: 'Envía un mensaje de texto a un chat o grupo del usuario. Usa el room_id exacto del contexto.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        room_id: { type: 'string', description: 'ID del room destino (dm-xxx o group-xxx)' },
+        message: { type: 'string', description: 'Texto del mensaje a enviar' },
+      },
+      required: ['room_id', 'message'],
+    },
+  },
+  {
+    name: 'create_task',
+    description: 'Crea una tarea en los Pendientes del usuario.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        content: { type: 'string', description: 'Descripción de la tarea' },
+        due_date: { type: 'string', description: 'Fecha límite YYYY-MM-DD (opcional)' },
+      },
+      required: ['content'],
+    },
+  },
+  {
+    name: 'create_reminder',
+    description: 'Crea un recordatorio con fecha y hora exacta.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        content: { type: 'string', description: 'Descripción del recordatorio' },
+        remind_at: { type: 'string', description: 'Fecha y hora ISO 8601: YYYY-MM-DDTHH:MM' },
+      },
+      required: ['content', 'remind_at'],
+    },
+  },
+  {
+    name: 'save_project',
+    description: 'Guarda un documento, reporte, acta o resumen en la sección Proyectos.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        title: { type: 'string', description: 'Título del documento' },
+        content: { type: 'string', description: 'Contenido completo del documento en markdown' },
+      },
+      required: ['title', 'content'],
+    },
+  },
+  {
+    name: 'search_web',
+    description: 'Busca información actualizada en internet. SOLO para: noticias del día, precios, cotizaciones, clima, resultados deportivos. NO para preguntas generales.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: { type: 'string', description: 'Términos de búsqueda en español' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'create_calendar_event',
+    description: 'Genera un evento de Google Calendar listo para agregar con un clic.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        title: { type: 'string', description: 'Título del evento' },
+        start: { type: 'string', description: 'Inicio: YYYY-MM-DDTHH:MM' },
+        end: { type: 'string', description: 'Fin: YYYY-MM-DDTHH:MM' },
+        description: { type: 'string', description: 'Descripción o agenda del evento (opcional)' },
+      },
+      required: ['title', 'start', 'end'],
+    },
+  },
+  {
+    name: 'generate_excel',
+    description: 'Genera un archivo Excel descargable con datos tabulares. Úsalo para tablas, reportes, inventarios, listas.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        filename: { type: 'string', description: 'Nombre del archivo sin extensión' },
+        headers: { type: 'array', items: { type: 'string' }, description: 'Nombres de columnas' },
+        rows: { type: 'array', items: { type: 'array', items: { type: 'string' } }, description: 'Filas de datos' },
+      },
+      required: ['filename', 'headers', 'rows'],
+    },
+  },
+]
+
+const TOOLS_BY_AGENT: Record<AgentType, string[]> = {
+  general:  ['send_message','create_task','create_reminder','save_project','search_web','create_calendar_event','generate_excel'],
+  finance:  ['generate_excel','save_project','create_task','create_reminder'],
+  agenda:   ['create_task','create_reminder','create_calendar_event','send_message'],
+  writing:  ['save_project','send_message','create_task'],
+  search:   ['search_web','save_project'],
+}
+
+function getToolsForAgent(type: AgentType): Anthropic.Tool[] {
+  return ALL_TOOLS.filter(t => TOOLS_BY_AGENT[type].includes(t.name))
+}
+
+// ── Country / location ────────────────────────────────────────────────────────
 type CountryCtx = { name: string; currency: string }
 const COUNTRY_CTX: Record<string, CountryCtx> = {
   MX: { name: 'México', currency: 'Peso mexicano (MXN, $)' },
@@ -19,25 +136,11 @@ const COUNTRY_CTX: Record<string, CountryCtx> = {
   CL: { name: 'Chile', currency: 'Peso chileno (CLP, $)' },
   ES: { name: 'España', currency: 'Euro (EUR, €)' },
   PE: { name: 'Perú', currency: 'Sol peruano (PEN, S/.)' },
-  VE: { name: 'Venezuela', currency: 'Bolívar venezolano (VES, Bs.)' },
-  EC: { name: 'Ecuador', currency: 'Dólar estadounidense (USD, $)' },
-  BO: { name: 'Bolivia', currency: 'Boliviano (BOB, Bs.)' },
-  PY: { name: 'Paraguay', currency: 'Guaraní (PYG, ₲)' },
-  UY: { name: 'Uruguay', currency: 'Peso uruguayo (UYU, $)' },
   US: { name: 'Estados Unidos', currency: 'Dólar estadounidense (USD, $)' },
   GT: { name: 'Guatemala', currency: 'Quetzal (GTQ, Q)' },
   CR: { name: 'Costa Rica', currency: 'Colón costarricense (CRC, ₡)' },
   DO: { name: 'República Dominicana', currency: 'Peso dominicano (DOP, $)' },
-  PA: { name: 'Panamá', currency: 'Balboa (PAB, B/.)' },
-  HN: { name: 'Honduras', currency: 'Lempira (HNL, L)' },
-  SV: { name: 'El Salvador', currency: 'Dólar (USD, $)' },
-  NI: { name: 'Nicaragua', currency: 'Córdoba (NIO, C$)' },
-  CU: { name: 'Cuba', currency: 'Peso cubano (CUP, $)' },
   BR: { name: 'Brasil', currency: 'Real brasileño (BRL, R$)' },
-  CA: { name: 'Canadá', currency: 'Dólar canadiense (CAD, $)' },
-  GB: { name: 'Reino Unido', currency: 'Libra esterlina (GBP, £)' },
-  DE: { name: 'Alemania', currency: 'Euro (EUR, €)' },
-  FR: { name: 'Francia', currency: 'Euro (EUR, €)' },
 }
 
 function buildLocationContext(countryCode: string | null, city: string | null): string {
@@ -45,13 +148,10 @@ function buildLocationContext(countryCode: string | null, city: string | null): 
   const geo = COUNTRY_CTX[countryCode]
   const countryName = geo?.name ?? countryCode
   const currency = geo?.currency ?? 'la moneda local'
-  return [
-    `UBICACIÓN DEL USUARIO: ${countryName}${city ? `, ${city}` : ''}`,
-    `MONEDA LOCAL: ${currency} — úsala por defecto en precios, cotizaciones y conversiones, salvo que el usuario indique otra.`,
-    `IDIOMA: español formal y neutro. Sin jerga, sin coloquialismos, sin expresiones regionales. Directo, claro y respetuoso.`,
-  ].join('\n')
+  return `UBICACIÓN: ${countryName}${city ? `, ${city}` : ''} — Moneda: ${currency}. Habla en español formal y neutro.`
 }
 
+// ── Web search ────────────────────────────────────────────────────────────────
 async function tavilySearch(query: string): Promise<string | null> {
   const key = process.env.TAVILY_API_KEY
   if (!key) return null
@@ -59,13 +159,7 @@ async function tavilySearch(query: string): Promise<string | null> {
     const res = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: key,
-        query,
-        search_depth: 'basic',
-        max_results: 5,
-        include_answer: true,
-      }),
+      body: JSON.stringify({ api_key: key, query, search_depth: 'basic', max_results: 5, include_answer: true }),
     })
     const data = await res.json()
     if (!data.results?.length) return null
@@ -74,27 +168,35 @@ async function tavilySearch(query: string): Promise<string | null> {
       .map(r => `**${r.title}**\n${r.content.slice(0, 400)}\nFuente: ${r.url}`)
       .join('\n\n---\n\n')
     return answer + sources
-  } catch {
-    return null
-  }
+  } catch { return null }
 }
 
-type RawMessage = {
-  content: string
-  type: string
-  room_id: string
-  created_at: string
-  user: unknown
-}
+// ── Message loading ───────────────────────────────────────────────────────────
+type RawMessage = { content: string; type: string; room_id: string; created_at: string; user_id: string; user?: unknown }
+
+const _profileNameCache: Record<string, string> = {}
 
 async function getMessagesFromRoom(roomId: string, limit = 30): Promise<RawMessage[]> {
-  const { data } = await admin()
+  const db = admin()
+  const { data } = await db
     .from('demo_messages')
-    .select('content, type, room_id, created_at, user:demo_profiles(name)')
+    .select('content, type, room_id, created_at, user_id')
     .eq('room_id', roomId)
     .order('created_at', { ascending: false })
     .limit(limit)
-  return ((data || []) as RawMessage[]).reverse()
+  if (!data?.length) return []
+
+  const unknownIds = [...new Set(data.map((m: any) => m.user_id as string))].filter(id => !_profileNameCache[id])
+  if (unknownIds.length) {
+    const { data: profiles } = await db.from('demo_profiles').select('id, name').in('id', unknownIds)
+    for (const p of profiles ?? []) _profileNameCache[p.id] = p.name
+  }
+  const decrypted = await Promise.all(data.map(async (m: any) => ({
+    ...m,
+    content: (m.type === 'text' || m.type === 'ai') ? await decrypt(m.content) : m.content,
+    user: { name: _profileNameCache[m.user_id] ?? 'Usuario' },
+  })))
+  return decrypted.reverse() as RawMessage[]
 }
 
 function getSenderName(msg: RawMessage): string {
@@ -102,74 +204,249 @@ function getSenderName(msg: RawMessage): string {
   return (msg.user as { name: string } | null)?.name ?? 'Usuario'
 }
 
-function buildMessageContent(
-  textContext: string,
-  images: { url: string; sender: string }[]
-): Anthropic.Messages.MessageParam['content'] {
-  if (images.length === 0) return textContext
-
-  const parts: Anthropic.Messages.ContentBlockParam[] = [
-    { type: 'text', text: textContext }
-  ]
-
-  for (const img of images.slice(0, 5)) {
-    parts.push({ type: 'text', text: `\nImagen compartida por ${img.sender}:` })
-    parts.push({ type: 'image', source: { type: 'url', url: img.url } })
-  }
-
-  return parts
+// ── Tool executor ─────────────────────────────────────────────────────────────
+type ToolContext = {
+  userId: string
+  replyRoomId: string
+  supabase: ReturnType<typeof admin>
+  roomDirectory: { name: string; emoji: string; roomId: string }[]
+  gcalLinks: string[]
+  excelMessages: string[]
+  sentRooms: Set<string>
 }
 
-const DAILY_AI_LIMIT = 40 // free queries per user per day
+async function executeTool(name: string, input: Record<string, unknown>, ctx: ToolContext): Promise<string> {
+  const db = ctx.supabase
 
+  if (name === 'send_message') {
+    const { room_id, message } = input as { room_id: string; message: string }
+    const roomName = ctx.roomDirectory.find(r => r.roomId === room_id)?.name ?? room_id
+    await db.from('demo_messages').insert({ user_id: ctx.userId, content: await encrypt(message), type: 'text', room_id })
+    ctx.sentRooms.add(room_id)
+    return `Mensaje enviado a ${roomName}.`
+  }
+
+  if (name === 'create_task') {
+    const { content, due_date } = input as { content: string; due_date?: string }
+    await db.from('demo_tasks').insert({ user_id: ctx.userId, content, due_date: due_date ?? null, source_room: ctx.replyRoomId })
+    return `Tarea creada: "${content}"${due_date ? ` — vence ${due_date}` : ''}.`
+  }
+
+  if (name === 'create_reminder') {
+    const { content, remind_at } = input as { content: string; remind_at: string }
+    await db.from('demo_reminders').insert({ user_id: ctx.userId, content, remind_at })
+    return `Recordatorio guardado: "${content}" para ${remind_at}.`
+  }
+
+  if (name === 'save_project') {
+    const { title, content } = input as { title: string; content: string }
+    await db.from('demo_projects').insert({ user_id: ctx.userId, title, content })
+    return `Documento "${title}" guardado en Proyectos.`
+  }
+
+  if (name === 'search_web') {
+    const { query } = input as { query: string }
+    const results = await tavilySearch(query)
+    return results ?? 'Sin resultados de búsqueda disponibles.'
+  }
+
+  if (name === 'create_calendar_event') {
+    const { title, start, end, description = '' } = input as { title: string; start: string; end: string; description?: string }
+    const fmt = (s: string) => s.replace(/[-:]/g, '').padEnd(15, '0')
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent(description)}`
+    const startDt = new Date(start)
+    const dateStr = startDt.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+    const timeStr = startDt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+    ctx.gcalLinks.push(`[GCAL:${title}|${dateStr} · ${timeStr}|${gcalUrl}]`)
+    return `Evento "${title}" creado para ${dateStr} a las ${timeStr}.`
+  }
+
+  if (name === 'generate_excel') {
+    const { filename, headers, rows } = input as { filename: string; headers: string[]; rows: string[][] }
+    try {
+      const XLSX = await import('xlsx')
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      ws['!cols'] = headers.map(() => ({ wch: 20 }))
+      const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1')
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const ref = XLSX.utils.encode_cell({ r: 0, c })
+        if (ws[ref]) ws[ref].s = { font: { bold: true } }
+      }
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos')
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const fname = `${filename.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '').trim()}.xlsx`
+      const storagePath = `excel/${Date.now()}-${fname}`
+      const { error } = await db.storage.from('demo-files').upload(storagePath, buffer, {
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        upsert: true,
+      })
+      if (!error) {
+        const { data: { publicUrl } } = db.storage.from('demo-files').getPublicUrl(storagePath)
+        const meta = JSON.stringify({ url: publicUrl, name: fname, size: buffer.length })
+        await db.from('demo_messages').insert({ user_id: ctx.userId, content: meta, type: 'file', room_id: ctx.replyRoomId })
+        return `Excel "${fname}" generado con ${rows.length} filas — disponible en el chat y en Documentos.`
+      }
+    } catch { /* fall through */ }
+    return 'No se pudo generar el Excel. Intenta de nuevo.'
+  }
+
+  return 'Herramienta no encontrada.'
+}
+
+// ── System prompts per agent ──────────────────────────────────────────────────
+function buildSystemPrompt(
+  agentType: AgentType,
+  today: string,
+  locationContext: string,
+  activeRoom: string | null,
+  hasFiles: boolean,
+  directoryBlock: string,
+): string {
+  const base = `Today's date: ${today}.${locationContext ? `\n${locationContext}` : ''}
+${directoryBlock}
+${activeRoom ? `The user is messaging from chat room_id: ${activeRoom}. "This chat" and "here" refer to that chat.` : ''}
+${hasFiles ? 'The user attached files — their content is available for analysis.' : ''}
+
+CRITICAL RULES:
+— Never invent messages that are not in the context.
+— Respond in the same language the user writes in. If they write in Spanish, reply in Spanish. If in English, reply in English.
+— Be direct and clear, no long introductions.
+— When using tools, execute them without asking for confirmation — the user already requested it.
+— You can use multiple tools in parallel if they are independent.`
+
+  const prompts: Record<AgentType, string> = {
+    general: `You are "DO AI", the artificial intelligence assistant of DO Chat. You have full access to all the user's chats and can execute real actions: send messages, create tasks, reminders, documents, calendar events and Excel files.
+
+Mental process for each request:
+1. IDENTIFY exactly what is being asked
+2. LOCATE the relevant context in the chats
+3. ACT by executing the necessary tools
+4. RESPOND with what you did and any useful insights
+
+${base}`,
+
+    finance: `You are "DO Finance", the financial agent of DO Chat. Your specialty: invoice analysis, expenses, budgets, cash flow and financial reports. You are precise with numbers, always verify calculations and generate clear Excel reports.
+
+When analyzing financial documents:
+- Verify subtotals, taxes and totals
+- Detect inconsistencies or errors
+- Suggest improvements or payment alerts
+- Generate Excel reports when useful
+
+${base}`,
+
+    agenda: `You are "DO Agenda", the organization agent of DO Chat. Your specialty: meetings, calendars, reminders and team coordination. You turn conversations into concrete commitments and never let anything slip through.
+
+When reading chats:
+- Detect dates, times and commitments mentioned
+- Create calendar events and reminders automatically
+- Alert on scheduling conflicts
+- Coordinate availability among contacts
+
+${base}`,
+
+    writing: `You are "DO Writing", the writing agent of DO Chat. Your specialty: drafting professional emails, proposals, minutes, contracts and any business document. You write with clarity, conciseness and the right tone for each context.
+
+When drafting:
+- Adapt the tone to the recipient (formal/informal)
+- Structure documents clearly
+- Save everything in Projects for easy access
+- You can send the document directly to the recipient's chat
+
+${base}`,
+
+    search: `You are "DO Search", the research agent of DO Chat. Your specialty: finding up-to-date information on the internet and synthesizing it into clear, useful answers. Always cite sources.
+
+When to search:
+- Current news and events
+- Real-time prices and quotes
+- Product or service information
+- Data that changes frequently
+
+Save important results in Projects if the user will need them later.
+
+${base}`,
+  }
+
+  return prompts[agentType]
+}
+
+// ── Plan config ──────────────────────────────────────────────────────────────
+const PLAN_CONFIG: Record<string, { model: string; limit: number }> = {
+  free:     { model: 'claude-haiku-4-5-20251001', limit: 15 },
+  pro:      { model: 'claude-sonnet-4-6',         limit: 80 },
+  business: { model: 'claude-sonnet-4-6',         limit: 200 },
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const { user_id, query, room_id: replyRoomId } = await req.json()
   const supabase = admin()
-  const aiRoomId = `ai-${user_id}`
+  const agentType = detectAgentType(replyRoomId ?? '')
+  const aiRoomId = replyRoomId ?? getAIRoom(user_id)
 
-  // ── Location context (auto-detected from IP via Vercel headers) ──────────────
+  // Plan
+  const { data: profileData } = await supabase.from('demo_profiles').select('plan').eq('id', user_id).single()
+  const plan = (profileData?.plan ?? 'free') as string
+  const planConfig = PLAN_CONFIG[plan] ?? PLAN_CONFIG.free
+
+  // Location
   const geoCountry = req.headers.get('x-vercel-ip-country') ?? null
   const geoCity = req.headers.get('x-vercel-ip-city') ? decodeURIComponent(req.headers.get('x-vercel-ip-city')!) : null
   const locationContext = buildLocationContext(geoCountry, geoCity)
 
-  // ── Rate limiting ────────────────────────────────────────────────────────────
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const { count } = await supabase
-    .from('demo_messages')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', user_id)
-    .eq('type', 'ai')
-    .gte('created_at', todayStart.toISOString())
-
-  if ((count ?? 0) >= DAILY_AI_LIMIT) {
-    const limitMsg = `Alcanzaste el límite de ${DAILY_AI_LIMIT} consultas diarias. El límite se reinicia a medianoche. 🌙`
-    await supabase.from('demo_messages').insert({ user_id, content: limitMsg, type: 'ai', room_id: replyRoomId || aiRoomId })
-    return NextResponse.json({ reply: limitMsg, actions: [] })
+  // Rate limit
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  const { count } = await supabase.from('demo_messages').select('id', { count: 'exact', head: true })
+    .eq('user_id', user_id).eq('type', 'ai').gte('created_at', todayStart.toISOString())
+  if ((count ?? 0) >= planConfig.limit) {
+    const upgradeTip = plan === 'free' ? ' Upgrade to Pro for 80 queries/day. 👉 getdochat.com/pricing' : ''
+    const msg = `You've reached your ${planConfig.limit} daily query limit on the ${plan} plan.${upgradeTip} Limit resets at midnight. 🌙`
+    await supabase.from('demo_messages').insert({ user_id, content: msg, type: 'ai', room_id: aiRoomId })
+    return NextResponse.json({ reply: msg, actions: [] })
   }
 
-  // ── Determine which rooms to include in context ──────────────────────────────
-  const queryWantsAllChats = /chat|convers|mensaje|resumi|todos|todas|cuánt|cuant|cuánto|cuanto|conta|lee|leer|leé|dime|hay|busca|buscar|encuentr|encontr/i.test(query)
-  // If asked from inside a specific chat (replyRoomId is not the AI room), always load it
-  const activeRoom = replyRoomId && replyRoomId !== aiRoomId ? replyRoomId : null
+  // ── Load conversation history from this AI room ───────────────────────────
+  const aiMsgs = await getMessagesFromRoom(aiRoomId, 21)
+  const aiHistoryMsgs = aiMsgs.slice(0, -1)
 
-  const allImages: { url: string; sender: string; room: string }[] = []
-  const allFiles: { name: string; url: string; sender: string; room: string }[] = []
-  const allChatsContext: string[] = []
-
-  // Always load AI room files (last 10 messages)
   const aiRoomFiles: { name: string; url: string }[] = []
-  const aiMsgs = await getMessagesFromRoom(aiRoomId, 10)
-  for (const m of aiMsgs) {
+  for (const m of aiHistoryMsgs) {
     if (m.type === 'file') {
       try { aiRoomFiles.push(JSON.parse(m.content)) } catch { /* skip */ }
-    } else if (m.type === 'image') {
-      allImages.push({ url: m.content, sender: 'tú', room: 'do AI' })
     }
   }
 
-  // Helper to format room messages into context lines
+  // Build conversation turns for multi-turn memory
+  const rawTurns: Anthropic.MessageParam[] = []
+  for (const m of aiHistoryMsgs) {
+    if (m.type === 'text') {
+      rawTurns.push({ role: 'user', content: m.content.slice(0, 800) })
+    } else if (m.type === 'ai') {
+      const cleaned = m.content.replace(/\[GCAL:[^\]]+\]/g, '').trim()
+      rawTurns.push({ role: 'assistant', content: cleaned.slice(0, 1500) || '…' })
+    }
+  }
+  const conversationHistory: Anthropic.MessageParam[] = []
+  for (const msg of rawTurns) {
+    if (conversationHistory.length === 0) { if (msg.role === 'user') conversationHistory.push(msg) }
+    else if (conversationHistory[conversationHistory.length - 1].role !== msg.role) conversationHistory.push(msg)
+  }
+  while (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role !== 'assistant') {
+    conversationHistory.pop()
+  }
+
+  // ── Load chat context (other rooms) ──────────────────────────────────────
+  const allImages: { url: string; sender: string; room: string }[] = []
+  const allFiles: { name: string; url: string; sender: string; room: string }[] = []
+  const allChatsContext: string[] = []
+  const roomDirectory: { name: string; emoji: string; roomId: string }[] = []
+
+  const activeRoom = replyRoomId && replyRoomId !== aiRoomId ? replyRoomId : null
+
   async function loadRoomContext(roomId: string, roomName: string, roomEmoji: string, limit: number) {
+    roomDirectory.push({ name: roomName, emoji: roomEmoji, roomId })
     const msgs = await getMessagesFromRoom(roomId, limit)
     if (!msgs.length) return
     const lines: string[] = []
@@ -191,308 +468,150 @@ export async function POST(req: NextRequest) {
     if (lines.length) allChatsContext.push(`--- ${roomEmoji} ${roomName} (room_id: ${roomId}) ---\n${lines.join('\n')}`)
   }
 
-  // Always load the active chat room with generous limit
   if (activeRoom) {
     const { data: roomData } = await supabase.from('demo_rooms').select('name, emoji').eq('id', activeRoom).single()
     await loadRoomContext(activeRoom, roomData?.name ?? activeRoom, roomData?.emoji ?? '💬', 100)
   }
 
-  if (queryWantsAllChats) {
-    // Load all other rooms — capped at 30 messages each, max 8 rooms
-    const { data: roomMembers } = await supabase
-      .from('demo_room_members')
-      .select('room_id, demo_rooms(id, name, type, emoji)')
-      .eq('user_id', user_id)
+  // Load all rooms for general + finance agents; others only load what's needed
+  const loadAllRooms = agentType === 'general' || agentType === 'finance' || !activeRoom
+  if (loadAllRooms) {
+    const { data: roomMembers } = await supabase.from('demo_room_members')
+      .select('room_id, demo_rooms(id, name, type, emoji)').eq('user_id', user_id)
     const rooms = ((roomMembers ?? []).map((m: any) => {
       const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms
       return r && r.type !== 'ai' ? { id: r.id, name: r.name ?? r.id, type: r.type, emoji: r.emoji ?? '💬' } : null
     }).filter(Boolean)) as { id: string; name: string; type: string; emoji: string }[]
 
+    const dmRooms = rooms.filter(r => r.type === 'dm')
+    if (dmRooms.length > 0) {
+      const { data: otherMembers } = await supabase.from('demo_room_members')
+        .select('room_id, user_id, demo_profiles!demo_room_members_user_id_fkey(name, phone)')
+        .in('room_id', dmRooms.map(r => r.id)).neq('user_id', user_id)
+      const otherUserIds = (otherMembers ?? []).map((m: any) => m.user_id).filter(Boolean)
+      const { data: savedContacts } = otherUserIds.length
+        ? await supabase.from('demo_contacts').select('contact_id, first_name, last_name').eq('user_id', user_id).in('contact_id', otherUserIds)
+        : { data: [] }
+      const savedNameMap: Record<string, string> = {}
+      for (const c of savedContacts ?? []) {
+        const n = [c.first_name, c.last_name].filter(Boolean).join(' ')
+        if (n) savedNameMap[c.contact_id] = n
+      }
+      for (const room of rooms) {
+        if (room.type !== 'dm') continue
+        const other = (otherMembers ?? []).find((m: any) => m.room_id === room.id)
+        if (other) {
+          const p = Array.isArray(other.demo_profiles) ? other.demo_profiles[0] : other.demo_profiles
+          room.name = savedNameMap[other.user_id] || p?.phone || p?.name || room.id
+        }
+      }
+    }
+
     for (const room of rooms.slice(0, 8)) {
-      if (room.id === activeRoom) continue // already loaded
+      if (room.id === activeRoom) continue
       await loadRoomContext(room.id, room.name, room.emoji, 30)
     }
   }
 
-  // ── Parse files ──────────────────────────────────────────────────────────────
+  // Parse AI room files
   const parsedFilesContext: string[] = []
   for (const f of aiRoomFiles.slice(0, 2)) {
     const content = await parseFile(f.url, f.name)
-    if (content) parsedFilesContext.push(`\n--- Archivo: "${f.name}" ---\n${content}`)
+    if (content) parsedFilesContext.push(`\n--- Archivo adjunto: "${f.name}" ---\n${content}`)
   }
-
-  const queryMentionsFiles = /archivo|excel|word|pdf|csv|documento|tabla|dato/i.test(query)
-  if (queryMentionsFiles && allFiles.length > 0) {
-    for (const f of allFiles.slice(0, 2)) {
+  const shouldParseOtherFiles = /archivo|excel|word|pdf|csv|documento|tabla|dato|factura|recibo|cuenta|invoice|contrato|reporte|presupuesto|verifica|revisa|analiza/i.test(query)
+  if (shouldParseOtherFiles && allFiles.length > 0) {
+    for (const f of allFiles.slice(0, 3)) {
       const content = await parseFile(f.url, f.name)
       if (content) parsedFilesContext.push(`\n--- "${f.name}" (${f.room}) ---\n${content}`)
     }
   }
 
-  const contextBlock = allChatsContext.length > 0
-    ? `CONTEXTO DE CHATS:\n${allChatsContext.join('\n\n')}${parsedFilesContext.length ? `\n\nARCHIVOS:${parsedFilesContext.join('\n')}` : ''}`
-    : parsedFilesContext.length > 0
-      ? `ARCHIVOS ANALIZADOS:${parsedFilesContext.join('\n')}`
-      : '(Sin contexto de chats)'
+  const directoryBlock = roomDirectory.length > 0
+    ? `CHATS DISPONIBLES:\n${roomDirectory.map(r => `  ${r.emoji} ${r.name} → room_id: ${r.roomId}`).join('\n')}`
+    : ''
 
-  // ── Smart model routing ──────────────────────────────────────────────────────
-  const needsSonnet =
-    aiRoomFiles.length > 0 ||
-    allImages.length > 0 ||
-    parsedFilesContext.length > 0 ||
-    /analiz|resum|reporte|extrae|genera|excel|tabla|proyecto/i.test(query)
-  const model = needsSonnet ? 'claude-sonnet-4-6' : 'claude-haiku-4-5-20251001'
+  const contextBlock = [
+    allChatsContext.length > 0 ? `MENSAJES RECIENTES:\n${allChatsContext.join('\n\n')}` : '',
+    parsedFilesContext.length > 0 ? `ARCHIVOS:\n${parsedFilesContext.join('\n')}` : '',
+  ].filter(Boolean).join('\n\n') || '(Sin contexto de chats disponible)'
 
-  const hasDirectFiles = aiRoomFiles.length > 0
-  const systemPrompt = `Eres do, una IA accionable integrada en una app de mensajería.
-Tienes visión — puedes ver y analizar imágenes compartidas en los chats.
-Puedes leer mensajes, contar palabras o frases, resumir conversaciones, extraer tareas, crear proyectos y enviar mensajes.
-${activeRoom ? `El usuario te está consultando desde un chat específico (room_id: ${activeRoom}) — sus últimos 100 mensajes están disponibles en el contexto. Cuando diga "este chat" o "aquí", se refiere a ese chat.` : ''}
-${hasDirectFiles ? 'El usuario adjuntó archivos directamente — su contenido está disponible.' : ''}
-Cuando cuentes palabras, frases o mensajes: hazlo de forma exacta. Si no hay suficiente contexto, dilo claramente.
+  const today = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const systemPrompt = buildSystemPrompt(agentType, today, locationContext, activeRoom, aiRoomFiles.length > 0, directoryBlock)
 
-${locationContext ? `═══════════════════════════════\n${locationContext}\n═══════════════════════════════\n\nIMPORTANTE: Aplica siempre el tono, vocabulario y moneda indicados arriba. No uses vocabulario de otro país. Si el usuario no especifica moneda, usa la local.` : ''}
+  // ── Agentic loop with Tool Use ────────────────────────────────────────────
+  const tools = getToolsForAgent(agentType)
+  const ctx: ToolContext = {
+    userId: user_id,
+    replyRoomId: aiRoomId,
+    supabase,
+    roomDirectory,
+    gcalLinks: [],
+    excelMessages: [],
+    sentRooms: new Set([aiRoomId]),
+  }
 
-ACCIONES DISPONIBLES — incluirlas al final de tu respuesta:
+  const userMessageContent = contextBlock
+    ? `${contextBlock}\n\n---\nSOLICITUD: ${query}`
+    : query
 
-1. Enviar mensaje a un chat:
-[ACCION:ENVIAR:room_id:mensaje]
-room_ids: group, dm-001-002, dm-001-003, dm-001-004, dm-002-003, dm-002-004, dm-003-004
+  const messages: Anthropic.MessageParam[] = [
+    ...conversationHistory,
+    { role: 'user', content: userMessageContent },
+  ]
 
-2. Guardar una tarea en "Mis pendientes" del usuario:
-[ACCION:TAREA:contenido de la tarea|YYYY-MM-DD]
-La fecha (YYYY-MM-DD) es opcional. Incluyela si el usuario menciona una fecha límite o deadline. Podés incluir múltiples acciones TAREA.
+  let finalReply = ''
 
-3. Crear un proyecto/reporte en "Proyectos":
-[ACCION:PROYECTO:título|contenido completo del reporte]
-Usá esto cuando el usuario pide generar un reporte, resumen ejecutivo, acta o proyecto.
-
-4. Crear un recordatorio para el usuario:
-[ACCION:RECORDATORIO:descripción del recordatorio|YYYY-MM-DD HH:MM]
-Usá esto cuando el usuario pide que le recuerdes algo o menciona una fecha/hora. La fecha y hora son obligatorias.
-Ejemplo: [ACCION:RECORDATORIO:Llamar a Pedro|2026-05-02 10:00]
-
-5. Generar un archivo Excel descargable:
-[ACCION:EXCEL:nombre del archivo|Columna1;Columna2;Columna3|valor1;valor2;valor3|valor1;valor2;valor3]
-- La primera fila después del nombre es el encabezado (separado por ;)
-- Cada fila siguiente es una fila de datos (separada por ;)
-- Usá esto cuando el usuario pide un Excel, tabla, planilla o compilación de datos
-- Podés incluir tantas filas como necesites
-- Ejemplo: [ACCION:EXCEL:Facturas abril|Proveedor;Monto;Fecha;Estado|Pedro García;$5.000;15/04;Pendiente|María López;$3.200;20/04;Pagado]
-
-6. Buscar información actual en internet:
-[ACCION:BUSCAR:tu query de búsqueda]
-Usá esto SOLO cuando el usuario necesita información actual que no tenés: noticias de hoy, precios, cotizaciones, clima, eventos recientes, datos de mercado, resultados deportivos. NO lo uses para preguntas generales que podés responder con tu conocimiento. Solo una búsqueda por respuesta.
-
-7. Crear un evento en Google Calendar:
-[ACCION:CALENDARIO:título del evento|YYYY-MM-DDTHH:MM|YYYY-MM-DDTHH:MM|descripción opcional]
-- El primer campo es el título
-- El segundo es la fecha y hora de inicio (ISO 8601)
-- El tercero es la fecha y hora de fin (ISO 8601)
-- El cuarto es la descripción (puede estar vacío)
-- Usá esto cuando el usuario pide agendar algo, crear una reunión, o programar un evento
-- Ejemplo: [ACCION:CALENDARIO:Reunión con el equipo|2026-05-05T10:00|2026-05-05T11:00|Revisar avances del proyecto]
-
-Responde en español. Sé directo y útil. Siempre confirmá qué acciones tomaste.`
-
-  const queryMentionsImages = /imagen|foto|adjunto|compartió|mandó/i.test(query)
-  const imagesToInclude = (queryMentionsImages || allImages.length > 0) ? allImages : []
-
-  const userContent = buildMessageContent(
-    `${contextBlock}\n\n---\nSOLICITUD: ${query}`,
-    imagesToInclude
-  )
-
-  const response = await anthropic.messages.create({
-    model,
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userContent }]
-  })
-
-  if (!response.content?.length) return NextResponse.json({ error: 'Empty AI response' }, { status: 500 })
-  let reply = response.content[0].type === 'text' ? response.content[0].text : ''
-
-  // Process BUSCAR action — web search via Tavily (2-pass)
-  const buscarMatch = reply.match(/\[ACCION:BUSCAR:([^\]]+)\]/)
-  if (buscarMatch) {
-    const searchQuery = buscarMatch[1].trim()
-    reply = reply.replace(/\[ACCION:BUSCAR:[^\]]+\]/g, '').trim()
-    const searchResults = await tavilySearch(searchQuery)
-    if (searchResults) {
-      const response2 = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6', // always Sonnet for web search (needs quality)
-        max_tokens: 1024,
+  try {
+    for (let iteration = 0; iteration < 5; iteration++) {
+      const response = await anthropic.messages.create({
+        model: planConfig.model,
+        max_tokens: 4096,
         system: systemPrompt,
-        messages: [
-          { role: 'user', content: userContent },
-          { role: 'assistant', content: reply || 'Buscando información actualizada…' },
-          { role: 'user', content: `RESULTADOS DE BÚSQUEDA WEB para "${searchQuery}":\n\n${searchResults}\n\nAhora respondé la pregunta original usando estos resultados. Citá las fuentes al final con sus URLs.` },
-        ],
+        tools,
+        messages,
       })
-      reply = response2.content?.[0]?.type === 'text' ? (response2.content[0] as { type: 'text'; text: string }).text : reply
-    } else {
-      reply = reply || 'No pude obtener resultados de búsqueda. Intentá de nuevo más tarde.'
-    }
-  }
 
-  // Process ENVIAR actions
-  const sendRegex = /\[ACCION:ENVIAR:([^:]+):([^\]]+)\]/g
-  const sendActions: { roomId: string; message: string }[] = []
-  let match
-  while ((match = sendRegex.exec(reply)) !== null) {
-    sendActions.push({ roomId: match[1].trim(), message: match[2].trim() })
-  }
-  reply = reply.replace(/\[ACCION:ENVIAR:[^\]]+\]/g, '').trim()
+      // Collect text from this turn
+      const textBlocks = response.content.filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      if (textBlocks.length) finalReply += (finalReply ? '\n' : '') + textBlocks.map(b => b.text).join('\n')
 
-  const roomNames: Record<string, string> = {
-    'group': 'el grupo general',
-    'dm-001-002': 'el chat de Abel y Santi',
-    'dm-001-003': 'el chat de Abel y Hernan',
-    'dm-001-004': 'el chat de Abel y Walter',
-    'dm-002-003': 'el chat de Santi y Hernan',
-    'dm-002-004': 'el chat de Santi y Walter',
-    'dm-003-004': 'el chat de Hernan y Walter',
-  }
-  for (const action of sendActions) {
-    await supabase.from('demo_messages').insert({
-      user_id, content: action.message, type: 'text', room_id: action.roomId,
-    })
-    reply += `\n\n✅ Mensaje enviado a ${roomNames[action.roomId] ?? action.roomId}.`
-  }
+      // If no tool calls or done → break
+      const toolUseBlocks = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
+      if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) break
 
-  // Process TAREA actions
-  const taskRegex = /\[ACCION:TAREA:([^\]]+)\]/g
-  const tasks: { content: string; due_date: string | null }[] = []
-  while ((match = taskRegex.exec(reply)) !== null) {
-    const parts = match[1].split('|')
-    const content = parts[0].trim()
-    const due_date = parts[1]?.trim().match(/^\d{4}-\d{2}-\d{2}$/) ? parts[1].trim() : null
-    tasks.push({ content, due_date })
-  }
-  reply = reply.replace(/\[ACCION:TAREA:[^\]]+\]/g, '').trim()
-
-  for (const task of tasks) {
-    await supabase.from('demo_tasks').insert({
-      user_id, content: task.content, due_date: task.due_date, source_room: replyRoomId || getAIRoom(user_id),
-    })
-  }
-  if (tasks.length > 0) {
-    reply += `\n\n📋 ${tasks.length} tarea${tasks.length > 1 ? 's' : ''} guardada${tasks.length > 1 ? 's' : ''} en Mis pendientes.`
-  }
-
-  // Process RECORDATORIO actions
-  const reminderRegex = /\[ACCION:RECORDATORIO:([^|]+)\|([^\]]+)\]/g
-  const reminders: { content: string; remind_at: string }[] = []
-  while ((match = reminderRegex.exec(reply)) !== null) {
-    const content = match[1].trim()
-    const remind_at = match[2].trim()
-    reminders.push({ content, remind_at })
-  }
-  reply = reply.replace(/\[ACCION:RECORDATORIO:[^\]]+\]/g, '').trim()
-
-  for (const r of reminders) {
-    await supabase.from('demo_reminders').insert({ user_id, content: r.content, remind_at: r.remind_at })
-  }
-  if (reminders.length > 0) {
-    reply += `\n\n🔔 ${reminders.length} recordatorio${reminders.length > 1 ? 's' : ''} guardado${reminders.length > 1 ? 's' : ''}.`
-  }
-
-  // Process PROYECTO actions
-  const projectRegex = /\[ACCION:PROYECTO:([^|]+)\|([^\]]+)\]/g
-  const projects: { title: string; content: string }[] = []
-  while ((match = projectRegex.exec(reply)) !== null) {
-    projects.push({ title: match[1].trim(), content: match[2].trim() })
-  }
-  reply = reply.replace(/\[ACCION:PROYECTO:[^\]]+\]/g, '').trim()
-
-  for (const proj of projects) {
-    await supabase.from('demo_projects').insert({
-      user_id, title: proj.title, content: proj.content,
-    })
-  }
-  if (projects.length > 0) {
-    reply += `\n\n📁 Proyecto "${projects[0].title}" guardado en Proyectos.`
-  }
-
-  // Process EXCEL actions
-  const excelRegex = /\[ACCION:EXCEL:([^|]+)\|([^\]]+)\]/g
-  const excelActions: { name: string; headers: string[]; rows: string[][] }[] = []
-  while ((match = excelRegex.exec(reply)) !== null) {
-    const name = match[1].trim()
-    const lines = match[2].split('|').map(l => l.trim()).filter(Boolean)
-    if (lines.length >= 1) {
-      const headers = lines[0].split(';').map(h => h.trim())
-      const rows = lines.slice(1).map(l => l.split(';').map(v => v.trim()))
-      excelActions.push({ name, headers, rows })
-    }
-  }
-  reply = reply.replace(/\[ACCION:EXCEL:[^\]]+\]/g, '').trim()
-
-  for (const excel of excelActions) {
-    try {
-      const XLSX = await import('xlsx')
-      const ws = XLSX.utils.aoa_to_sheet([excel.headers, ...excel.rows])
-      // Style header row bold
-      const range = XLSX.utils.decode_range(ws['!ref'] ?? 'A1')
-      for (let c = range.s.c; c <= range.e.c; c++) {
-        const cellRef = XLSX.utils.encode_cell({ r: 0, c })
-        if (ws[cellRef]) ws[cellRef].s = { font: { bold: true } }
-      }
-      ws['!cols'] = excel.headers.map(() => ({ wch: 20 }))
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Datos')
-      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
-
-      const fileName = `${excel.name.replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s]/g, '').trim()}.xlsx`
-      const storagePath = `excel/${Date.now()}-${fileName}`
-      const { error } = await supabase.storage
-        .from('demo-files')
-        .upload(storagePath, buffer, { contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', upsert: true })
-
-      if (!error) {
-        const { data: { publicUrl } } = supabase.storage.from('demo-files').getPublicUrl(storagePath)
-        const fileMeta = JSON.stringify({ url: publicUrl, name: fileName, size: buffer.length })
-        await supabase.from('demo_messages').insert({
-          user_id, content: fileMeta, type: 'file', room_id: replyRoomId || getAIRoom(user_id),
+      // Execute all tool calls in parallel
+      const toolResults = await Promise.all(
+        toolUseBlocks.map(async (block) => {
+          const result = await executeTool(block.name, block.input as Record<string, unknown>, ctx)
+          return { type: 'tool_result' as const, tool_use_id: block.id, content: result }
         })
-        reply += `\n\n📊 Excel "${fileName}" generado con ${excel.rows.length} filas — disponible arriba y en Documentos.`
-      }
-    } catch (e) {
-      reply += `\n\n⚠️ No pude generar el Excel. Intentá de nuevo.`
+      )
+
+      // Add assistant turn + tool results for next iteration
+      messages.push({ role: 'assistant', content: response.content })
+      messages.push({ role: 'user', content: toolResults })
     }
+  } catch (err: any) {
+    console.error('AI agent error:', err?.message ?? err)
+    return NextResponse.json({ error: 'AI error: ' + (err?.message ?? 'unknown') }, { status: 500 })
   }
 
-  // Process CALENDARIO actions — generate Google Calendar links
-  const calendarRegex = /\[ACCION:CALENDARIO:([^|]+)\|([^|]+)\|([^|]+)\|([^\]]*)\]/g
-  const calendarEvents: { title: string; start: string; end: string; description: string }[] = []
-  while ((match = calendarRegex.exec(reply)) !== null) {
-    calendarEvents.push({ title: match[1].trim(), start: match[2].trim(), end: match[3].trim(), description: match[4].trim() })
-  }
-  reply = reply.replace(/\[ACCION:CALENDARIO:[^\]]+\]/g, '').trim()
-
-  for (const event of calendarEvents) {
-    const fmt = (s: string) => s.replace(/[-:]/g, '').padEnd(15, '0')
-    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${fmt(event.start)}/${fmt(event.end)}&details=${encodeURIComponent(event.description)}`
-    const startDt = new Date(event.start)
-    const dateStr = startDt.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
-    const timeStr = startDt.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-    reply += `\n\n[GCAL:${event.title}|${dateStr} · ${timeStr}|${gcalUrl}]`
+  // Append calendar links at end of reply
+  if (ctx.gcalLinks.length > 0) {
+    finalReply += '\n\n' + ctx.gcalLinks.join('\n')
   }
 
-  const actions = sendActions
-
-  const targetRoom = replyRoomId || getAIRoom(user_id)
+  // Save AI response to DB (encrypted)
   await supabase.from('demo_messages').insert({
     user_id,
-    content: reply,
+    content: await encrypt(finalReply),
     type: 'ai',
-    room_id: targetRoom,
+    room_id: aiRoomId,
   })
 
-  // Also broadcast to rooms where AI sent messages via actions
-  const broadcastRooms = new Set([targetRoom, ...sendActions.map(a => a.roomId)])
-  await Promise.all([...broadcastRooms].map(r => broadcastToRoom(r)))
+  // Broadcast to all rooms that got messages
+  await Promise.all([...ctx.sentRooms].map(r => broadcastToRoom(r)))
 
-  return NextResponse.json({ reply, actions })
+  return NextResponse.json({ reply: finalReply, actions: [] })
 }

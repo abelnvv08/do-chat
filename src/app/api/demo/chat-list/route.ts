@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { type Room } from '@/lib/demo'
+import { decrypt } from '@/lib/encryption'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
   const profileMap: Record<string, string> = {}
   for (const p of profiles ?? []) profileMap[p.id] = p.name
 
-  const result = rooms.map(room => {
+  const result = await Promise.all(rooms.map(async room => {
     const msgs = (allMessages ?? []).filter(m => m.room_id === room.id)
     const lastMsg = msgs[0] ?? null
     const lastReadAt = readsMap[room.id]
@@ -118,13 +119,16 @@ export async function GET(req: NextRequest) {
       const isOwn = lastMsg.user_id === user_id
       const senderName = isOwn ? 'Tú' : (profileMap[lastMsg.user_id] ?? 'Usuario')
       if (lastMsg.type === 'image') lastMsgPreview = `${senderName}: Imagen`
+      else if (lastMsg.type === 'audio') lastMsgPreview = `${senderName}: Audio`
       else if (lastMsg.type === 'file') {
-        try { lastMsgPreview = `${senderName}: ${JSON.parse(lastMsg.content).name}` }
+        try { lastMsgPreview = `${senderName}: ${JSON.parse(await decrypt(lastMsg.content)).name}` }
         catch { lastMsgPreview = `${senderName}: Archivo` }
-      } else if (lastMsg.type === 'ai') lastMsgPreview = `do AI: ${lastMsg.content}`
-      else {
-        const isEnc = (() => { try { const p = JSON.parse(lastMsg.content); return p?.v === 1 && !!p?.iv && !!p?.ct } catch { return false } })()
-        lastMsgPreview = isEnc ? `${senderName}: Mensaje` : `${senderName}: ${lastMsg.content}`
+      } else if (lastMsg.type === 'ai') {
+        const plain = await decrypt(lastMsg.content)
+        lastMsgPreview = `do AI: ${plain}`
+      } else {
+        const plain = await decrypt(lastMsg.content)
+        lastMsgPreview = `${senderName}: ${plain}`
       }
     }
 
@@ -134,7 +138,7 @@ export async function GET(req: NextRequest) {
       unread,
       seenByOthers,
     }
-  })
+  }))
 
   result.sort((a, b) => {
     if (a.lastMsg && b.lastMsg) return new Date(b.lastMsg.created_at).getTime() - new Date(a.lastMsg.created_at).getTime()

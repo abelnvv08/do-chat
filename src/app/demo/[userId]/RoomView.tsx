@@ -8,9 +8,9 @@ import { deriveSharedKey, deriveRoomKey, encryptMsg, decryptMsg, isEncrypted } f
 import { formatMessageTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
 
-function renderInline(text: string): React.ReactNode[] {
+function renderInline(text: string, myName?: string): React.ReactNode[] {
   const parts: React.ReactNode[] = []
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|(https?:\/\/[^\s]+))/g
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|(https?:\/\/[^\s]+)|(@\w+))/g
   let last = 0
   let m: RegExpExecArray | null
   let k = 0
@@ -20,6 +20,11 @@ function renderInline(text: string): React.ReactNode[] {
     else if (m[3] !== undefined) parts.push(<em key={k++} className="italic">{m[3]}</em>)
     else if (m[4] !== undefined) parts.push(<code key={k++} className="bg-gray-100 text-blue-700 rounded px-1 py-0.5 text-xs font-mono">{m[4]}</code>)
     else if (m[5] !== undefined) parts.push(<a key={k++} href={m[5]} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">{m[5]}</a>)
+    else if (m[6] !== undefined) {
+      const mentioned = m[6].slice(1).toLowerCase()
+      const isMe = myName && mentioned === myName.toLowerCase()
+      parts.push(<span key={k++} className={`font-semibold rounded px-0.5 ${isMe ? 'bg-yellow-200 text-yellow-900' : 'text-blue-600'}`}>{m[6]}</span>)
+    }
     last = m.index + m[0].length
   }
   if (last < text.length) parts.push(text.slice(last))
@@ -189,14 +194,14 @@ function LinkPreview({ url, isOwn }: { url: string; isOwn: boolean }) {
     return (
       <a href={url} target="_blank" rel="noopener noreferrer"
         className={`mt-1.5 flex items-center gap-2.5 rounded-xl px-3 py-2 border text-left no-underline ${
-          isOwn ? 'border-[#1a56db]/40 bg-[#bfdbfe]/30' : 'border-gray-200 bg-gray-50'
+          isOwn ? 'border-white/30 bg-white/15' : 'border-gray-200 bg-gray-50'
         }`}>
-        <svg className={`w-4 h-4 shrink-0 ${isOwn ? 'text-green-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 shrink-0 ${isOwn ? 'text-white/80' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
         </svg>
         <div className="min-w-0">
-          <p className={`text-[10px] font-medium uppercase tracking-wide ${isOwn ? 'text-green-700' : 'text-gray-400'}`}>{domain}</p>
-          <p className={`text-xs truncate ${isOwn ? 'text-gray-600' : 'text-gray-500'}`}>{url}</p>
+          <p className={`text-[10px] font-medium uppercase tracking-wide ${isOwn ? 'text-white/60' : 'text-gray-400'}`}>{domain}</p>
+          <p className={`text-xs truncate ${isOwn ? 'text-white/90' : 'text-gray-500'}`}>{url}</p>
         </div>
       </a>
     )
@@ -205,15 +210,15 @@ function LinkPreview({ url, isOwn }: { url: string; isOwn: boolean }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
       className={`mt-1.5 flex flex-col rounded-xl overflow-hidden border text-left no-underline ${
-        isOwn ? 'border-[#1a56db]/40 bg-[#bfdbfe]/30' : 'border-gray-200 bg-gray-50'
+        isOwn ? 'border-white/30 bg-white/15' : 'border-gray-200 bg-gray-50'
       }`}>
       {data!.image && (
         <img src={data!.image} alt="" className="w-full max-h-32 object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
       )}
       <div className="px-3 py-2">
-        <p className={`text-[10px] font-medium uppercase tracking-wide mb-0.5 ${isOwn ? 'text-green-700' : 'text-gray-400'}`}>{data!.siteName}</p>
-        <p className={`text-xs font-semibold leading-snug ${isOwn ? 'text-gray-900' : 'text-gray-800'}`}>{data!.title}</p>
-        {data!.description && <p className={`text-[11px] mt-0.5 line-clamp-2 ${isOwn ? 'text-gray-600' : 'text-gray-500'}`}>{data!.description}</p>}
+        <p className={`text-[10px] font-medium uppercase tracking-wide mb-0.5 ${isOwn ? 'text-white/60' : 'text-gray-400'}`}>{data!.siteName}</p>
+        <p className={`text-xs font-semibold leading-snug ${isOwn ? 'text-white' : 'text-gray-800'}`}>{data!.title}</p>
+        {data!.description && <p className={`text-[11px] mt-0.5 line-clamp-2 ${isOwn ? 'text-white/80' : 'text-gray-500'}`}>{data!.description}</p>}
       </div>
     </a>
   )
@@ -274,7 +279,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
 
   return (
     <div className={`rounded-2xl min-w-[220px] max-w-[280px] overflow-hidden ${
-      isOwn ? 'bg-[#dbeafe]' : 'bg-white border border-gray-100 shadow-sm'
+      isOwn ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-sm' : 'bg-white border border-gray-100 shadow-sm'
     }`}>
       <div className="flex items-center gap-2.5 px-3.5 py-2.5">
         <audio
@@ -285,7 +290,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
           onEnded={() => { setPlaying(false); setCurrent(0) }}
         />
         <button onClick={toggle} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-          isOwn ? 'bg-[#1a56db]/40 text-gray-700' : 'bg-[#1a56db] text-white'
+          isOwn ? 'bg-white/25 text-white' : 'bg-blue-600 text-white'
         }`}>
           {playing
             ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
@@ -308,30 +313,30 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
                   key={idx}
                   className={`flex-1 rounded-full transition-colors ${
                     filled
-                      ? isOwn ? 'bg-[#1a56db]' : 'bg-[#1a56db]'
-                      : isOwn ? 'bg-gray-400/40' : 'bg-gray-200'
+                      ? isOwn ? 'bg-white' : 'bg-blue-600'
+                      : isOwn ? 'bg-white/35' : 'bg-gray-200'
                   } ${playing && filled ? 'animate-pulse' : ''}`}
                   style={{ height: `${h}px` }}
                 />
               )
             })}
           </div>
-          <p className={`text-xs mt-0.5 ${isOwn ? 'text-gray-500' : 'text-gray-400'}`}>
+          <p className={`text-xs mt-0.5 ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>
             {duration > 0 ? (playing ? fmt(current) : fmt(duration)) : '—'}
           </p>
         </div>
         {!transcript && (
           <button onClick={transcribe} disabled={transcribing}
             className={`shrink-0 text-[10px] font-medium px-2 py-1 rounded-lg transition-colors ${
-              isOwn ? 'bg-black/10 text-gray-600 hover:bg-black/20' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              isOwn ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
             } disabled:opacity-50`}>
             {transcribing ? '…' : 'Aa'}
           </button>
         )}
       </div>
       {transcript && (
-        <div className={`px-3.5 pb-2.5 text-xs leading-relaxed ${isOwn ? 'text-gray-700' : 'text-gray-600'}`}>
-          <div className={`h-px mb-2 ${isOwn ? 'bg-black/10' : 'bg-gray-100'}`} />
+        <div className={`px-3.5 pb-2.5 text-xs leading-relaxed ${isOwn ? 'text-white/90' : 'text-gray-600'}`}>
+          <div className={`h-px mb-2 ${isOwn ? 'bg-white/20' : 'bg-gray-100'}`} />
           {transcript}
         </div>
       )}
@@ -346,7 +351,9 @@ const RTC_CONFIG: RTCConfiguration = {
   ],
 }
 
-export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: string; roomId: string; onBack: () => void; initialRoom?: { id: string; name: string; emoji: string; type: string; otherUserId?: string } | null }) {
+export type CallLogEntry = { roomId: string; roomName: string; roomEmoji: string; type: 'outgoing' | 'incoming'; status: 'completed' | 'missed' | 'declined'; duration: number; ts: number }
+
+export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCallLog }: { userId: string; roomId: string; onBack: () => void; initialRoom?: { id: string; name: string; emoji: string; type: string; otherUserId?: string } | null; autoCall?: boolean; onCallLog?: (log: CallLogEntry) => void }) {
   const me = usersCache[userId]
   const isAIRoom = roomId === getAIRoom(userId)
   const [room, setRoom] = useState<{ id: string; name: string; emoji: string; type: string; otherUserId?: string } | null>(
@@ -383,6 +390,13 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const [tableLoadingMsgId, setTableLoadingMsgId] = useState<string | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [showGroupInfo, setShowGroupInfo] = useState(false)
+  const [showContactInfo, setShowContactInfo] = useState(false)
+  const [otherProfile, setOtherProfile] = useState<{ id: string; name: string; firstName?: string; lastName?: string; phone?: string | null; emoji: string; bg: string; avatar_url?: string | null } | null>(null)
+  const [editingContact, setEditingContact] = useState(false)
+  const [editFirstName, setEditFirstName] = useState('')
+  const [editLastName, setEditLastName] = useState('')
+  const [savingContact, setSavingContact] = useState(false)
+  const [contactIsSaved, setContactIsSaved] = useState(true)
   const [groupMembers, setGroupMembers] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null }[]>([])
   const [groupContacts, setGroupContacts] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null; room_id: string }[]>([])
   const [groupCreatedBy, setGroupCreatedBy] = useState<string | null>(null)
@@ -398,22 +412,48 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const [matchIdx, setMatchIdx] = useState(0)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; emoji: string }[]>([])
+  const mainInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [encKey, setEncKey] = useState<CryptoKey | null>(null)
   const [encReady, setEncReady] = useState(false)
+
+  // ── Typing indicators ───────────────────────────────────────────────────────
+  const [peerTyping, setPeerTyping] = useState<string | null>(null)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastTypingBroadcastRef = useRef(0)
+
+  // ── Scroll-to-bottom ────────────────────────────────────────────────────────
+  const [isScrolledUp, setIsScrolledUp] = useState(false)
+  const [unreadWhileUp, setUnreadWhileUp] = useState(0)
+
+  // ── Presence ────────────────────────────────────────────────────────────────
+  const [peerOnline, setPeerOnline] = useState(false)
 
   // ── Call state ──────────────────────────────────────────────────────────────
   const [callState, _setCallState] = useState<'idle' | 'calling' | 'incoming' | 'active'>('idle')
   const callStateRef = useRef<'idle' | 'calling' | 'incoming' | 'active'>('idle')
   function setCallState(s: typeof callState) { callStateRef.current = s; _setCallState(s) }
-  const [incomingOffer, setIncomingOffer] = useState<{ sdp: string; callerId: string; callerName: string } | null>(null)
+  function setCallSeconds(n: number | ((p: number) => number)) {
+    _setCallSeconds(prev => { const next = typeof n === 'function' ? n(prev) : n; callSecondsRef.current = next; return next })
+  }
+  const [incomingOffer, setIncomingOffer] = useState<{ sdp: string; callerId: string; callerName: string; hasVideo?: boolean } | null>(null)
   const [muted, setMuted] = useState(false)
-  const [callSeconds, setCallSeconds] = useState(0)
+  const [cameraOff, setCameraOff] = useState(false)
+  const [isVideoCall, setIsVideoCall] = useState(false)
+  const [speakerOn, setSpeakerOn] = useState(true)
+  const [callSeconds, _setCallSeconds] = useState(0)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const localVideoRef = useRef<HTMLVideoElement | null>(null)
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const audioSrcRef = useRef<MediaStreamAudioSourceNode | null>(null)
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const callTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
+  const callTypeRef = useRef<'outgoing' | 'incoming' | null>(null)
+  const callSecondsRef = useRef(0)
 
   useEffect(() => {
     if (!isAIRoom && !room) {
@@ -453,6 +493,20 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     markRead()
     fetchMessages()
     fetchReads()
+
+    // Pre-load contact info for DM rooms so the panel opens instantly
+    if (isDMRoom) {
+      Promise.all([
+        fetch(`/api/demo/rooms?room_id=${roomId}`).then(r => r.json()),
+        fetch(`/api/demo/contacts?user_id=${userId}`).then(r => r.json()),
+      ]).then(([{ members }, { contacts }]) => {
+        const other = (members ?? []).find((m: any) => m.id !== userId)
+        if (!other) return
+        const saved = (contacts ?? []).find((c: any) => c.id === other.id)
+        setContactIsSaved(!!saved)
+        setOtherProfile({ ...other, name: saved?.name ?? initialRoom?.name ?? other.phone ?? other.name, firstName: saved?.firstName ?? '', lastName: saved?.lastName ?? '' })
+      }).catch(() => {})
+    }
     // Reset deleted flag so the room reappears in chats after re-entering
     fetch('/api/demo/room-prefs', {
       method: 'POST',
@@ -461,8 +515,19 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     }).catch(() => {})
 
     const channel = supabase
-      .channel(`room:${roomId}`)
+      .channel(`room:${roomId}`, { config: { presence: { key: userId } } })
       .on('broadcast', { event: 'msg' }, () => { fetchMessages(); fetchReads() })
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.from === userId) return
+        setPeerTyping(payload.name ?? 'alguien')
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+        typingTimeoutRef.current = setTimeout(() => setPeerTyping(null), 3000)
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{ userId: string }>()
+        const others = Object.values(state).flat().filter((p: any) => p.userId !== userId)
+        setPeerOnline(others.length > 0)
+      })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_messages', filter: `room_id=eq.${roomId}` }, () => { fetchMessages(); fetchReads() })
       // ── Call signaling ──────────────────────────────────────────
       .on('broadcast', { event: 'call-offer' }, ({ payload }) => {
@@ -472,7 +537,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           channelRef.current?.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
           return
         }
-        setIncomingOffer({ sdp: payload.sdp, callerId: payload.from, callerName: payload.callerName ?? 'Usuario' })
+        setIncomingOffer({ sdp: payload.sdp, callerId: payload.from, callerName: payload.callerName ?? 'Usuario', hasVideo: payload.hasVideo ?? false })
         setCallState('incoming')
       })
       .on('broadcast', { event: 'call-answer' }, async ({ payload }) => {
@@ -494,14 +559,25 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       })
       .on('broadcast', { event: 'call-end' }, ({ payload }) => {
         if (payload.from === userId) return
+        if (callStateRef.current === 'active') {
+          onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: callTypeRef.current ?? 'incoming', status: 'completed', duration: callSecondsRef.current, ts: Date.now() })
+        }
         cleanupCall()
       })
       .on('broadcast', { event: 'call-reject' }, ({ payload }) => {
         if (payload.from === userId) return
+        onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: 'outgoing', status: 'missed', duration: 0, ts: Date.now() })
         cleanupCall()
       })
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') channel.track({ userId })
+      })
     channelRef.current = channel
+
+    let autoCallTimer: ReturnType<typeof setTimeout> | null = null
+    if (autoCall) {
+      autoCallTimer = setTimeout(() => startCall(), 800)
+    }
 
     // Refresh when tab becomes visible again (phone back from background)
     const onVisible = () => { if (document.visibilityState === 'visible') { fetchMessages(); fetchReads() } }
@@ -510,6 +586,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     // Fallback every 3s in case websocket drops
     const interval = setInterval(() => { fetchMessages(); fetchReads() }, 3000)
     return () => {
+      if (autoCallTimer) clearTimeout(autoCallTimer)
       document.removeEventListener('visibilitychange', onVisible)
       // Signal the other side before tearing down the channel
       if (callStateRef.current !== 'idle') {
@@ -591,11 +668,41 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
     const isNearBottom = distanceFromBottom < 120
     const gotNewMessages = messages.length > lastMsgCountRef.current
+    const newCount = messages.length - lastMsgCountRef.current
     lastMsgCountRef.current = messages.length
-    if (isNearBottom || gotNewMessages) {
+    if (isNearBottom || !gotNewMessages) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      setUnreadWhileUp(0)
+      setIsScrolledUp(false)
+    } else {
+      setUnreadWhileUp(prev => prev + newCount)
     }
   }, [messages, aiTyping])
+
+  // Attach local video stream via callback ref (fires on every mount/unmount)
+  function attachLocalVideo(el: HTMLVideoElement | null) {
+    localVideoRef.current = el
+    if (el && localStreamRef.current) {
+      el.srcObject = localStreamRef.current
+      el.play().catch(() => {})
+    }
+  }
+
+  const [containerHeight, setContainerHeight] = useState<string>('100dvh')
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    function update() {
+      setContainerHeight(`${vv!.height}px`)
+      window.scrollTo(0, 0)
+      // Keep messages scrolled to bottom when keyboard opens
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      }, 50)
+    }
+    vv.addEventListener('resize', update)
+    return () => vv.removeEventListener('resize', update)
+  }, [])
 
   async function fetchMessages() {
     if (fetchingRef.current) { pendingFetchRef.current = true; return }
@@ -690,6 +797,20 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
         await fetch('/api/demo/upload', { method: 'POST', body: fd })
       }
       if (content) {
+        const optimisticId = `optimistic-${Date.now()}`
+        setMessages(prev => [...prev, {
+          id: optimisticId,
+          user_id: userId,
+          content,
+          type: 'text',
+          room_id: roomId,
+          created_at: new Date().toISOString(),
+          user: me ? { name: me.name, emoji: me.emoji, avatar_url: me.avatar_url ?? null } : null,
+          reactions: [],
+          reply_to_id: reply?.id ?? null,
+          reply_preview: reply?.preview ?? null,
+          reply_user_name: reply?.userName ?? null,
+        }])
         const res = await fetch('/api/demo/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -700,12 +821,14 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           }),
         })
         const data = await res.json()
-        // Append the confirmed message directly — no flash, no duplicate
         if (data.message) {
           setMessages(prev => {
-            if (prev.find(m => m.id === data.message.id)) return prev
-            return [...prev, { ...data.message, reactions: data.message.reactions ?? [] }]
+            const without = prev.filter(m => m.id !== optimisticId)
+            if (without.find(m => m.id === data.message.id)) return without
+            return [...without, { ...data.message, reactions: data.message.reactions ?? [] }]
           })
+        } else {
+          setMessages(prev => prev.filter(m => m.id !== optimisticId))
         }
       }
       broadcast()
@@ -812,6 +935,30 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     setGroupContacts((contacts ?? []).filter((c: any) => !memberIds.has(c.id)))
   }
 
+  async function fetchContactInfo() {
+    const res = await fetch(`/api/demo/rooms?room_id=${roomId}`)
+    const { members } = await res.json()
+    const other = (members ?? []).find((m: any) => m.id !== userId)
+    if (other) {
+      setOtherProfile({ ...other, name: roomData.name })
+    }
+  }
+
+  async function saveContactName() {
+    if (!otherProfile) return
+    setSavingContact(true)
+    await fetch('/api/demo/contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, contact_id: otherProfile.id, first_name: editFirstName.trim() || null, last_name: editLastName.trim() || null }),
+    })
+    const newName = [editFirstName.trim(), editLastName.trim()].filter(Boolean).join(' ') || otherProfile.phone || otherProfile.name
+    setOtherProfile(p => p ? { ...p, name: newName, firstName: editFirstName.trim(), lastName: editLastName.trim() } : p)
+    setContactIsSaved(true)
+    setSavingContact(false)
+    setEditingContact(false)
+  }
+
   async function leaveGroup() {
     await fetch('/api/demo/rooms', {
       method: 'PATCH',
@@ -904,13 +1051,24 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     localStreamRef.current = null
     pcRef.current?.close()
     pcRef.current = null
+    audioSrcRef.current?.disconnect()
+    audioSrcRef.current = null
+    audioCtxRef.current?.close()
+    audioCtxRef.current = null
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null
+    if (localVideoRef.current) localVideoRef.current.srcObject = null
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
     if (callTimerRef.current) { clearInterval(callTimerRef.current); callTimerRef.current = null }
     if (callTimeoutRef.current) { clearTimeout(callTimeoutRef.current); callTimeoutRef.current = null }
     setCallState('idle')
     setIncomingOffer(null)
     setMuted(false)
+    setCameraOff(false)
+    setIsVideoCall(false)
+    setSpeakerOn(true)
     setCallSeconds(0)
+    callSecondsRef.current = 0
+    callTypeRef.current = null
     pendingCandidatesRef.current = []
   }
 
@@ -923,9 +1081,27 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       }
     }
     pc.ontrack = e => {
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = e.streams[0]
-        remoteAudioRef.current.play().catch(() => {})
+      const stream = e.streams[0]
+      if (e.track.kind === 'video') {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream
+          remoteVideoRef.current.play().catch(() => {})
+        }
+      } else {
+        // Route audio through AudioContext — plays through earpiece on iOS by default
+        try {
+          const ctx = new AudioContext()
+          audioCtxRef.current = ctx
+          const src = ctx.createMediaStreamSource(stream)
+          audioSrcRef.current = src
+          src.connect(ctx.destination)
+        } catch {
+          // Fallback to audio element if AudioContext fails
+          if (remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = stream
+            remoteAudioRef.current.play().catch(() => {})
+          }
+        }
       }
     }
     pc.onconnectionstatechange = () => {
@@ -937,34 +1113,55 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     return pc
   }
 
-  async function startCall() {
+  async function startCall(video = false) {
     if (callStateRef.current !== 'idle') return
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      const videoConstraints = video ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoConstraints })
       localStreamRef.current = stream
+      setIsVideoCall(video)
       const pc = buildPC()
       stream.getTracks().forEach(t => pc.addTrack(t, stream))
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
+      callTypeRef.current = 'outgoing'
       setCallState('calling')
-      channelRef.current?.send({ type: 'broadcast', event: 'call-offer', payload: { sdp: offer.sdp, from: userId, callerName: me?.name ?? 'Usuario' } })
+
+      const callerName = me?.name ?? 'Usuario'
+      channelRef.current?.send({ type: 'broadcast', event: 'call-offer', payload: { sdp: offer.sdp, from: userId, callerName, hasVideo: video } })
+
+      // Send push notification to callee (best-effort, fire and forget)
+      const otherUserId = room?.otherUserId
+      if (otherUserId) {
+        fetch('/api/demo/call-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ caller_id: userId, callee_id: otherUserId, caller_name: callerName, room_id: roomId, has_video: video }),
+        }).catch(() => {})
+      }
+
       // Auto-cancel if nobody answers in 30 seconds
       callTimeoutRef.current = setTimeout(() => {
         if (callStateRef.current === 'calling') {
+          onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: 'outgoing', status: 'missed', duration: 0, ts: Date.now() })
           channelRef.current?.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
           cleanupCall()
         }
       }, 30000)
     } catch {
       cleanupCall()
-      alert('No se pudo acceder al micrófono')
+      alert('No se pudo acceder al micrófono o cámara')
     }
   }
 
   async function acceptCall() {
     if (!incomingOffer) return
+    callTypeRef.current = 'incoming'
+    const video = incomingOffer.hasVideo ?? false
+    setIsVideoCall(video)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      const videoConstraints = video ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoConstraints })
       localStreamRef.current = stream
       const pc = buildPC()
       stream.getTracks().forEach(t => pc.addTrack(t, stream))
@@ -984,11 +1181,15 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   }
 
   function rejectCall() {
+    onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: 'incoming', status: 'declined', duration: 0, ts: Date.now() })
     channelRef.current?.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
     cleanupCall()
   }
 
   function endCall() {
+    if (callStateRef.current === 'active') {
+      onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: callTypeRef.current ?? 'outgoing', status: 'completed', duration: callSecondsRef.current, ts: Date.now() })
+    }
     channelRef.current?.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
     cleanupCall()
   }
@@ -1000,9 +1201,28 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     setMuted(!track.enabled)
   }
 
+  function toggleCamera() {
+    const track = localStreamRef.current?.getVideoTracks()[0]
+    if (!track) return
+    track.enabled = !track.enabled
+    setCameraOff(!track.enabled)
+  }
+
   function fmtDuration(s: number) {
     const m = Math.floor(s / 60)
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
+  }
+
+  function insertMention(member: { id: string; name: string }) {
+    const el = mainInputRef.current
+    if (!el) return
+    const cursor = el.selectionStart ?? input.length
+    const before = input.slice(0, cursor)
+    const after = input.slice(cursor)
+    const replaced = before.replace(/@(\w*)$/, `@${member.name} `)
+    setInput(replaced + after)
+    setMentionSuggestions([])
+    setTimeout(() => { el.focus(); el.selectionStart = el.selectionEnd = replaced.length }, 0)
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1070,7 +1290,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     const urlMatch = text.match(/https?:\/\/[^\s]+/)
     return (
       <div>
-        <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(text)}</span>
+        <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(text, me?.name)}</span>
         {urlMatch && <LinkPreview url={urlMatch[0]} isOwn={isOwn} />}
       </div>
     )
@@ -1148,7 +1368,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
     const urlMatch = msg.content.match(/https?:\/\/[^\s]+/)
     return (
       <div>
-        <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(msg.content)}</span>
+        <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(msg.content, me?.name)}</span>
         {urlMatch && <LinkPreview url={urlMatch[0]} isOwn={isOwn} />}
       </div>
     )
@@ -1162,7 +1382,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
   const isDMRoom = !isAIRoom && (room?.type === 'dm' || roomId.startsWith('dm-'))
 
   return (
-    <div className="flex flex-col bg-[#f1f5f9]" style={{ height: '100dvh' }}>
+    <div className="flex flex-col bg-[#f1f5f9]" style={{ height: containerHeight }}>
       {/* Hidden remote audio element */}
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
 
@@ -1175,7 +1395,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 📞
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Llamada entrante</p>
+                <p className="text-xs text-gray-400 mb-1">{incomingOffer.hasVideo ? 'Videollamada entrante' : 'Llamada entrante'}</p>
                 <p className="text-xl font-bold text-gray-900">{incomingOffer.callerName}</p>
               </div>
               <div className="flex items-center justify-center gap-12 mt-2">
@@ -1190,7 +1410,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 </button>
                 <button
                   onClick={acceptCall}
-                  className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                  className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
                 >
                   <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8Z"/>
@@ -1206,16 +1426,33 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       {/* ── Active call overlay ───────────────────────────────────── */}
       {callState === 'active' && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gray-900">
-          <div className="flex flex-col items-center gap-5">
-            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl">
-              {room?.emoji ?? '👤'}
+          {/* Video streams */}
+          {isVideoCall && (
+            <>
+              <video ref={el => { remoteVideoRef.current = el; if (el && el.srcObject === null && remoteVideoRef.current?.srcObject) { el.srcObject = remoteVideoRef.current.srcObject; el.play().catch(() => {}) } }} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
+              <video ref={attachLocalVideo} autoPlay playsInline muted className={`absolute bottom-28 right-4 w-24 h-36 object-cover rounded-2xl border-2 border-white/30 shadow-lg z-10 transition-opacity ${cameraOff ? 'opacity-20' : 'opacity-100'}`} />
+            </>
+          )}
+          {/* Audio-only: show avatar */}
+          {!isVideoCall && (
+            <div className="flex flex-col items-center gap-5">
+              <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl">
+                {room?.emoji ?? '👤'}
+              </div>
+              <div className="text-center">
+                <p className="text-white text-xl font-semibold">{room?.name ?? 'Llamada'}</p>
+                <p className="text-white/60 text-sm mt-1">{fmtDuration(callSeconds)}</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-white text-xl font-semibold">{room?.name ?? 'Llamada'}</p>
-              <p className="text-white/60 text-sm mt-1">{fmtDuration(callSeconds)}</p>
+          )}
+          {/* Timer for video call */}
+          {isVideoCall && (
+            <div className="absolute top-16 left-0 right-0 flex flex-col items-center z-10">
+              <p className="text-white text-base font-semibold drop-shadow">{room?.name ?? 'Llamada'}</p>
+              <p className="text-white/70 text-sm">{fmtDuration(callSeconds)}</p>
             </div>
-          </div>
-          <div className="absolute bottom-16 flex items-center gap-8">
+          )}
+          <div className="absolute bottom-16 flex items-center gap-8 z-10">
             <button
               onClick={toggleMute}
               className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${muted ? 'bg-white/20' : 'bg-white/10'}`}
@@ -1240,25 +1477,74 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 <line x1="3" y1="3" x2="21" y2="21" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
             </button>
-            <div className="w-16 h-16" /> {/* spacer for symmetry */}
+            {isVideoCall ? (
+              <button
+                onClick={toggleCamera}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${cameraOff ? 'bg-white/20' : 'bg-white/10'}`}
+              >
+                {cameraOff ? (
+                  <svg className="w-7 h-7 text-white/50" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18 10.48V6c0-1.1-.9-2-2-2H6.83L18 10.48zM3.27 2 2 3.27 4.73 6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c.55 0 1.05-.22 1.41-.59L19.73 22 21 20.73 3.27 2zM16 13.45l4 3.98V6.28l-4 3.98v3.19z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  </svg>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  const next = !speakerOn
+                  setSpeakerOn(next)
+                  // Toggle between AudioContext (earpiece) and audio element (speaker)
+                  if (audioSrcRef.current && audioCtxRef.current) {
+                    if (next) {
+                      // Speaker: disconnect AudioContext, use audio element
+                      audioSrcRef.current.disconnect()
+                    } else {
+                      // Earpiece: reconnect AudioContext
+                      audioSrcRef.current.connect(audioCtxRef.current.destination)
+                    }
+                  }
+                  if (remoteAudioRef.current) {
+                    remoteAudioRef.current.muted = next // mute audio element when using AudioContext
+                  }
+                }}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${speakerOn ? 'bg-white/20' : 'bg-white/10'}`}
+              >
+                <svg className={`w-7 h-7 ${speakerOn ? 'text-white' : 'text-white/50'}`} fill="currentColor" viewBox="0 0 24 24">
+                  {speakerOn
+                    ? <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    : <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/>
+                  }
+                </svg>
+              </button>
+            )}
           </div>
-          <p className="absolute bottom-6 text-white/30 text-xs">{muted ? 'Micrófono silenciado' : 'Micrófono activo'}</p>
+          <p className="absolute bottom-6 text-white/30 text-xs z-10">{muted ? 'Micrófono silenciado' : 'Micrófono activo'}</p>
         </div>
       )}
 
       {/* ── Calling (ringing) overlay ─────────────────────────────── */}
       {callState === 'calling' && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gray-900">
-          <div className="flex flex-col items-center gap-5">
-            <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl animate-pulse">
-              {room?.emoji ?? '👤'}
-            </div>
+          {/* Local camera preview during video call ringing */}
+          {isVideoCall && (
+            <video ref={attachLocalVideo} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-40" />
+          )}
+          <div className="flex flex-col items-center gap-5 z-10">
+            {!isVideoCall && (
+              <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl animate-pulse">
+                {room?.emoji ?? '👤'}
+              </div>
+            )}
             <div className="text-center">
-              <p className="text-white text-xl font-semibold">{room?.name ?? '…'}</p>
-              <p className="text-white/60 text-sm mt-1">Llamando…</p>
+              <p className="text-white text-xl font-semibold drop-shadow">{room?.name ?? '…'}</p>
+              <p className="text-white/70 text-sm mt-1">{isVideoCall ? 'Videollamada…' : 'Llamando…'}</p>
             </div>
           </div>
-          <div className="absolute bottom-16">
+          <div className="absolute bottom-16 z-10">
             <button
               onClick={endCall}
               className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-xl active:scale-95 transition-transform"
@@ -1336,8 +1622,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
 
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 ${
-              isAIRoom ? 'bg-white/20 text-white' : 'bg-white/20 text-white'
+            <div className={`w-10 h-10 flex items-center justify-center text-lg shrink-0 ${
+              isAIRoom
+                ? 'rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-md text-white'
+                : 'rounded-2xl bg-white/25 text-white'
             }`}>
               {isAIRoom ? '✦' : roomData.emoji}
             </div>
@@ -1346,25 +1634,37 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               className="flex-1 min-w-0 text-left"
               onClick={() => {
                 if (roomData.type === 'group') { fetchGroupInfo(); setShowGroupInfo(true) }
+                else if (isDMRoom) { setShowContactInfo(true) }
               }}
             >
               <h1 className="text-sm font-semibold text-white">{isAIRoom ? 'do AI' : roomData.name}</h1>
               <p className="text-xs text-white/60 flex items-center gap-1">
-                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : 'en línea'}
+                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : peerTyping ? `${peerTyping} está escribiendo…` : peerOnline ? 'en línea' : 'última vez hace poco'}
               </p>
             </button>
 
-            {/* Call button — DM rooms only */}
+            {/* Call buttons — DM rooms only */}
             {isDMRoom && callState === 'idle' && (
-              <button
-                onClick={startCall}
-                className="text-white/80 hover:text-white transition-colors p-1 shrink-0"
-                title="Llamar"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
-                </svg>
-              </button>
+              <>
+                <button
+                  onClick={() => startCall(true)}
+                  className="text-white/80 hover:text-white transition-colors p-1 shrink-0"
+                  title="Videollamada"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => startCall(false)}
+                  className="text-white/80 hover:text-white transition-colors p-1 shrink-0"
+                  title="Llamada de voz"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                  </svg>
+                </button>
+              </>
             )}
 
             <button
@@ -1394,6 +1694,24 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                     <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                     {exporting ? 'Exportando…' : 'Exportar Word'}
                   </button>
+                  {isAIRoom && (
+                    <button onClick={async () => {
+                      setShowExportMenu(false)
+                      if (!confirm('¿Limpiar todo el historial con do AI?')) return
+                      await fetch('/api/demo/messages', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ room_id: roomId }),
+                      })
+                      setMessages([])
+                    }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                      </svg>
+                      Limpiar chat
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -1411,7 +1729,28 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       </div>
 
       {/* Messages */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto bg-[#f1f5f9]">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto bg-[#eef2f7] relative"
+        onScroll={e => {
+          const el = e.currentTarget
+          const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+          const scrolled = distFromBottom > 100
+          setIsScrolledUp(scrolled)
+          if (!scrolled) setUnreadWhileUp(0)
+        }}
+      >
+      {isScrolledUp && (
+        <button
+          onClick={() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setUnreadWhileUp(0); setIsScrolledUp(false) }}
+          className="sticky bottom-20 left-0 right-0 mx-auto w-fit z-20 flex items-center gap-1.5 bg-white shadow-lg border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-700 font-medium active:scale-95 transition-transform"
+        >
+          {unreadWhileUp > 0 && (
+            <span className="bg-[#1a56db] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shrink-0">{unreadWhileUp}</span>
+          )}
+          <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+      )}
       <div className="max-w-3xl mx-auto px-3 py-3 space-y-1 pb-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
@@ -1449,7 +1788,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           if (isAI) {
             return (
               <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-start gap-2.5 py-1 max-w-[85%] ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5 text-white text-sm">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shrink-0 mt-0.5 text-white text-sm shadow-sm">
                   ✦
                 </div>
                 <div className="space-y-1">
@@ -1494,7 +1833,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                   {isMedia(msg.type) ? (
                     <div>
                       {msg.reply_preview && (
-                        <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#bfdbfe]/50 border-[#1a56db]/70 text-gray-600' : 'bg-gray-100 border-[#1a56db] text-gray-500'}`}>
+                        <div className={`mb-1 px-3 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-white/20 border-white/60 text-white/90' : 'bg-gray-100 border-blue-400 text-gray-500'}`}>
                           <p className="font-semibold">{msg.reply_user_name}</p>
                           <p className="truncate">{msg.reply_preview}</p>
                         </div>
@@ -1504,30 +1843,30 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                         {msg.edited && <span className="text-[10px] text-gray-500 italic">Editado ·</span>}
                         <span className="text-[10px] text-gray-500">{formatMessageTime(msg.created_at)}</span>
                         {isOwn && (anyReaderAfter(msg.created_at)
-                          ? <span className="text-[11px] text-[#1a56db] font-medium">✓✓</span>
-                          : <span className="text-[11px] text-gray-400 font-medium">✓✓</span>
+                          ? <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /><path strokeLinecap="round" strokeLinejoin="round" d="m1.5 12.75 6 6 9-13.5" opacity="0.5" /></svg>
+                          : <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                         )}
                       </div>
                     </div>
                   ) : (
                     <div className={`px-3 py-2 rounded-2xl ${
                       isOwn
-                        ? `bg-[#dbeafe] text-gray-900 rounded-tr-sm${isActiveMatch ? ' outline outline-2 outline-yellow-400 outline-offset-1' : ''}`
+                        ? `bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-tr-sm shadow-sm${isActiveMatch ? ' outline outline-2 outline-yellow-400 outline-offset-1' : ''}`
                         : `bg-white text-gray-800 rounded-tl-sm shadow-sm${isActiveMatch ? ' border-2 border-yellow-400' : ''}`
                     }`}>
                       {msg.reply_preview && (
-                        <div className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-[#bfdbfe]/40 border-[#1a56db]/70 text-gray-600' : 'bg-gray-100 border-[#1a56db] text-gray-500'}`}>
+                        <div className={`mb-2 px-2.5 py-1.5 rounded-xl border-l-2 text-xs ${isOwn ? 'bg-white/20 border-white/60 text-white/90' : 'bg-gray-100 border-blue-400 text-gray-500'}`}>
                           <p className="font-semibold">{msg.reply_user_name}</p>
                           <p className="truncate">{msg.reply_preview}</p>
                         </div>
                       )}
                       {renderContent(msg, isOwn)}
                       <div className="flex items-center justify-end gap-1 mt-1 -mb-0.5">
-                        {msg.edited && <span className="text-[10px] text-gray-400 italic">Editado ·</span>}
-                        <span className="text-[10px] text-gray-400">{formatMessageTime(msg.created_at)}</span>
+                        {msg.edited && <span className={`text-[10px] italic ${isOwn ? 'text-white/60' : 'text-gray-400'}`}>Editado ·</span>}
+                        <span className={`text-[10px] ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>{formatMessageTime(msg.created_at)}</span>
                         {isOwn && (anyReaderAfter(msg.created_at)
-                          ? <span className="text-[11px] text-[#1a56db] font-medium">✓✓</span>
-                          : <span className="text-[11px] text-gray-400 font-medium">✓✓</span>
+                          ? <svg className="w-3.5 h-3.5 text-white/90 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /><path strokeLinecap="round" strokeLinejoin="round" d="m1.5 12.75 6 6 9-13.5" opacity="0.5" /></svg>
+                          : <svg className="w-3.5 h-3.5 text-white/50 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                         )}
                       </div>
                     </div>
@@ -1602,7 +1941,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
 
         {aiTyping && (
           <div className="flex items-center gap-2.5 py-1">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm shrink-0">✦</div>
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm shrink-0 shadow-sm">✦</div>
             <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
               <div className="flex gap-1 items-center h-4">
                 <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
@@ -1621,7 +1960,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowAIPanel(false)}>
           <div className="w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white">✦</div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white shadow-sm">✦</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">do AI</p>
                 <p className="text-xs text-gray-400">¿Qué necesitás de este chat?</p>
@@ -1658,7 +1997,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 <button
                   onClick={askAI}
                   disabled={!aiQuery.trim()}
-                  className="h-8 w-8 shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-xl flex items-center justify-center transition-colors"
+                  className="h-8 w-8 shrink-0 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:opacity-40 rounded-xl flex items-center justify-center transition-all shadow-sm"
                 >
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
@@ -1670,7 +2009,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       )}
 
       {/* Input bar */}
-      <div className="bg-[#f8fafc] px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
+      <div className="bg-white/90 backdrop-blur-sm border-t border-gray-100/60 px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
       <div className="max-w-3xl mx-auto">
         {editingMsg && (
           <div className="flex items-end gap-2 bg-blue-50 rounded-2xl border border-blue-200 px-3.5 py-2 mb-2">
@@ -1713,6 +2052,17 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
           <div className="flex items-center gap-2 mb-2">
             <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-xs text-gray-400">Subiendo…</span>
+          </div>
+        )}
+        {mentionSuggestions.length > 0 && (
+          <div className="mb-1 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            {mentionSuggestions.slice(0, 5).map(m => (
+              <button key={m.id} onMouseDown={e => { e.preventDefault(); insertMention(m) }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                <span className="text-lg leading-none">{m.emoji}</span>
+                <span className="text-sm font-medium text-gray-900">@{m.name}</span>
+              </button>
+            ))}
           </div>
         )}
         {isRecording ? (
@@ -1760,9 +2110,44 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               </button>
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" multiple className="hidden" onChange={handleFile} />
               <TextareaAutosize
+                ref={mainInputRef}
                 value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKey}
+                onChange={e => {
+                  const val = e.target.value
+                  setInput(val)
+                  if (!isAIRoom && val) {
+                    const now = Date.now()
+                    if (now - lastTypingBroadcastRef.current > 2000) {
+                      lastTypingBroadcastRef.current = now
+                      channelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { from: userId, name: me?.name ?? 'Usuario' } })
+                    }
+                  }
+                  // @mention autocomplete (groups only)
+                  if (roomData.type === 'group' && groupMembers.length > 0) {
+                    const cursor = e.target.selectionStart ?? val.length
+                    const beforeCursor = val.slice(0, cursor)
+                    const match = beforeCursor.match(/@(\w*)$/)
+                    if (match) {
+                      const q = match[1].toLowerCase()
+                      const filtered = groupMembers.filter(m => m.id !== userId && m.name.toLowerCase().includes(q))
+                      setMentionSuggestions(filtered)
+                    } else {
+                      setMentionSuggestions([])
+                    }
+                  }
+                }}
+                onKeyDown={e => {
+                  if (mentionSuggestions.length > 0 && (e.key === 'Escape' || e.key === 'Tab')) {
+                    e.preventDefault()
+                    if (e.key === 'Tab') {
+                      insertMention(mentionSuggestions[0])
+                    } else {
+                      setMentionSuggestions([])
+                    }
+                    return
+                  }
+                  handleKey(e)
+                }}
                 placeholder={isAIRoom ? (pendingFiles.length > 0 ? '¿Qué quieres hacer con este archivo?' : 'Adjunta un archivo o pregúntame algo…') : 'Escribe un mensaje…'}
                 className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none min-h-[20px] max-h-32 py-1"
                 minRows={1}
@@ -1771,7 +2156,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
               />
               {(input.trim() || pendingFiles.length > 0) ? (
                 <button onClick={send} disabled={loading}
-                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#1a56db] hover:bg-[#1648c8] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-sm">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
               ) : !isAIRoom ? (
@@ -1781,7 +2166,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
                 </button>
               ) : (
                 <button onClick={send} disabled={!input.trim() || loading}
-                  className="h-8 w-8 mb-0.5 shrink-0 bg-[#1a56db] hover:bg-[#1648c8] disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-colors">
+                  className="h-8 w-8 mb-0.5 shrink-0 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-sm">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
               )}
@@ -1792,6 +2177,162 @@ export function RoomView({ userId, roomId, onBack, initialRoom }: { userId: stri
       </div>
 
       {/* Group info panel */}
+      {/* ── Contact Info Panel (DM) ──────────────────────────────────────────── */}
+      {showContactInfo && isDMRoom && (
+        <div className="fixed inset-0 z-50 bg-[#f2f2f7] flex flex-col">
+          {/* Nav header */}
+          <div className="bg-[#f2f2f7] px-4 pb-2 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 8px)' }}>
+            <button onClick={() => { setShowContactInfo(false); setEditingContact(false) }} className="flex items-center gap-1 text-[#1a56db] font-medium text-[15px] -ml-1 py-1">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+              Atrás
+            </button>
+            <h2 className="text-[17px] font-semibold text-gray-900">Info. del contacto</h2>
+            {editingContact ? (
+              <button onClick={saveContactName} disabled={savingContact} className="text-[#1a56db] font-semibold text-[15px] disabled:opacity-40">
+                {savingContact ? '…' : 'Guardar'}
+              </button>
+            ) : contactIsSaved ? (
+              <button onClick={() => {
+                const isPhone = (s: string) => /^[\+\d\s\-\(\)]{5,}$/.test(s.trim())
+                setEditFirstName(isPhone(otherProfile?.firstName ?? '') ? '' : (otherProfile?.firstName ?? ''))
+                setEditLastName(isPhone(otherProfile?.lastName ?? '') ? '' : (otherProfile?.lastName ?? ''))
+                setEditingContact(true)
+              }} className="text-[#1a56db] font-medium text-[15px]">Editar</button>
+            ) : <div className="w-16" />}
+          </div>
+
+          <div className="flex-1 overflow-y-auto pb-12">
+            {/* Avatar + name block */}
+            <div className="flex flex-col items-center pt-6 pb-8 px-4">
+              {otherProfile?.avatar_url
+                ? <img src={otherProfile.avatar_url} alt="" className="w-[100px] h-[100px] rounded-full object-cover shadow mb-4" />
+                : <div className={`w-[100px] h-[100px] rounded-full ${otherProfile?.bg ?? 'bg-gray-300'} flex items-center justify-center text-5xl mb-4 shadow`}>{otherProfile?.emoji}</div>
+              }
+              {editingContact ? (
+                <div className="w-full max-w-xs space-y-2 mt-1">
+                  <div className="bg-white rounded-xl overflow-hidden divide-y divide-gray-100 shadow-sm">
+                    <input
+                      autoFocus
+                      value={editFirstName}
+                      onChange={e => setEditFirstName(e.target.value)}
+                      placeholder="Nombre"
+                      className="w-full px-4 py-3 text-[15px] text-gray-900 bg-transparent focus:outline-none"
+                    />
+                    <input
+                      value={editLastName}
+                      onChange={e => setEditLastName(e.target.value)}
+                      placeholder="Apellido"
+                      className="w-full px-4 py-3 text-[15px] text-gray-900 bg-transparent focus:outline-none"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[26px] font-bold text-gray-900 text-center leading-tight">{otherProfile?.name ?? roomData.name}</p>
+                  {otherProfile?.phone && <p className="text-[15px] text-gray-500 mt-1">{otherProfile.phone}</p>}
+                  {!contactIsSaved && (
+                    <button
+                      onClick={() => {
+                        setEditFirstName('')
+                        setEditLastName('')
+                        setEditingContact(true)
+                      }}
+                      className="mt-4 flex items-center gap-2 bg-[#1a56db] text-white text-[14px] font-semibold px-5 py-2.5 rounded-full shadow active:opacity-80 transition-opacity"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                      Agregar a contactos
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="px-4 mb-6">
+              <div className="bg-white rounded-2xl shadow-sm flex divide-x divide-gray-100 overflow-hidden">
+                <button onClick={() => setShowContactInfo(false)} className="flex-1 flex flex-col items-center gap-1.5 py-4 active:bg-gray-50 transition-colors">
+                  <svg className="w-[22px] h-[22px] text-[#1a56db]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                  </svg>
+                  <span className="text-xs text-[#1a56db] font-medium">Mensaje</span>
+                </button>
+                <button onClick={() => { setShowContactInfo(false); startCall() }} className="flex-1 flex flex-col items-center gap-1.5 py-4 active:bg-gray-50 transition-colors">
+                  <svg className="w-[22px] h-[22px] text-[#1a56db]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+                  </svg>
+                  <span className="text-xs text-[#1a56db] font-medium">Llamar</span>
+                </button>
+                <button onClick={() => { setShowContactInfo(false); setShowSearch(true); setTimeout(() => searchRef.current?.focus(), 80) }} className="flex-1 flex flex-col items-center gap-1.5 py-4 active:bg-gray-50 transition-colors">
+                  <svg className="w-[22px] h-[22px] text-[#1a56db]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  </svg>
+                  <span className="text-xs text-[#1a56db] font-medium">Buscar</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Info rows */}
+            <div className="px-4 mb-6">
+              <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                {otherProfile?.phone && (
+                  <div className="flex items-center px-4 py-3.5">
+                    <div className="flex-1">
+                      <p className="text-[15px] text-gray-900">{otherProfile.phone}</p>
+                      <p className="text-[12px] text-gray-400 mt-0.5">Teléfono</p>
+                    </div>
+                    <svg className="w-4 h-4 text-[#1a56db]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Media / docs */}
+            {(() => {
+              const sharedImages = messages.filter(m => m.type === 'image')
+              const sharedFiles = messages.filter(m => m.type === 'file')
+              const total = sharedImages.length + sharedFiles.length
+              return (
+                <div className="px-4 mb-6">
+                  <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                    <button className="w-full flex items-center px-4 py-3.5 active:bg-gray-50 transition-colors">
+                      <span className="flex-1 text-left text-[15px] text-gray-900">Archivos, enlaces y docs</span>
+                      <span className="text-[15px] text-gray-400 mr-1">{total}</span>
+                      <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                    {sharedImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-0.5">
+                        {sharedImages.slice(0, 6).map(m => (
+                          <a key={m.id} href={m.content} target="_blank" rel="noopener noreferrer">
+                            <img src={m.content} alt="" className="w-full aspect-square object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Danger */}
+            <div className="px-4 mb-4">
+              <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+                <button
+                  onClick={async () => {
+                    if (!confirm(`¿Eliminar el chat con ${otherProfile?.name ?? roomData.name}?\nNo se pueden recuperar los mensajes.`)) return
+                    await fetch('/api/demo/messages', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: roomId }) })
+                    setShowContactInfo(false)
+                    onBack()
+                  }}
+                  className="w-full flex items-center justify-center px-4 py-4 active:bg-red-50 transition-colors"
+                >
+                  <span className="text-[15px] font-medium text-red-500">Eliminar chat</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showGroupInfo && roomData.type === 'group' && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
           {/* Header */}

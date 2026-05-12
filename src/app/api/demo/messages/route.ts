@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { broadcastToRoom } from '@/lib/realtime-broadcast'
+import { encrypt, decrypt } from '@/lib/encryption'
+import webpush from 'web-push'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -62,7 +64,11 @@ export async function GET(req: NextRequest) {
   }
 
   const withUsers = await attachUsers(supabase, rawMessages)
-  const enriched = withUsers.map(m => ({
+  const decrypted = await Promise.all(withUsers.map(async m => ({
+    ...m,
+    content: (m.type === 'text' || m.type === 'ai') ? await decrypt(m.content) : m.content,
+  })))
+  const enriched = decrypted.map(m => ({
     ...m,
     reactions: reactionsByMsg[m.id] ?? [],
     reply_user_name: m.reply_to_id ? (replyUserMap[m.reply_to_id] ?? null) : null,
@@ -74,7 +80,8 @@ export async function POST(req: NextRequest) {
   const { user_id, content, type = 'text', room_id = 'group', reply_to_id, reply_preview } = await req.json()
   if (!user_id || !content) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-  const row: Record<string, unknown> = { user_id, content, type, room_id }
+  const encryptedContent = (type === 'text' || type === 'ai') ? await encrypt(content) : content
+  const row: Record<string, unknown> = { user_id, content: encryptedContent, type, room_id }
   if (reply_to_id) row.reply_to_id = reply_to_id
   if (reply_preview) row.reply_preview = reply_preview
 
@@ -83,9 +90,35 @@ export async function POST(req: NextRequest) {
   if (!inserted) return NextResponse.json({ error: 'Insert failed' }, { status: 500 })
 
   const { data: profile } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('id', user_id).single()
-  const message = { ...inserted, user: profile ?? null }
+  const message = { ...inserted, content: await decrypt(encryptedContent), user: profile ?? null }
 
   await broadcastToRoom(room_id)
+
+  // Push notifications to other room members
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+      `mailto:${process.env.VAPID_SUBJECT ?? 'noreply@getdochat.com'}`,
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    )
+    const { data: members } = await supabase.from('demo_room_members').select('user_id').eq('room_id', room_id).neq('user_id', user_id)
+    if (members?.length) {
+      const otherIds = members.map((m: any) => m.user_id)
+      const { data: subs } = await supabase.from('demo_push_subscriptions').select('user_id, subscription').in('user_id', otherIds)
+      const senderName = profile?.name ?? 'Mensaje nuevo'
+      const bodyText = type === 'image' ? 'Imagen' : type === 'file' ? 'Archivo' : type === 'audio' ? 'Audio' : content
+      await Promise.allSettled((subs ?? []).map((s: any) => {
+        const payload = JSON.stringify({
+          title: senderName,
+          body: bodyText,
+          tag: `msg-${room_id}`,
+          data: { url: `/demo/${s.user_id}` },
+        })
+        return webpush.sendNotification(s.subscription as webpush.PushSubscription, payload)
+      }))
+    }
+  }
+
   return NextResponse.json({ message })
 }
 
@@ -97,7 +130,8 @@ export async function PATCH(req: NextRequest) {
   const { data: msg } = await db.from('demo_messages').select('user_id, room_id').eq('id', message_id).single()
   if (!msg || msg.user_id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  await db.from('demo_messages').update({ content, edited: true }).eq('id', message_id)
+  const encContent = await encrypt(content)
+  await db.from('demo_messages').update({ content: encContent, edited: true }).eq('id', message_id)
   await broadcastToRoom(msg.room_id)
   return NextResponse.json({ ok: true })
 }
@@ -107,8 +141,18 @@ export async function DELETE(req: NextRequest) {
   const db = admin()
 
   if (message_id && user_id) {
-    const { data: msg } = await db.from('demo_messages').select('user_id, room_id').eq('id', message_id).single()
+    const { data: msg } = await db.from('demo_messages').select('user_id, room_id, type, content').eq('id', message_id).single()
     if (!msg || msg.user_id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    // Delete from storage if it's a file/image/audio
+    if (msg.type === 'file' || msg.type === 'image' || msg.type === 'audio') {
+      try {
+        const url = msg.type === 'file' ? JSON.parse(msg.content).url : msg.content
+        const match = (url as string).match(/demo-files\/(.+)$/)
+        if (match) await db.storage.from('demo-files').remove([match[1]])
+      } catch { /* skip */ }
+    }
+
     await db.from('demo_messages').delete().eq('id', message_id)
     await broadcastToRoom(msg.room_id)
     return NextResponse.json({ ok: true })
