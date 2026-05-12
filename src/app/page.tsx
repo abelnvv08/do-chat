@@ -10,6 +10,6 @@ export default async function RootPage() {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   )
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect(`/demo/${user.id}`)
+  if (user) redirect(`/chat/${user.id}`)
   redirect('/landing')
 }

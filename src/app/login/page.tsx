@@ -110,7 +110,7 @@ export default function LoginPage() {
       if (!user) return
       const res = await fetch('/api/auth/profile')
       const d = await res.json()
-      if (d.profile) { router.push(`/demo/${user.id}`); return }
+      if (d.profile) { router.push(`/chat/${user.id}`); return }
       setPendingUserId(user.id)
       setStep('profile')
       setTimeout(() => nameRef.current?.focus(), 100)
@@ -214,7 +214,7 @@ export default function LoginPage() {
       })
       setLoading(false)
       if (!res.ok) { const d = await res.json(); setError(d.error ?? l.profile.errorGeneric); return }
-      router.push(`/demo/${pendingUserId}`)
+      router.push(`/chat/${pendingUserId}`)
       return
     }
 
@@ -232,7 +232,7 @@ export default function LoginPage() {
   async function finishLogin(token_hash: string, user_id: string) {
     const { error: sessionErr } = await supabase.auth.verifyOtp({ token_hash, type: 'email' })
     if (sessionErr) { setError('Error'); return }
-    router.push(`/demo/${user_id}`)
+    router.push(`/chat/${user_id}`)
   }
 
   const filteredCountries = COUNTRIES.filter(c =>

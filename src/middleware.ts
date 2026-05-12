@@ -40,7 +40,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (user && pathname === '/') {
-    return NextResponse.redirect(new URL(`/demo/${user.id}`, req.url))
+    return NextResponse.redirect(new URL(`/chat/${user.id}`, req.url))
   }
 
   return res
