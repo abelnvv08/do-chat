@@ -691,7 +691,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* Reminder toast */}
       {dueReminder && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm transition-all duration-300 ${reminderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="bg-blue-600 text-white rounded-2xl shadow-xl px-4 py-3 flex items-start gap-3">
+          <div className="bg-blue-500 text-white rounded-2xl shadow-xl px-4 py-3 flex items-start gap-3">
             <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold opacity-80 mb-0.5">{a.reminder.title}</p>
@@ -945,7 +945,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       <button onClick={createProject}
                         className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl border border-blue-500/30 bg-transparent">{a.files.newProject}</button>
                       <button onClick={() => docsFileRef.current?.click()} disabled={docsUploading}
-                        className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
+                        className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
                         {docsUploading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
                       </button>
                       <input ref={docsFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.zip" className="hidden" onChange={uploadDocFile} />
@@ -958,7 +958,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
                 {(['all', 'proyectos', 'archivos', 'imagenes'] as const).map(f => (
                   <button key={f} onClick={() => setArchivosFilter(f)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-blue-600 text-white' : 'bg-white/8 text-slate-400 hover:bg-white/12'}`}>
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-blue-500 text-white' : 'bg-white/8 text-slate-400 hover:bg-white/12'}`}>
                     {f === 'all' ? a.files.filterAll : f === 'proyectos' ? a.files.filterProjects : f === 'archivos' ? a.files.filterFiles : a.files.filterImages}
                   </button>
                 ))}
@@ -989,7 +989,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         <button onClick={() => selectionMode ? toggleSelect(proj.id) : setActiveProject(proj)}
                           className="w-full flex items-start gap-3 px-4 py-3.5 text-left">
                           {selectionMode && (
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-600'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-600'}`}>
                               {selectedIds.has(proj.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                             </div>
                           )}
@@ -1018,7 +1018,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         <div key={file.id} className={`relative aspect-square rounded-xl overflow-hidden ${selectedIds.has(file.id) ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-[#0a0f1e]' : ''}`}>
                           {selectionMode && (
                             <button onClick={() => toggleSelect(file.id)} className="absolute inset-0 z-10 w-full h-full">
-                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'bg-black/40 border-white/60'}`}>
+                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'bg-black/40 border-white/60'}`}>
                                 {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                               </div>
                             </button>
@@ -1035,7 +1035,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         <div key={file.id} className={`flex items-center gap-3 bg-white/5 rounded-2xl border px-4 py-3 transition-all ${selectedIds.has(file.id) ? 'border-blue-500/60' : 'border-white/10'}`}>
                           {selectionMode && (
                             <button onClick={() => toggleSelect(file.id)}>
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-600'}`}>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-600'}`}>
                                 {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                               </div>
                             </button>
@@ -1064,7 +1064,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="bg-gray-900 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-xl">
                   <span className="text-white text-sm font-medium flex-1">{totalSelected} {a.files.selected}</span>
                   <button onClick={askAISelected}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold active:scale-95 transition-all">
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500 text-white text-xs font-semibold active:scale-95 transition-all">
                     <span>✦</span> {a.files.askAI}
                   </button>
                   <button onClick={deleteSelected}
@@ -1106,7 +1106,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <p className="text-slate-400 text-sm font-medium">{a.contacts.empty}</p>
                   <p className="text-xs text-slate-500">{a.contacts.emptyHint}</p>
                   <button onClick={() => setShowNewContact(true)}
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-full">
+                    className="mt-2 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full">
                     {a.contacts.add}
                   </button>
                 </div>
@@ -1342,7 +1342,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           <div className="flex-1 overflow-y-auto pb-24 bg-[#0a0f1e]">
 
             {/* Identity card */}
-            <div className="mx-4 mt-5 relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-600/20 via-indigo-600/10 to-slate-900 border border-white/10 p-6">
+            <div className="mx-4 mt-5 relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-500/20 via-indigo-600/10 to-slate-900 border border-white/10 p-6">
               <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
               <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
               <div className="relative flex items-center gap-4">
@@ -1523,7 +1523,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             <div className="flex gap-2">
               {(['all', 'received', 'sent'] as const).map(f => (
                 <button key={f} onClick={() => setInviteFilter(f)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${inviteFilter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${inviteFilter === f ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                   {f === 'all' ? a.daily.all : f === 'received' ? a.daily.received : a.daily.sent}
                 </button>
               ))}
@@ -1542,7 +1542,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-400 text-gray-800 placeholder:text-gray-400"
                 />
                 <button onClick={addTask} disabled={!newTask.trim() || addingTask}
-                  className="px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors shrink-0">
+                  className="px-4 py-2.5 bg-blue-500 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 disabled:opacity-40 transition-colors shrink-0">
                   +
                 </button>
               </div>
@@ -1590,7 +1590,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                             {a.daily.reject}
                           </button>
                           <button onClick={() => respondInvite(inv.id, 'accept')}
-                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-colors">
                             {a.daily.accept}
                           </button>
                         </div>
@@ -1696,7 +1696,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="flex gap-2">
                   {(['task', 'reminder'] as const).map(t => (
                     <button key={t} onClick={() => setInviteType(t)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${inviteType === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${inviteType === t ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       {t === 'task' ? a.daily.taskType : a.daily.reminderType}
                     </button>
                   ))}
@@ -1740,7 +1740,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 )}
 
                 <button onClick={sendInvite} disabled={!inviteTarget || !inviteContent.trim() || sendingInvite}
-                  className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-2xl hover:bg-blue-700 disabled:opacity-40 transition-colors">
+                  className="w-full py-3 bg-blue-500 text-white text-sm font-semibold rounded-2xl hover:bg-blue-600 disabled:opacity-40 transition-colors">
                   {sendingInvite ? a.daily.sending : a.daily.sendButton}
                 </button>
               </div>
@@ -1841,7 +1841,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setActionRoom(null)}>
           <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${actionRoom.type === 'ai' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{actionRoom.type === 'ai' ? '✦' : actionRoom.emoji}</div>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${actionRoom.type === 'ai' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>{actionRoom.type === 'ai' ? '✦' : actionRoom.emoji}</div>
               <p className="font-semibold text-gray-900">{actionRoom.type === 'ai' ? 'do AI' : actionRoom.name}</p>
             </div>
             <div className="py-2">
@@ -1942,11 +1942,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             {/* Mode toggle */}
             <div className="px-5 mt-6 mb-3 flex gap-2">
               <button onClick={() => { setNcMode('phone'); setNcError('') }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'phone' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'phone' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
                 {a.newContact.phone}
               </button>
               <button onClick={() => { setNcMode('username'); setNcError('') }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'username' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'username' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
                 {a.newContact.username}
               </button>
             </div>
@@ -2005,7 +2005,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left transition-colors">
                     <Avatar emoji={c.emoji} bg={c.bg} size="lg" avatarUrl={c.avatar_url} />
                     <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-900">{c.name}</p></div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                       {selected && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                     </div>
                   </button>
@@ -2046,7 +2046,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: { id: string; content: s
   return (
     <div className={`bg-white rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm transition-all ${task.done ? 'border-gray-100' : 'border-gray-200'}`}>
       <button onClick={() => onToggle(task.id, !task.done)}
-        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${task.done ? 'bg-blue-600 border-blue-600' : 'border-gray-300 hover:border-blue-400'}`}>
+        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${task.done ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}`}>
         {task.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
       </button>
       <div className="flex-1 min-w-0">
@@ -2082,7 +2082,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
               </div>
           }
           {hasUnread && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm shadow-blue-500/40">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm shadow-blue-400/40">
               {room.unread > 99 ? '99+' : room.unread}
             </span>
           )}
@@ -2156,7 +2156,7 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
         return (
           <button key={tab.id} onClick={() => onTabChange(tab.id)}
             className="flex-1 flex flex-col items-center pt-1.5 pb-1 gap-0.5 transition-colors relative">
-            <div className={`relative flex items-center justify-center w-12 h-7 rounded-full transition-all duration-300 ${isActive ? 'bg-blue-600/20' : ''}`}>
+            <div className={`relative flex items-center justify-center w-12 h-7 rounded-full transition-all duration-300 ${isActive ? 'bg-blue-400/20' : ''}`}>
               <div className={`transition-colors duration-200 ${isActive ? 'text-blue-400' : 'text-slate-600'}`}>
                 {tab.icon}
               </div>
