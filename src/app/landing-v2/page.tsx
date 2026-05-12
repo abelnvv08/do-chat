@@ -2,17 +2,42 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function LandingV2() {
+  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [annual, setAnnual] = useState(false)
+  const [pricingLoading, setPricingLoading] = useState<string | null>(null)
+  const [pricingError, setPricingError] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  async function handlePlan(plan: string) {
+    if (plan === 'free') { router.push('/login'); return }
+    setPricingLoading(plan)
+    setPricingError(null)
+    try {
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const data = await res.json()
+      if (res.status === 401) { router.push('/login?next=/pricing'); return }
+      if (data.url) { window.location.href = data.url; return }
+      setPricingError(data.error ?? 'Algo salió mal. Intenta de nuevo.')
+    } catch {
+      setPricingError('Error de conexión. Intenta de nuevo.')
+    } finally {
+      setPricingLoading(null)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#080c14] text-white font-sans antialiased">
@@ -31,7 +56,7 @@ export default function LandingV2() {
             <a href="#funciones" className="text-sm text-white/60 hover:text-white transition-colors">Funciones</a>
             <a href="#como-funciona" className="text-sm text-white/60 hover:text-white transition-colors">Cómo funciona</a>
             <a href="#seguridad" className="text-sm text-white/60 hover:text-white transition-colors">Seguridad</a>
-            <Link href="/pricing" className="text-sm text-white/60 hover:text-white transition-colors">Precios</Link>
+            <a href="#precios" className="text-sm text-white/60 hover:text-white transition-colors">Precios</a>
             <Link href="/login" className="text-sm text-white/60 hover:text-white transition-colors">Iniciar sesión</Link>
             <Link href="/login?start=phone"
               className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
@@ -86,10 +111,10 @@ export default function LandingV2() {
               className="px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-base hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95">
               Empezar gratis
             </Link>
-            <Link href="/pricing"
+            <a href="#precios"
               className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-base hover:bg-white/10 transition-all">
               Ver precios →
-            </Link>
+            </a>
           </div>
           <p className="text-white/25 text-sm">Sin tarjeta de crédito · Gratis para siempre en el plan básico</p>
         </div>
@@ -341,7 +366,6 @@ export default function LandingV2() {
             <h2 className="text-3xl sm:text-4xl font-extrabold max-w-md leading-tight">
               Precios simples,<br />sin sorpresas
             </h2>
-            {/* Annual toggle */}
             <div className="flex items-center gap-3">
               <span className={`text-sm ${!annual ? 'text-white' : 'text-white/40'}`}>Mensual</span>
               <button onClick={() => setAnnual(!annual)}
@@ -354,40 +378,50 @@ export default function LandingV2() {
             </div>
           </div>
 
+          {pricingError && (
+            <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-5 py-4 mb-8">
+              <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+              <p className="text-red-300 text-sm flex-1">{pricingError}</p>
+              <button onClick={() => setPricingError(null)} className="text-red-400 hover:text-red-200"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-3 gap-6">
-            {[
+            {([
               {
+                key: 'free',
                 name: 'Free',
                 price: '$0',
                 period: 'para siempre',
                 desc: 'Para personas y equipos pequeños.',
                 features: ['Mensajes ilimitados', 'Cifrado E2E', 'do AI (básico)', '1 GB de archivos', 'Hasta 5 contactos activos'],
                 cta: 'Empezar gratis',
-                href: '/login?start=phone',
                 highlight: false,
+                badge: '',
               },
               {
+                key: 'pro',
                 name: 'Pro',
-                price: annual ? '$10' : '$12',
+                price: annual ? '$10' : '$12.99',
                 period: 'por usuario / mes',
                 desc: 'Para equipos que necesitan más poder.',
-                badge: 'Más popular',
                 features: ['Todo en Free', 'do AI sin límites', '100 GB de archivos', 'Contactos ilimitados', 'Llamadas grupales', 'Soporte prioritario'],
                 cta: 'Probar gratis 14 días',
-                href: '/pricing',
                 highlight: true,
+                badge: 'Más popular',
               },
               {
+                key: 'business',
                 name: 'Business',
                 price: 'A medida',
                 period: '',
                 desc: 'Para empresas con necesidades avanzadas.',
                 features: ['Todo en Pro', 'Almacenamiento ilimitado', 'Integraciones custom', 'SLA garantizado', 'Soporte 24/7', 'Factura empresarial'],
                 cta: 'Contactar ventas',
-                href: 'mailto:hola@getdochat.com',
                 highlight: false,
+                badge: '',
               },
-            ].map(plan => (
+            ] as const).map(plan => (
               <div key={plan.name}
                 className={`rounded-2xl border p-7 flex flex-col relative transition-all ${plan.highlight ? 'bg-blue-600 border-blue-500 shadow-2xl shadow-blue-500/20' : 'bg-white/3 border-white/10 hover:bg-white/5'}`}>
                 {plan.badge && (
@@ -413,10 +447,17 @@ export default function LandingV2() {
                     </li>
                   ))}
                 </ul>
-                <Link href={plan.href}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm text-center transition-all active:scale-[0.98] ${plan.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-white/8 text-white hover:bg-white/12 border border-white/10'}`}>
-                  {plan.cta}
-                </Link>
+                <button
+                  onClick={() => handlePlan(plan.key)}
+                  disabled={pricingLoading === plan.key}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm text-center transition-all active:scale-[0.98] disabled:opacity-50 ${plan.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-white/8 text-white hover:bg-white/12 border border-white/10'}`}>
+                  {pricingLoading === plan.key ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${plan.highlight ? 'border-blue-600' : 'border-white'}`} />
+                      Redirigiendo...
+                    </span>
+                  ) : plan.cta}
+                </button>
               </div>
             ))}
           </div>
@@ -486,7 +527,7 @@ export default function LandingV2() {
               <div className="space-y-3">
                 <a href="#funciones" className="block text-sm text-white/40 hover:text-white transition-colors">Funciones</a>
                 <a href="#como-funciona" className="block text-sm text-white/40 hover:text-white transition-colors">Cómo funciona</a>
-                <Link href="/pricing" className="block text-sm text-white/40 hover:text-white transition-colors">Precios</Link>
+                <a href="#precios" className="block text-sm text-white/40 hover:text-white transition-colors">Precios</a>
                 <a href="#seguridad" className="block text-sm text-white/40 hover:text-white transition-colors">Seguridad</a>
               </div>
             </div>
