@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { useLanguage, LangToggle } from '@/lib/i18n'
@@ -24,6 +24,10 @@ const PLAN_NOT_OK = {
 }
 
 export default function PricingPage() {
+  return <Suspense><PricingContent /></Suspense>
+}
+
+function PricingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useLanguage()
