@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const stripe = getStripe()
   const session = await stripe.billingPortal.sessions.create({
     customer: profile.stripe_customer_id,
-    return_url: `${origin}/demo/${user.id}`,
+    return_url: `${origin}/chat/${user.id}`,
   })
 
   return NextResponse.json({ url: session.url })

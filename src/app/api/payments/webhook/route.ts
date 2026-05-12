@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
             title: 'Payment failed',
             body: 'We could not process your payment. Update your card to keep your plan.',
             tag: 'payment-failed',
-            data: { url: `/demo/${profile.id}` },
+            data: { url: `/chat/${profile.id}` },
           })
           await Promise.allSettled((subs ?? []).map((s: any) =>
             webpush.sendNotification(s.subscription as webpush.PushSubscription, payload)
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
                 <p style="margin:0 0 24px;color:#555;line-height:1.6">
                   Hi ${profile.name}, your DO Chat subscription payment failed. To keep access to your plan, please update your payment method.
                 </p>
-                <a href="https://getdochat.com/demo/${profile.id}?tab=billing"
+                <a href="https://getdochat.com/chat/${profile.id}?tab=billing"
                    style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px">
                   Update payment method
                 </a>
