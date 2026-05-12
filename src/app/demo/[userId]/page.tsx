@@ -646,7 +646,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   }
 
   if (!profile) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -674,7 +674,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   })
   const doneTasks = tasks.filter(t => t.done)
   return (
-    <div className="bg-white flex flex-col" style={{ minHeight: '100dvh' }}>
+    <div className="bg-[#0a0f1e] flex flex-col" style={{ minHeight: '100dvh' }}>
       {/* Upgrade success toast */}
       {upgradeToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm">
@@ -707,7 +707,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* ── CHATS TAB ── */}
       {activeTab === 'mensajes' && (
         <>
-          <div className="bg-[#0f172a] px-4 pb-0 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
+          <div className="bg-[#0a0f1e]/95 backdrop-blur-sm px-4 pb-0 sticky top-0 z-10 border-b border-white/5" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
             <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-3">
               <Image src="/icon-192.png" alt="DO Chat" width={36} height={36} className="rounded-xl" />
@@ -718,20 +718,20 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 {showNewMenu && (
                   <>
                     <div className="fixed inset-0 z-20" onClick={() => setShowNewMenu(false)} />
-                    <div className="absolute right-0 top-11 z-30 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 w-52 overflow-hidden">
+                    <div className="absolute right-0 top-11 z-30 bg-[#111827] rounded-2xl shadow-xl border border-white/10 py-1 w-52 overflow-hidden">
                       <button onClick={() => { setShowNewMenu(false); setNgName(''); setNgSelected([]); setNgError(''); setShowNewGroup(true) }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-left transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                          <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
                         </div>
-                        <span className="text-sm font-medium text-gray-800">{a.chats.newGroup}</span>
+                        <span className="text-sm font-medium text-white/80">{a.chats.newGroup}</span>
                       </button>
                       <button onClick={() => { setShowNewMenu(false); resetNc(); setShowNewContact(true) }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-left transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                          <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
                         </div>
-                        <span className="text-sm font-medium text-gray-800">{a.chats.newContact}</span>
+                        <span className="text-sm font-medium text-white/80">{a.chats.newContact}</span>
                       </button>
                     </div>
                   </>
@@ -758,27 +758,27 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               {searchLoading && <div className="flex items-center justify-center py-10"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
               {!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-8">
-                  <p className="text-gray-500 font-medium">{a.chats.noResults} &ldquo;{searchQuery}&rdquo;</p>
+                  <p className="text-slate-400 font-medium">{a.chats.noResults} &ldquo;{searchQuery}&rdquo;</p>
                 </div>
               )}
-              {searchQuery.length < 2 && <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8"><p className="text-gray-500 text-sm">{a.chats.minChars}</p></div>}
+              {searchQuery.length < 2 && <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8"><p className="text-slate-500 text-sm">{a.chats.minChars}</p></div>}
               {!searchLoading && Object.entries(grouped).map(([roomId, msgs]) => (
                 <div key={roomId}>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-y border-gray-100">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border-y border-white/8">
                     <span>{msgs[0].room_emoji}</span>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{msgs[0].room_name}</span>
-                    <span className="ml-auto text-xs text-gray-400">{msgs.length} resultado{msgs.length > 1 ? 's' : ''}</span>
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{msgs[0].room_name}</span>
+                    <span className="ml-auto text-xs text-slate-500">{msgs.length} resultado{msgs.length > 1 ? 's' : ''}</span>
                   </div>
                   {msgs.map(result => (
                     <button key={result.id} onClick={() => { setSearchQuery(''); setActiveRoomId(result.room_id) }}
-                      className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 border-b border-gray-50 text-left">
-                      <div className={`w-9 h-9 shrink-0 flex items-center justify-center text-sm mt-0.5 ${result.type === 'ai' ? 'rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 text-white shadow-sm' : 'rounded-full bg-gray-100'}`}>{result.type === 'ai' ? '✦' : result.sender_emoji}</div>
+                      className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-white/5 border-b border-white/5 text-left">
+                      <div className={`w-9 h-9 shrink-0 flex items-center justify-center text-sm mt-0.5 ${result.type === 'ai' ? 'rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 text-white shadow-sm' : 'rounded-full bg-white/10'}`}>{result.type === 'ai' ? '✦' : result.sender_emoji}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                          <p className="text-sm font-semibold text-gray-800">{result.sender_name}</p>
-                          <p className="text-xs text-gray-400 shrink-0">{formatMessageTime(result.created_at)}</p>
+                          <p className="text-sm font-semibold text-white">{result.sender_name}</p>
+                          <p className="text-xs text-slate-500 shrink-0">{formatMessageTime(result.created_at)}</p>
                         </div>
-                        <p className="text-sm text-gray-500 line-clamp-2">{result.fileInfo ? `📎 ${result.fileInfo.name}` : result.preview.slice(0, 140)}</p>
+                        <p className="text-sm text-slate-400 line-clamp-2">{result.fileInfo ? `📎 ${result.fileInfo.name}` : result.preview.slice(0, 140)}</p>
                       </div>
                     </button>
                   ))}
@@ -791,32 +791,29 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             <div className="max-w-3xl mx-auto">
               {loading && (
                 <div className="animate-pulse px-4 pt-4 space-y-3">
-                  {/* DO AI skeleton */}
-                  <div className="w-full flex items-center gap-3 bg-blue-100 rounded-2xl px-4 py-3.5">
-                    <div className="w-10 h-10 rounded-full bg-blue-200 shrink-0" />
+                  <div className="w-full flex items-center gap-3 bg-blue-500/10 rounded-2xl px-4 py-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-500/20 shrink-0" />
                     <div className="flex-1 space-y-1.5">
-                      <div className="h-3 bg-blue-200 rounded w-16" />
-                      <div className="h-2.5 bg-blue-200 rounded w-32" />
+                      <div className="h-3 bg-blue-500/20 rounded w-16" />
+                      <div className="h-2.5 bg-blue-500/10 rounded w-32" />
                     </div>
                   </div>
-                  {/* Daily panel skeleton */}
-                  <div className="w-full flex items-center gap-3 bg-gray-100 rounded-2xl px-4 py-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
+                  <div className="w-full flex items-center gap-3 bg-white/5 rounded-2xl px-4 py-3">
+                    <div className="w-9 h-9 rounded-full bg-white/10 shrink-0" />
                     <div className="flex-1 space-y-1.5">
-                      <div className="h-3 bg-gray-200 rounded w-24" />
-                      <div className="h-2.5 bg-gray-200 rounded w-36" />
+                      <div className="h-3 bg-white/10 rounded w-24" />
+                      <div className="h-2.5 bg-white/5 rounded w-36" />
                     </div>
                   </div>
-                  {/* Chat list skeletons */}
                   {[1,2,3,4,5].map(i => (
                     <div key={i} className="flex items-center gap-3 py-2">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0" />
+                      <div className="w-12 h-12 rounded-2xl bg-white/8 shrink-0" />
                       <div className="flex-1 space-y-2">
                         <div className="flex justify-between">
-                          <div className="h-3 bg-gray-200 rounded w-28" />
-                          <div className="h-2.5 bg-gray-200 rounded w-10" />
+                          <div className="h-3 bg-white/8 rounded w-28" />
+                          <div className="h-2.5 bg-white/5 rounded w-10" />
                         </div>
-                        <div className="h-2.5 bg-gray-100 rounded w-48" />
+                        <div className="h-2.5 bg-white/5 rounded w-48" />
                       </div>
                     </div>
                   ))}
@@ -841,42 +838,42 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   setShowDailyPanel(true)
                   if (!tasksFetched) { setTasksFetched(true); setTasksLoading(true); fetchTasks(); fetchTaskReminders() }
                 }}
-                  className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 border bg-white border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-all active:scale-[0.98]">
-                  <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                    <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>
+                  className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 bg-white/5 border border-white/10 hover:bg-white/8 transition-all active:scale-[0.98]">
+                  <div className="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-semibold text-gray-800">{a.daily.title}</p>
-                    <p className="text-xs text-gray-400">{tasks.filter(t => !t.done).length > 0 ? `${tasks.filter(t => !t.done).length} pending` : a.daily.tasksReminders}</p>
+                    <p className="text-sm font-semibold text-white">{a.daily.title}</p>
+                    <p className="text-xs text-slate-500">{tasks.filter(t => !t.done).length > 0 ? `${tasks.filter(t => !t.done).length} pending` : a.daily.tasksReminders}</p>
                   </div>
-                  <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                  <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                 </button>
               </div>
               {pinnedRooms.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-4 pt-1 pb-1">{a.chats.pinned}</p>
-                  <div className="divide-y divide-gray-50">{pinnedRooms.map(room => <ChatRow key={room.id} room={room} userId={userId} pref={getPref(room.id)} pinnedCount={pinnedCount} onAction={() => setActionRoom(room)} onOpenRoom={setActiveRoomId} />)}</div>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-4 pt-1 pb-1">{a.chats.pinned}</p>
+                  <div className="divide-y divide-white/5">{pinnedRooms.map(room => <ChatRow key={room.id} room={room} userId={userId} pref={getPref(room.id)} pinnedCount={pinnedCount} onAction={() => setActionRoom(room)} onOpenRoom={setActiveRoomId} />)}</div>
                 </div>
               )}
               {normalRooms.length > 0 && (
-                <div className={pinnedRooms.length > 0 ? 'border-t border-gray-100 mt-2' : 'mt-2'}>
-                  {pinnedRooms.length > 0 && <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-4 pt-1 pb-1">{a.chats.allChats}</p>}
-                  <div className="divide-y divide-gray-50">{normalRooms.map(room => <ChatRow key={room.id} room={room} userId={userId} pref={getPref(room.id)} pinnedCount={pinnedCount} onAction={() => setActionRoom(room)} onOpenRoom={setActiveRoomId} />)}</div>
+                <div className={pinnedRooms.length > 0 ? 'border-t border-white/5 mt-2' : 'mt-2'}>
+                  {pinnedRooms.length > 0 && <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-4 pt-1 pb-1">{a.chats.allChats}</p>}
+                  <div className="divide-y divide-white/5">{normalRooms.map(room => <ChatRow key={room.id} room={room} userId={userId} pref={getPref(room.id)} pinnedCount={pinnedCount} onAction={() => setActionRoom(room)} onOpenRoom={setActiveRoomId} />)}</div>
                 </div>
               )}
               {archivedRooms.length > 0 && (
-                <div className="border-t border-gray-100 mt-2">
-                  <button onClick={() => setShowArchived(!showArchived)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center shrink-0"><svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg></div>
-                    <div className="flex-1"><p className="text-sm font-semibold text-gray-700">{a.chats.archived}</p><p className="text-xs text-gray-400">{archivedRooms.length} {archivedRooms.length > 1 ? a.chats.conversations : a.chats.conversation}</p></div>
-                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${showArchived ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                <div className="border-t border-white/5 mt-2">
+                  <button onClick={() => setShowArchived(!showArchived)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 transition-colors text-left">
+                    <div className="w-12 h-12 rounded-2xl bg-white/8 flex items-center justify-center shrink-0"><svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg></div>
+                    <div className="flex-1"><p className="text-sm font-semibold text-white/80">{a.chats.archived}</p><p className="text-xs text-slate-500">{archivedRooms.length} {archivedRooms.length > 1 ? a.chats.conversations : a.chats.conversation}</p></div>
+                    <svg className={`w-4 h-4 text-slate-500 transition-transform ${showArchived ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                   </button>
-                  {showArchived && <div className="divide-y divide-gray-50 bg-gray-50">{archivedRooms.map(room => <ChatRow key={room.id} room={room} userId={userId} pref={getPref(room.id)} pinnedCount={pinnedCount} onAction={() => setActionRoom(room)} onOpenRoom={setActiveRoomId} />)}</div>}
+                  {showArchived && <div className="divide-y divide-white/5 bg-white/3">{archivedRooms.map(room => <ChatRow key={room.id} room={room} userId={userId} pref={getPref(room.id)} pinnedCount={pinnedCount} onAction={() => setActionRoom(room)} onOpenRoom={setActiveRoomId} />)}</div>}
                 </div>
               )}
               {!loading && normalRooms.length === 0 && pinnedRooms.length === 0 && !aiRoom && (
                 <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
-                  <p className="text-gray-500 text-sm">{a.chats.empty}</p>
+                  <p className="text-slate-500 text-sm">{a.chats.empty}</p>
                 </div>
               )}
             </div>
@@ -934,21 +931,21 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
         return (
           <>
             {/* Header */}
-            <div className="bg-white border-b border-gray-100 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
+            <div className="bg-[#0a0f1e]/95 backdrop-blur-sm border-b border-white/8 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
               <div className="flex items-center justify-between mb-3">
-                <h1 className="text-2xl font-bold text-gray-900">{a.files.title}</h1>
+                <h1 className="text-xl font-bold text-white">{a.files.title}</h1>
                 <div className="flex items-center gap-2">
                   {selectionMode ? (
                     <button onClick={() => { setSelectionMode(false); setSelectedIds(new Set()) }}
-                      className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl bg-blue-50">{a.files.cancel}</button>
+                      className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl bg-blue-500/10">{a.files.cancel}</button>
                   ) : (
                     <>
                       <button onClick={() => setSelectionMode(true)}
-                        className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl bg-blue-50">{a.files.select}</button>
+                        className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl bg-blue-500/10">{a.files.select}</button>
                       <button onClick={createProject}
-                        className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-xl border border-blue-200 bg-white">{a.files.newProject}</button>
+                        className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl border border-blue-500/30 bg-transparent">{a.files.newProject}</button>
                       <button onClick={() => docsFileRef.current?.click()} disabled={docsUploading}
-                        className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
+                        className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
                         {docsUploading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
                       </button>
                       <input ref={docsFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.zip" className="hidden" onChange={uploadDocFile} />
@@ -957,11 +954,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 </div>
               </div>
               <input value={archivosSearch} onChange={e => setArchivosSearch(e.target.value)} placeholder={a.files.search}
-                className="w-full bg-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 mb-3" />
+                className="w-full bg-white/8 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 mb-3" />
               <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
                 {(['all', 'proyectos', 'archivos', 'imagenes'] as const).map(f => (
                   <button key={f} onClick={() => setArchivosFilter(f)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-[#2563EB] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-blue-600 text-white' : 'bg-white/8 text-slate-400 hover:bg-white/12'}`}>
                     {f === 'all' ? a.files.filterAll : f === 'proyectos' ? a.files.filterProjects : f === 'archivos' ? a.files.filterFiles : a.files.filterImages}
                   </button>
                 ))}
@@ -969,41 +966,41 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto pb-28 bg-gray-50">
+            <div className="flex-1 overflow-y-auto pb-28">
               {isLoading && <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
 
               {!isLoading && filteredProjects.length === 0 && filteredFiles.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
-                  <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                     <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                   </div>
-                  <p className="text-gray-600 font-medium">{a.files.empty}</p>
-                  <p className="text-sm text-gray-400">{a.files.emptyHint}</p>
+                  <p className="text-white/80 font-medium">{a.files.empty}</p>
+                  <p className="text-sm text-slate-500">{a.files.emptyHint}</p>
                 </div>
               )}
 
               {/* Proyectos */}
               {filteredProjects.length > 0 && (
                 <div className="px-4 pt-4">
-                  {(archivosFilter === 'all') && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{a.files.projectsSection}</p>}
+                  {(archivosFilter === 'all') && <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">{a.files.projectsSection}</p>}
                   <div className="space-y-2.5">
                     {filteredProjects.map(proj => (
-                      <div key={proj.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${selectedIds.has(proj.id) ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
+                      <div key={proj.id} className={`bg-white/5 rounded-2xl border overflow-hidden transition-all ${selectedIds.has(proj.id) ? 'border-blue-500/60' : 'border-white/10'}`}>
                         <button onClick={() => selectionMode ? toggleSelect(proj.id) : setActiveProject(proj)}
                           className="w-full flex items-start gap-3 px-4 py-3.5 text-left">
                           {selectionMode && (
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-600'}`}>
                               {selectedIds.has(proj.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                             </div>
                           )}
-                          <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                          <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">{proj.title}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{formatMessageTime(proj.created_at)} · {proj.project_files?.length ? `${proj.project_files.length} archivo${proj.project_files.length !== 1 ? 's' : ''}` : 'do AI'}</p>
+                            <p className="text-sm font-semibold text-white">{proj.title}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{formatMessageTime(proj.created_at)} · {proj.project_files?.length ? `${proj.project_files.length} archivo${proj.project_files.length !== 1 ? 's' : ''}` : 'do AI'}</p>
                           </div>
-                          {!selectionMode && <svg className="w-4 h-4 text-gray-400 mt-1 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
+                          {!selectionMode && <svg className="w-4 h-4 text-slate-600 mt-1 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
                         </button>
                       </div>
                     ))}
@@ -1014,14 +1011,14 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               {/* Archivos e Imágenes */}
               {filteredFiles.length > 0 && (
                 <div className="px-4 pt-4">
-                  {(archivosFilter === 'all') && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 mt-2">{a.files.filesSection}</p>}
+                  {(archivosFilter === 'all') && <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2 mt-2">{a.files.filesSection}</p>}
                   {archivosFilter === 'imagenes' ? (
                     <div className="grid grid-cols-3 gap-1.5">
                       {filteredFiles.map(file => (
-                        <div key={file.id} className={`relative aspect-square rounded-xl overflow-hidden ${selectedIds.has(file.id) ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}>
+                        <div key={file.id} className={`relative aspect-square rounded-xl overflow-hidden ${selectedIds.has(file.id) ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-[#0a0f1e]' : ''}`}>
                           {selectionMode && (
                             <button onClick={() => toggleSelect(file.id)} className="absolute inset-0 z-10 w-full h-full">
-                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'bg-white/80 border-white'}`}>
+                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'bg-black/40 border-white/60'}`}>
                                 {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                               </div>
                             </button>
@@ -1035,23 +1032,23 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   ) : (
                     <div className="space-y-2">
                       {filteredFiles.map(file => (
-                        <div key={file.id} className={`flex items-center gap-3 bg-white rounded-2xl border px-4 py-3 shadow-sm transition-all ${selectedIds.has(file.id) ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
+                        <div key={file.id} className={`flex items-center gap-3 bg-white/5 rounded-2xl border px-4 py-3 transition-all ${selectedIds.has(file.id) ? 'border-blue-500/60' : 'border-white/10'}`}>
                           {selectionMode && (
                             <button onClick={() => toggleSelect(file.id)}>
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-600'}`}>
                                 {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                               </div>
                             </button>
                           )}
                           {file.type === 'image'
-                            ? <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-gray-100"><img src={file.url} alt={file.name} className="w-full h-full object-cover" /></div>
+                            ? <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-white/10"><img src={file.url} alt={file.name} className="w-full h-full object-cover" /></div>
                             : <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${fileColor(file.name)}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg></div>
                           }
                           <a href={!selectionMode ? file.url : undefined} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0" onClick={selectionMode ? (e) => { e.preventDefault(); toggleSelect(file.id) } : undefined}>
-                            <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{file.sender_emoji} {file.sender}{file.size ? ` · ${Math.round(file.size / 1024)} KB` : ''}</p>
+                            <p className="text-sm font-medium text-white truncate">{file.name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{file.sender_emoji} {file.sender}{file.size ? ` · ${Math.round(file.size / 1024)} KB` : ''}</p>
                           </a>
-                          {!selectionMode && <a href={file.url} target="_blank" rel="noopener noreferrer"><svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg></a>}
+                          {!selectionMode && <a href={file.url} target="_blank" rel="noopener noreferrer"><svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg></a>}
                         </div>
                       ))}
                     </div>
@@ -1089,25 +1086,25 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           .sort((a, b) => a.name.localeCompare(b.name))
         return (
           <>
-            <div className="bg-white border-b border-gray-100 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
+            <div className="bg-[#0a0f1e]/95 backdrop-blur-sm border-b border-white/8 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
               <div className="flex items-center justify-between mb-3">
-                <h1 className="text-2xl font-bold text-gray-900">{a.contacts.title}</h1>
+                <h1 className="text-xl font-bold text-white">{a.contacts.title}</h1>
                 <button onClick={() => { setShowNewContact(true); setShowNewMenu(false) }}
-                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 active:scale-95 transition-all">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center hover:bg-white/12 active:scale-95 transition-all">
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 </button>
               </div>
               {contacts.length > 0 && (
                 <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder={a.contacts.search}
-                  className="w-full bg-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none" />
+                  className="w-full bg-white/8 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50" />
               )}
             </div>
             <div className="flex-1 overflow-y-auto pb-24">
               {contacts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-8">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">👥</div>
-                  <p className="text-gray-500 text-sm font-medium">{a.contacts.empty}</p>
-                  <p className="text-xs text-gray-400">{a.contacts.emptyHint}</p>
+                  <div className="w-16 h-16 rounded-2xl bg-white/8 flex items-center justify-center text-2xl">👥</div>
+                  <p className="text-slate-400 text-sm font-medium">{a.contacts.empty}</p>
+                  <p className="text-xs text-slate-500">{a.contacts.emptyHint}</p>
                   <button onClick={() => setShowNewContact(true)}
                     className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-full">
                     {a.contacts.add}
@@ -1115,21 +1112,21 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center px-8">
-                  <p className="text-gray-400 text-sm">{a.contacts.noResults} &ldquo;{contactSearch}&rdquo;</p>
+                  <p className="text-slate-500 text-sm">{a.contacts.noResults} &ldquo;{contactSearch}&rdquo;</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-white/5">
                   {filtered.map(c => (
                     <button key={c.id} onClick={() => setSelectedContact(c)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 active:bg-gray-100 text-left transition-colors">
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 active:bg-white/8 text-left transition-colors">
                       {c.avatar_url
-                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
-                        : <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
+                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
+                        : <div className={`w-11 h-11 rounded-2xl ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
                       }
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
+                        <p className="text-sm font-semibold text-white truncate">{c.name}</p>
                       </div>
-                      <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                      <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                     </button>
                   ))}
                 </div>
@@ -1138,23 +1135,21 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
             {/* Contact detail sheet */}
             {selectedContact && (
-              <div className="fixed inset-0 z-50 flex items-end bg-black/30" onClick={() => { setSelectedContact(null); setEditingContact(false) }}>
-                <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl pb-8" onClick={e => e.stopPropagation()}>
-                  <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1" />
+              <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={() => { setSelectedContact(null); setEditingContact(false) }}>
+                <div className="w-full bg-[#111827] rounded-t-3xl overflow-hidden shadow-2xl pb-8 border-t border-white/10" onClick={e => e.stopPropagation()}>
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-1" />
 
                   {editingContact ? (
-                    /* ── Edit form ── */
                     <div className="px-5 pt-4 pb-2">
                       <div className="flex items-center justify-between mb-5">
-                        <button onClick={() => setEditingContact(false)} className="text-sm text-gray-400 font-medium">{a.contacts.cancel}</button>
-                        <h2 className="text-base font-semibold text-gray-900">{a.contacts.edit}</h2>
+                        <button onClick={() => setEditingContact(false)} className="text-sm text-slate-500 font-medium">{a.contacts.cancel}</button>
+                        <h2 className="text-base font-semibold text-white">{a.contacts.edit}</h2>
                         <button
                           disabled={savingContactEdit || !editContactFirst.trim()}
                           onClick={async () => {
                             if (!selectedContact) return
                             setSavingContactEdit(true)
                             const newName = [editContactFirst.trim(), editContactLast.trim()].filter(Boolean).join(' ')
-                            // Optimistic update
                             setContacts(prev => prev.map(c => c.id === selectedContact.id
                               ? { ...c, name: newName, firstName: editContactFirst.trim(), lastName: editContactLast.trim() }
                               : c
@@ -1168,87 +1163,74 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                             })
                             setSavingContactEdit(false)
                           }}
-                          className="text-sm text-[#2563EB] font-semibold disabled:opacity-40"
+                          className="text-sm text-blue-400 font-semibold disabled:opacity-40"
                         >
                           {savingContactEdit ? a.contacts.saving : a.contacts.save}
                         </button>
                       </div>
                       <div className="flex flex-col items-center mb-5">
                         {selectedContact.avatar_url
-                          ? <img src={selectedContact.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover" />
-                          : <div className={`w-16 h-16 rounded-full ${selectedContact.bg} flex items-center justify-center text-2xl`}>{selectedContact.emoji}</div>
+                          ? <img src={selectedContact.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" />
+                          : <div className={`w-16 h-16 rounded-2xl ${selectedContact.bg} flex items-center justify-center text-2xl`}>{selectedContact.emoji}</div>
                         }
                       </div>
                       <div className="space-y-3">
-                        <div className="bg-gray-50 rounded-2xl px-4 py-3">
-                          <p className="text-[11px] text-gray-400 font-medium mb-1">{a.contacts.firstName}</p>
-                          <input
-                            autoFocus
-                            value={editContactFirst}
-                            onChange={e => setEditContactFirst(e.target.value)}
-                            placeholder={a.contacts.firstName}
-                            maxLength={30}
-                            className="w-full text-[15px] text-gray-900 bg-transparent focus:outline-none"
-                          />
+                        <div className="bg-white/8 border border-white/10 rounded-2xl px-4 py-3">
+                          <p className="text-[11px] text-slate-500 font-medium mb-1">{a.contacts.firstName}</p>
+                          <input autoFocus value={editContactFirst} onChange={e => setEditContactFirst(e.target.value)}
+                            placeholder={a.contacts.firstName} maxLength={30}
+                            className="w-full text-[15px] text-white bg-transparent focus:outline-none" />
                         </div>
-                        <div className="bg-gray-50 rounded-2xl px-4 py-3">
-                          <p className="text-[11px] text-gray-400 font-medium mb-1">{a.contacts.lastName}</p>
-                          <input
-                            value={editContactLast}
-                            onChange={e => setEditContactLast(e.target.value)}
-                            placeholder={`${a.contacts.lastName} (optional)`}
-                            maxLength={30}
-                            className="w-full text-[15px] text-gray-900 bg-transparent focus:outline-none"
-                          />
+                        <div className="bg-white/8 border border-white/10 rounded-2xl px-4 py-3">
+                          <p className="text-[11px] text-slate-500 font-medium mb-1">{a.contacts.lastName}</p>
+                          <input value={editContactLast} onChange={e => setEditContactLast(e.target.value)}
+                            placeholder={`${a.contacts.lastName} (optional)`} maxLength={30}
+                            className="w-full text-[15px] text-white bg-transparent focus:outline-none" />
                         </div>
                       </div>
                     </div>
                   ) : (
-                    /* ── Normal view ── */
                     <>
-                      {/* Avatar + name */}
                       <div className="flex flex-col items-center pt-4 pb-5">
                         {selectedContact.avatar_url
-                          ? <img src={selectedContact.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover mb-3" />
-                          : <div className={`w-20 h-20 rounded-full ${selectedContact.bg} flex items-center justify-center text-3xl mb-3`}>{selectedContact.emoji}</div>
+                          ? <img src={selectedContact.avatar_url} alt="" className="w-20 h-20 rounded-2xl object-cover mb-3" />
+                          : <div className={`w-20 h-20 rounded-2xl ${selectedContact.bg} flex items-center justify-center text-3xl mb-3`}>{selectedContact.emoji}</div>
                         }
-                        <p className="text-lg font-bold text-gray-900">{selectedContact.name}</p>
+                        <p className="text-lg font-bold text-white">{selectedContact.name}</p>
                       </div>
-                      {/* Quick actions */}
-                      <div className="flex mx-5 rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-sm mb-5">
+                      <div className="flex mx-5 rounded-2xl overflow-hidden border border-white/10 bg-white/5 mb-4">
                         <button onClick={() => { setSelectedContact(null); setActiveTab('mensajes'); setActiveRoomId(selectedContact.room_id) }}
-                          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 border-r border-gray-100 active:bg-gray-50">
-                          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
+                          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 border-r border-white/10 active:bg-white/8">
+                          <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
                           </div>
-                          <span className="text-xs text-blue-600 font-medium">{a.tabs.messages}</span>
+                          <span className="text-xs text-blue-400 font-medium">{a.tabs.messages}</span>
                         </button>
                         <button onClick={() => { const c = selectedContact; setSelectedContact(null); setAutoCallRoomId(c.room_id); setActiveRoomId(c.room_id) }}
-                          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 border-r border-gray-100 active:bg-gray-50">
-                          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 border-r border-white/10 active:bg-white/8">
+                          <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                           </div>
-                          <span className="text-xs text-blue-600 font-medium">{a.tabs.calls}</span>
+                          <span className="text-xs text-blue-400 font-medium">{a.tabs.calls}</span>
                         </button>
                         <button onClick={() => { setEditContactFirst(selectedContact.firstName); setEditContactLast(selectedContact.lastName); setEditingContact(true) }}
-                          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 active:bg-gray-50">
-                          <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
+                          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 active:bg-white/8">
+                          <div className="w-9 h-9 rounded-full bg-white/8 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" /></svg>
                           </div>
-                          <span className="text-xs text-gray-600 font-medium">{a.profile.edit}</span>
+                          <span className="text-xs text-slate-400 font-medium">{a.profile.edit}</span>
                         </button>
                       </div>
-                      {/* Delete */}
-                      <div className="mx-5 rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-sm">
+                      <div className="mx-5 rounded-2xl overflow-hidden border border-red-500/20 bg-red-500/5">
                         <button onClick={async () => {
                           const c = selectedContact
                           setSelectedContact(null)
                           setEditingContact(false)
                           await fetch('/api/demo/contacts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, contact_id: c.id }) })
                           await fetchContacts()
-                        }} className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-red-50 transition-colors">
+                        }} className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-red-500/10 transition-colors">
                           <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 10.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
-                          <span className="text-[15px] text-red-500 font-medium">Eliminar contacto</span>
+                          <span className="text-[15px] text-red-400 font-medium">Eliminar contacto</span>
                         </button>
                       </div>
                     </>
@@ -1263,19 +1245,18 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* ── LLAMADAS TAB ── */}
       {activeTab === 'llamadas' && (
         <>
-          <div className="bg-white border-b border-gray-100 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
-            <h1 className="text-2xl font-bold text-gray-900">Llamadas</h1>
+          <div className="bg-[#0a0f1e]/95 backdrop-blur-sm border-b border-white/8 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
+            <h1 className="text-xl font-bold text-white">Llamadas</h1>
           </div>
           <div className="flex-1 overflow-y-auto pb-24">
-            {/* Recientes */}
             {callHistory.length > 0 && (
               <div>
                 <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Recientes</p>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Recientes</p>
                   <button onClick={() => { setCallHistory([]); try { localStorage.removeItem(`call_history_${userId}`) } catch {} }}
                     className="text-xs text-red-400 font-medium">Borrar</button>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-white/5">
                   {callHistory.map((log, i) => {
                     const contact = contacts.find(c => c.room_id === log.roomId)
                     const isOut = log.type === 'outgoing'
@@ -1291,25 +1272,25 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     return (
                       <div key={i} className="flex items-center gap-3 px-4 py-3">
                         {contact?.avatar_url
-                          ? <img src={contact.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
-                          : <div className={`w-11 h-11 rounded-full ${contact?.bg ?? 'bg-gray-300'} flex items-center justify-center text-lg shrink-0`}>{contact?.emoji ?? '👤'}</div>
+                          ? <img src={contact.avatar_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
+                          : <div className={`w-11 h-11 rounded-2xl ${contact?.bg ?? 'bg-slate-700'} flex items-center justify-center text-lg shrink-0`}>{contact?.emoji ?? '👤'}</div>
                         }
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{log.roomName}</p>
+                          <p className="text-sm font-semibold text-white truncate">{log.roomName}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             {isOut
-                              ? <svg className="w-3 h-3 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg>
-                              : <svg className={`w-3 h-3 shrink-0 ${isMissed ? 'text-red-400' : 'text-green-500'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" /></svg>
+                              ? <svg className="w-3 h-3 text-blue-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg>
+                              : <svg className={`w-3 h-3 shrink-0 ${isMissed ? 'text-red-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" /></svg>
                             }
-                            <p className={`text-xs ${isMissed ? 'text-red-400' : 'text-gray-400'}`}>
+                            <p className={`text-xs ${isMissed ? 'text-red-400' : 'text-slate-500'}`}>
                               {log.status === 'completed' ? `${relTime}${fmtDur(log.duration) ? ` · ${fmtDur(log.duration)}` : ''}` : log.status === 'missed' ? `${a.calls.noAnswer} · ${relTime}` : `${a.calls.declined} · ${relTime}`}
                             </p>
                           </div>
                         </div>
                         {contact && (
                           <button onClick={() => { setAutoCallRoomId(contact.room_id); setActiveRoomId(contact.room_id) }}
-                            className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 active:scale-95 transition-all">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                            className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center active:scale-95 transition-all">
+                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                           </button>
                         )}
                       </div>
@@ -1319,31 +1300,29 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
             )}
 
-            {/* Contactos para llamar */}
             {contacts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-8">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">📞</div>
-                <p className="text-gray-500 text-sm font-medium">{a.calls.noContacts}</p>
-                <p className="text-xs text-gray-400">{a.calls.noContactsHint}</p>
+                <div className="w-16 h-16 rounded-2xl bg-white/8 flex items-center justify-center text-2xl">📞</div>
+                <p className="text-slate-400 text-sm font-medium">{a.calls.noContacts}</p>
+                <p className="text-xs text-slate-500">{a.calls.noContactsHint}</p>
               </div>
             ) : (
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-4 pt-4 pb-2">{a.calls.contactsSection}</p>
-                <div className="divide-y divide-gray-100">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-4 pt-4 pb-2">{a.calls.contactsSection}</p>
+                <div className="divide-y divide-white/5">
                   {contacts.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
                     <div key={c.id} className="flex items-center gap-3 px-4 py-3">
                       {c.avatar_url
-                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
-                        : <div className={`w-11 h-11 rounded-full ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
+                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
+                        : <div className={`w-11 h-11 rounded-2xl ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
                       }
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
-                        <p className="text-xs text-gray-400">{a.calls.tapToCall}</p>
+                        <p className="text-sm font-semibold text-white truncate">{c.name}</p>
+                        <p className="text-xs text-slate-500">{a.calls.tapToCall}</p>
                       </div>
-                      <button
-                        onClick={() => { setAutoCallRoomId(c.room_id); setActiveRoomId(c.room_id) }}
-                        className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 active:scale-95 transition-all">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                      <button onClick={() => { setAutoCallRoomId(c.room_id); setActiveRoomId(c.room_id) }}
+                        className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center active:scale-95 transition-all">
+                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                       </button>
                     </div>
                   ))}
@@ -2089,7 +2068,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
   const muted = !!pref.muted_until && new Date(pref.muted_until) > new Date()
   const hasUnread = room.unread > 0 && !muted
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 transition-colors active:bg-blue-50/40 ${hasUnread ? 'bg-blue-50/30' : ''}`}>
+    <div className={`flex items-center gap-3 px-4 py-2.5 transition-colors active:bg-white/5 ${hasUnread ? 'bg-blue-500/5' : ''}`}>
       {/* Unread accent bar */}
       <div className={`absolute left-0 w-0.5 h-10 rounded-r-full transition-all ${hasUnread ? 'bg-blue-500' : 'bg-transparent'}`} />
 
@@ -2108,7 +2087,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
             </span>
           )}
           {muted && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-slate-800 border-2 border-[#0a0f1e] flex items-center justify-center">
               <svg className="w-2.5 h-2.5 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>
             </span>
           )}
@@ -2118,28 +2097,28 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
           <div className="flex items-center justify-between gap-2 mb-0.5">
             <div className="flex items-center gap-1.5 min-w-0">
               {pref.pinned && <svg className="w-3 h-3 text-blue-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>}
-              <p className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900' : 'font-semibold text-gray-700'}`}>{room.name}</p>
+              <p className={`text-sm truncate ${hasUnread ? 'font-bold text-white' : 'font-semibold text-white/80'}`}>{room.name}</p>
             </div>
             {room.lastMsg && (
-              <span className={`text-[11px] shrink-0 tabular-nums ${hasUnread ? 'text-blue-600 font-semibold' : 'text-gray-400'}`}>
+              <span className={`text-[11px] shrink-0 tabular-nums ${hasUnread ? 'text-blue-400 font-semibold' : 'text-slate-500'}`}>
                 {formatMessageTime(room.lastMsg.created_at)}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
             {room.lastMsg?.user_id === userId && (
-              <svg className={`w-3.5 h-3.5 shrink-0 ${room.seenByOthers ? 'text-blue-500' : 'text-gray-300'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <svg className={`w-3.5 h-3.5 shrink-0 ${room.seenByOthers ? 'text-blue-400' : 'text-slate-700'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               </svg>
             )}
-            <p className={`text-xs truncate ${hasUnread ? 'text-gray-600 font-medium' : 'text-gray-400'}`}>
+            <p className={`text-xs truncate ${hasUnread ? 'text-white/70 font-medium' : 'text-slate-500'}`}>
               {room.lastMsg?.content ?? t.app.chat.noMessages}
             </p>
           </div>
         </div>
       </div>
 
-      <button onClick={e => { e.stopPropagation(); onAction() }} className="p-1.5 text-gray-300 hover:text-gray-400 shrink-0 transition-colors">
+      <button onClick={e => { e.stopPropagation(); onAction() }} className="p-1.5 text-slate-600 hover:text-slate-400 shrink-0 transition-colors">
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
       </button>
     </div>
@@ -2171,18 +2150,18 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
     },
   ]
   return (
-    <div className="bg-white/95 backdrop-blur-md border-t border-gray-100/80 flex fixed bottom-0 left-0 right-0 z-10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <div className="bg-[#0a0f1e]/95 backdrop-blur-md border-t border-white/8 flex fixed bottom-0 left-0 right-0 z-10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {tabs.map(tab => {
         const isActive = active === tab.id
         return (
           <button key={tab.id} onClick={() => onTabChange(tab.id)}
             className="flex-1 flex flex-col items-center pt-1.5 pb-1 gap-0.5 transition-colors relative">
-            <div className={`relative flex items-center justify-center w-12 h-7 rounded-full transition-all duration-300 ${isActive ? 'bg-blue-100' : ''}`}>
-              <div className={`transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`relative flex items-center justify-center w-12 h-7 rounded-full transition-all duration-300 ${isActive ? 'bg-blue-600/20' : ''}`}>
+              <div className={`transition-colors duration-200 ${isActive ? 'text-blue-400' : 'text-slate-600'}`}>
                 {tab.icon}
               </div>
             </div>
-            <span className={`text-[9px] font-semibold transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>{tab.label}</span>
+            <span className={`text-[9px] font-semibold transition-colors ${isActive ? 'text-blue-400' : 'text-slate-600'}`}>{tab.label}</span>
           </button>
         )
       })}
