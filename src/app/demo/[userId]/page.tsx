@@ -647,7 +647,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
   if (!profile) return (
     <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -691,7 +691,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {/* Reminder toast */}
       {dueReminder && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm transition-all duration-300 ${reminderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="bg-blue-500 text-white rounded-2xl shadow-xl px-4 py-3 flex items-start gap-3">
+          <div className="bg-blue-400 text-white rounded-2xl shadow-xl px-4 py-3 flex items-start gap-3">
             <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold opacity-80 mb-0.5">{a.reminder.title}</p>
@@ -722,7 +722,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       <button onClick={() => { setShowNewMenu(false); setNgName(''); setNgSelected([]); setNgError(''); setShowNewGroup(true) }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-left transition-colors">
                         <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
-                          <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
+                          <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
                         </div>
                         <span className="text-sm font-medium text-white/80">{a.chats.newGroup}</span>
                       </button>
@@ -755,7 +755,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           {isSearching ? (
             <div className="flex-1 overflow-y-auto pb-20">
             <div className="max-w-3xl mx-auto">
-              {searchLoading && <div className="flex items-center justify-center py-10"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
+              {searchLoading && <div className="flex items-center justify-center py-10"><div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /></div>}
               {!searchLoading && searchQuery.length >= 2 && searchResults.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-8">
                   <p className="text-slate-400 font-medium">{a.chats.noResults} &ldquo;{searchQuery}&rdquo;</p>
@@ -937,15 +937,15 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="flex items-center gap-2">
                   {selectionMode ? (
                     <button onClick={() => { setSelectionMode(false); setSelectedIds(new Set()) }}
-                      className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl bg-blue-500/10">{a.files.cancel}</button>
+                      className="text-sm text-blue-300 font-medium px-3 py-1.5 rounded-xl bg-blue-500/10">{a.files.cancel}</button>
                   ) : (
                     <>
                       <button onClick={() => setSelectionMode(true)}
-                        className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl bg-blue-500/10">{a.files.select}</button>
+                        className="text-sm text-blue-300 font-medium px-3 py-1.5 rounded-xl bg-blue-500/10">{a.files.select}</button>
                       <button onClick={createProject}
-                        className="text-sm text-blue-400 font-medium px-3 py-1.5 rounded-xl border border-blue-500/30 bg-transparent">{a.files.newProject}</button>
+                        className="text-sm text-blue-300 font-medium px-3 py-1.5 rounded-xl border border-blue-400/30 bg-transparent">{a.files.newProject}</button>
                       <button onClick={() => docsFileRef.current?.click()} disabled={docsUploading}
-                        className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
+                        className="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center text-white disabled:opacity-40 shadow-sm active:scale-95 transition-all">
                         {docsUploading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
                       </button>
                       <input ref={docsFileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.zip" className="hidden" onChange={uploadDocFile} />
@@ -954,11 +954,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 </div>
               </div>
               <input value={archivosSearch} onChange={e => setArchivosSearch(e.target.value)} placeholder={a.files.search}
-                className="w-full bg-white/8 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 mb-3" />
+                className="w-full bg-white/8 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-400/50 mb-3" />
               <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
                 {(['all', 'proyectos', 'archivos', 'imagenes'] as const).map(f => (
                   <button key={f} onClick={() => setArchivosFilter(f)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-blue-500 text-white' : 'bg-white/8 text-slate-400 hover:bg-white/12'}`}>
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${archivosFilter === f ? 'bg-blue-400 text-white' : 'bg-white/8 text-slate-400 hover:bg-white/12'}`}>
                     {f === 'all' ? a.files.filterAll : f === 'proyectos' ? a.files.filterProjects : f === 'archivos' ? a.files.filterFiles : a.files.filterImages}
                   </button>
                 ))}
@@ -967,12 +967,12 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto pb-28">
-              {isLoading && <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}
+              {isLoading && <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /></div>}
 
               {!isLoading && filteredProjects.length === 0 && filteredFiles.length === 0 && (
                 <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
                   <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                    <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                    <svg className="w-7 h-7 text-blue-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                   </div>
                   <p className="text-white/80 font-medium">{a.files.empty}</p>
                   <p className="text-sm text-slate-500">{a.files.emptyHint}</p>
@@ -985,16 +985,16 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   {(archivosFilter === 'all') && <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">{a.files.projectsSection}</p>}
                   <div className="space-y-2.5">
                     {filteredProjects.map(proj => (
-                      <div key={proj.id} className={`bg-white/5 rounded-2xl border overflow-hidden transition-all ${selectedIds.has(proj.id) ? 'border-blue-500/60' : 'border-white/10'}`}>
+                      <div key={proj.id} className={`bg-white/5 rounded-2xl border overflow-hidden transition-all ${selectedIds.has(proj.id) ? 'border-blue-400/60' : 'border-white/10'}`}>
                         <button onClick={() => selectionMode ? toggleSelect(proj.id) : setActiveProject(proj)}
                           className="w-full flex items-start gap-3 px-4 py-3.5 text-left">
                           {selectionMode && (
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-600'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${selectedIds.has(proj.id) ? 'bg-blue-400 border-blue-400' : 'border-slate-600'}`}>
                               {selectedIds.has(proj.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                             </div>
                           )}
                           <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                            <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-white">{proj.title}</p>
@@ -1015,10 +1015,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   {archivosFilter === 'imagenes' ? (
                     <div className="grid grid-cols-3 gap-1.5">
                       {filteredFiles.map(file => (
-                        <div key={file.id} className={`relative aspect-square rounded-xl overflow-hidden ${selectedIds.has(file.id) ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-[#0a0f1e]' : ''}`}>
+                        <div key={file.id} className={`relative aspect-square rounded-xl overflow-hidden ${selectedIds.has(file.id) ? 'ring-2 ring-blue-400 ring-offset-1 ring-offset-[#0a0f1e]' : ''}`}>
                           {selectionMode && (
                             <button onClick={() => toggleSelect(file.id)} className="absolute inset-0 z-10 w-full h-full">
-                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'bg-black/40 border-white/60'}`}>
+                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(file.id) ? 'bg-blue-400 border-blue-400' : 'bg-black/40 border-white/60'}`}>
                                 {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                               </div>
                             </button>
@@ -1032,10 +1032,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   ) : (
                     <div className="space-y-2">
                       {filteredFiles.map(file => (
-                        <div key={file.id} className={`flex items-center gap-3 bg-white/5 rounded-2xl border px-4 py-3 transition-all ${selectedIds.has(file.id) ? 'border-blue-500/60' : 'border-white/10'}`}>
+                        <div key={file.id} className={`flex items-center gap-3 bg-white/5 rounded-2xl border px-4 py-3 transition-all ${selectedIds.has(file.id) ? 'border-blue-400/60' : 'border-white/10'}`}>
                           {selectionMode && (
                             <button onClick={() => toggleSelect(file.id)}>
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-500 border-blue-500' : 'border-slate-600'}`}>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(file.id) ? 'bg-blue-400 border-blue-400' : 'border-slate-600'}`}>
                                 {selectedIds.has(file.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                               </div>
                             </button>
@@ -1064,7 +1064,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="bg-gray-900 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-xl">
                   <span className="text-white text-sm font-medium flex-1">{totalSelected} {a.files.selected}</span>
                   <button onClick={askAISelected}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500 text-white text-xs font-semibold active:scale-95 transition-all">
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-400 text-white text-xs font-semibold active:scale-95 transition-all">
                     <span>✦</span> {a.files.askAI}
                   </button>
                   <button onClick={deleteSelected}
@@ -1096,7 +1096,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               </div>
               {contacts.length > 0 && (
                 <input value={contactSearch} onChange={e => setContactSearch(e.target.value)} placeholder={a.contacts.search}
-                  className="w-full bg-white/8 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50" />
+                  className="w-full bg-white/8 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-400/50" />
               )}
             </div>
             <div className="flex-1 overflow-y-auto pb-24">
@@ -1106,7 +1106,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <p className="text-slate-400 text-sm font-medium">{a.contacts.empty}</p>
                   <p className="text-xs text-slate-500">{a.contacts.emptyHint}</p>
                   <button onClick={() => setShowNewContact(true)}
-                    className="mt-2 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full">
+                    className="mt-2 px-4 py-2 bg-blue-400 text-white text-sm font-medium rounded-full">
                     {a.contacts.add}
                   </button>
                 </div>
@@ -1163,7 +1163,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                             })
                             setSavingContactEdit(false)
                           }}
-                          className="text-sm text-blue-400 font-semibold disabled:opacity-40"
+                          className="text-sm text-blue-300 font-semibold disabled:opacity-40"
                         >
                           {savingContactEdit ? a.contacts.saving : a.contacts.save}
                         </button>
@@ -1202,16 +1202,16 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         <button onClick={() => { setSelectedContact(null); setActiveTab('mensajes'); setActiveRoomId(selectedContact.room_id) }}
                           className="flex-1 flex flex-col items-center gap-1.5 py-3.5 border-r border-white/10 active:bg-white/8">
                           <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
+                            <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg>
                           </div>
-                          <span className="text-xs text-blue-400 font-medium">{a.tabs.messages}</span>
+                          <span className="text-xs text-blue-300 font-medium">{a.tabs.messages}</span>
                         </button>
                         <button onClick={() => { const c = selectedContact; setSelectedContact(null); setAutoCallRoomId(c.room_id); setActiveRoomId(c.room_id) }}
                           className="flex-1 flex flex-col items-center gap-1.5 py-3.5 border-r border-white/10 active:bg-white/8">
                           <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center">
-                            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                            <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                           </div>
-                          <span className="text-xs text-blue-400 font-medium">{a.tabs.calls}</span>
+                          <span className="text-xs text-blue-300 font-medium">{a.tabs.calls}</span>
                         </button>
                         <button onClick={() => { setEditContactFirst(selectedContact.firstName); setEditContactLast(selectedContact.lastName); setEditingContact(true) }}
                           className="flex-1 flex flex-col items-center gap-1.5 py-3.5 active:bg-white/8">
@@ -1279,7 +1279,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           <p className="text-sm font-semibold text-white truncate">{log.roomName}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             {isOut
-                              ? <svg className="w-3 h-3 text-blue-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg>
+                              ? <svg className="w-3 h-3 text-blue-300 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg>
                               : <svg className={`w-3 h-3 shrink-0 ${isMissed ? 'text-red-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" /></svg>
                             }
                             <p className={`text-xs ${isMissed ? 'text-red-400' : 'text-slate-500'}`}>
@@ -1289,8 +1289,8 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         </div>
                         {contact && (
                           <button onClick={() => { setAutoCallRoomId(contact.room_id); setActiveRoomId(contact.room_id) }}
-                            className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center active:scale-95 transition-all">
-                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                            className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center active:scale-95 transition-all">
+                            <svg className="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                           </button>
                         )}
                       </div>
@@ -1321,8 +1321,8 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         <p className="text-xs text-slate-500">{a.calls.tapToCall}</p>
                       </div>
                       <button onClick={() => { setAutoCallRoomId(c.room_id); setActiveRoomId(c.room_id) }}
-                        className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center active:scale-95 transition-all">
-                        <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
+                        className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center active:scale-95 transition-all">
+                        <svg className="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" /></svg>
                       </button>
                     </div>
                   ))}
@@ -1342,13 +1342,13 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           <div className="flex-1 overflow-y-auto pb-24 bg-[#0a0f1e]">
 
             {/* Identity card */}
-            <div className="mx-4 mt-5 relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-500/20 via-indigo-600/10 to-slate-900 border border-white/10 p-6">
+            <div className="mx-4 mt-5 relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-400/20 via-indigo-600/10 to-slate-900 border border-white/10 p-6">
               <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
               <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
               <div className="relative flex items-center gap-4">
                 {/* Square avatar */}
                 <div className="relative shrink-0">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-blue-500/40 shadow-xl shadow-blue-900/40 bg-[#d9d0f0] flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-blue-400/40 shadow-xl shadow-blue-900/40 bg-[#d9d0f0] flex items-center justify-center">
                     {avatarUploading ? (
                       <div className="w-7 h-7 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                     ) : (profile as any).avatar_url ? (
@@ -1393,7 +1393,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <div className="flex justify-end gap-4 mt-3">
                     <button onClick={() => setEditingProfile(false)} className="text-sm text-slate-500 font-medium">{a.profile.cancel}</button>
                     <button onClick={saveProfile} disabled={profileSaving || editName.trim().length < 2}
-                      className="text-sm text-blue-400 font-semibold disabled:opacity-40">
+                      className="text-sm text-blue-300 font-semibold disabled:opacity-40">
                       {profileSaving ? a.profile.saving : a.profile.save}
                     </button>
                   </div>
@@ -1423,7 +1423,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <div className="flex justify-end gap-4 mt-3">
                     <button onClick={() => { setEditingUsername(false); setUsernameError('') }} className="text-sm text-slate-500 font-medium">{a.profile.cancel}</button>
                     <button onClick={saveUsername} disabled={usernameChecking || newUsername.trim().length < 3}
-                      className="text-sm text-blue-400 font-semibold disabled:opacity-40">
+                      className="text-sm text-blue-300 font-semibold disabled:opacity-40">
                       {usernameChecking ? a.profile.checking : a.profile.save}
                     </button>
                   </div>
@@ -1460,7 +1460,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       <p className="text-[11px] text-slate-500 font-medium">{a.profile.yourPlan}</p>
                       <p className="text-sm font-bold text-white">{planLabel}</p>
                     </div>
-                    <p className="text-[10px] text-blue-400 font-medium">{isPaid ? a.profile.manageSub : a.profile.upgrade} →</p>
+                    <p className="text-[10px] text-blue-300 font-medium">{isPaid ? a.profile.manageSub : a.profile.upgrade} →</p>
                   </button>
                 )
               })()}
@@ -1477,7 +1477,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <p className="text-[11px] text-slate-500 font-medium">{a.profile.appearance}</p>
                   <p className="text-sm font-bold text-white">{a.profile.darkMode}</p>
                 </div>
-                <div className={`w-8 h-4 rounded-full transition-colors ${darkMode ? 'bg-blue-500' : 'bg-slate-700'} relative`}>
+                <div className={`w-8 h-4 rounded-full transition-colors ${darkMode ? 'bg-blue-400' : 'bg-slate-700'} relative`}>
                   <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${darkMode ? 'left-4' : 'left-0.5'}`} />
                 </div>
               </button>
@@ -1523,7 +1523,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             <div className="flex gap-2">
               {(['all', 'received', 'sent'] as const).map(f => (
                 <button key={f} onClick={() => setInviteFilter(f)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${inviteFilter === f ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${inviteFilter === f ? 'bg-blue-400 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                   {f === 'all' ? a.daily.all : f === 'received' ? a.daily.received : a.daily.sent}
                 </button>
               ))}
@@ -1542,7 +1542,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-400 text-gray-800 placeholder:text-gray-400"
                 />
                 <button onClick={addTask} disabled={!newTask.trim() || addingTask}
-                  className="px-4 py-2.5 bg-blue-500 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 disabled:opacity-40 transition-colors shrink-0">
+                  className="px-4 py-2.5 bg-blue-400 text-white text-sm font-semibold rounded-xl hover:bg-blue-500 disabled:opacity-40 transition-colors shrink-0">
                   +
                 </button>
               </div>
@@ -1556,7 +1556,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
             {tasksLoading && (
               <div className="flex items-center justify-center py-16">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
 
@@ -1590,7 +1590,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                             {a.daily.reject}
                           </button>
                           <button onClick={() => respondInvite(inv.id, 'accept')}
-                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-colors">
+                            className="flex-1 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-400 hover:bg-blue-500 transition-colors">
                             {a.daily.accept}
                           </button>
                         </div>
@@ -1696,7 +1696,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="flex gap-2">
                   {(['task', 'reminder'] as const).map(t => (
                     <button key={t} onClick={() => setInviteType(t)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${inviteType === t ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${inviteType === t ? 'bg-blue-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       {t === 'task' ? a.daily.taskType : a.daily.reminderType}
                     </button>
                   ))}
@@ -1708,7 +1708,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <div className="flex gap-2 flex-wrap">
                     {contacts.map(c => (
                       <button key={c.id} onClick={() => setInviteTarget(c.id)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition-colors ${inviteTarget === c.id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition-colors ${inviteTarget === c.id ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                         <span>{c.emoji}</span> <span>{c.firstName}</span>
                       </button>
                     ))}
@@ -1740,7 +1740,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 )}
 
                 <button onClick={sendInvite} disabled={!inviteTarget || !inviteContent.trim() || sendingInvite}
-                  className="w-full py-3 bg-blue-500 text-white text-sm font-semibold rounded-2xl hover:bg-blue-600 disabled:opacity-40 transition-colors">
+                  className="w-full py-3 bg-blue-400 text-white text-sm font-semibold rounded-2xl hover:bg-blue-500 disabled:opacity-40 transition-colors">
                   {sendingInvite ? a.daily.sending : a.daily.sendButton}
                 </button>
               </div>
@@ -1841,7 +1841,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setActionRoom(null)}>
           <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${actionRoom.type === 'ai' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>{actionRoom.type === 'ai' ? '✦' : actionRoom.emoji}</div>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${actionRoom.type === 'ai' ? 'bg-blue-400 text-white' : 'bg-gray-100'}`}>{actionRoom.type === 'ai' ? '✦' : actionRoom.emoji}</div>
               <p className="font-semibold text-gray-900">{actionRoom.type === 'ai' ? 'do AI' : actionRoom.name}</p>
             </div>
             <div className="py-2">
@@ -1942,11 +1942,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             {/* Mode toggle */}
             <div className="px-5 mt-6 mb-3 flex gap-2">
               <button onClick={() => { setNcMode('phone'); setNcError('') }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'phone' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'phone' ? 'bg-blue-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
                 {a.newContact.phone}
               </button>
               <button onClick={() => { setNcMode('username'); setNcError('') }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'username' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${ncMode === 'username' ? 'bg-blue-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
                 {a.newContact.username}
               </button>
             </div>
@@ -2005,7 +2005,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left transition-colors">
                     <Avatar emoji={c.emoji} bg={c.bg} size="lg" avatarUrl={c.avatar_url} />
                     <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-900">{c.name}</p></div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selected ? 'bg-blue-400 border-blue-400' : 'border-gray-300'}`}>
                       {selected && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
                     </div>
                   </button>
@@ -2046,7 +2046,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: { id: string; content: s
   return (
     <div className={`bg-white rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm transition-all ${task.done ? 'border-gray-100' : 'border-gray-200'}`}>
       <button onClick={() => onToggle(task.id, !task.done)}
-        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${task.done ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}`}>
+        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${task.done ? 'bg-blue-400 border-blue-400' : 'border-gray-300 hover:border-blue-400'}`}>
         {task.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
       </button>
       <div className="flex-1 min-w-0">
@@ -2070,7 +2070,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
   return (
     <div className={`flex items-center gap-3 px-4 py-2.5 transition-colors active:bg-white/5 ${hasUnread ? 'bg-blue-500/5' : ''}`}>
       {/* Unread accent bar */}
-      <div className={`absolute left-0 w-0.5 h-10 rounded-r-full transition-all ${hasUnread ? 'bg-blue-500' : 'bg-transparent'}`} />
+      <div className={`absolute left-0 w-0.5 h-10 rounded-r-full transition-all ${hasUnread ? 'bg-blue-400' : 'bg-transparent'}`} />
 
       <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => onOpenRoom(room.id)}>
         {/* Square avatar */}
@@ -2082,7 +2082,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
               </div>
           }
           {hasUnread && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm shadow-blue-400/40">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-400 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm shadow-blue-300/40">
               {room.unread > 99 ? '99+' : room.unread}
             </span>
           )}
@@ -2096,18 +2096,18 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-0.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              {pref.pinned && <svg className="w-3 h-3 text-blue-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>}
+              {pref.pinned && <svg className="w-3 h-3 text-blue-300 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>}
               <p className={`text-sm truncate ${hasUnread ? 'font-bold text-white' : 'font-semibold text-white/80'}`}>{room.name}</p>
             </div>
             {room.lastMsg && (
-              <span className={`text-[11px] shrink-0 tabular-nums ${hasUnread ? 'text-blue-400 font-semibold' : 'text-slate-500'}`}>
+              <span className={`text-[11px] shrink-0 tabular-nums ${hasUnread ? 'text-blue-300 font-semibold' : 'text-slate-500'}`}>
                 {formatMessageTime(room.lastMsg.created_at)}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
             {room.lastMsg?.user_id === userId && (
-              <svg className={`w-3.5 h-3.5 shrink-0 ${room.seenByOthers ? 'text-blue-400' : 'text-slate-700'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <svg className={`w-3.5 h-3.5 shrink-0 ${room.seenByOthers ? 'text-blue-300' : 'text-slate-700'}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               </svg>
             )}
@@ -2156,12 +2156,12 @@ export function BottomNav({ active, onTabChange }: { active: string; onTabChange
         return (
           <button key={tab.id} onClick={() => onTabChange(tab.id)}
             className="flex-1 flex flex-col items-center pt-1.5 pb-1 gap-0.5 transition-colors relative">
-            <div className={`relative flex items-center justify-center w-12 h-7 rounded-full transition-all duration-300 ${isActive ? 'bg-blue-400/20' : ''}`}>
-              <div className={`transition-colors duration-200 ${isActive ? 'text-blue-400' : 'text-slate-600'}`}>
+            <div className={`relative flex items-center justify-center w-12 h-7 rounded-full transition-all duration-300 ${isActive ? 'bg-blue-300/20' : ''}`}>
+              <div className={`transition-colors duration-200 ${isActive ? 'text-blue-300' : 'text-slate-600'}`}>
                 {tab.icon}
               </div>
             </div>
-            <span className={`text-[9px] font-semibold transition-colors ${isActive ? 'text-blue-400' : 'text-slate-600'}`}>{tab.label}</span>
+            <span className={`text-[9px] font-semibold transition-colors ${isActive ? 'text-blue-300' : 'text-slate-600'}`}>{tab.label}</span>
           </button>
         )
       })}
