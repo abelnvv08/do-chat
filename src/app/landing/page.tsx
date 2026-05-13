@@ -405,20 +405,34 @@ export default function LandingV2() {
                   </div>
                 )}
                 <div className="mb-5">
-                  <h3 className={`text-sm font-semibold mb-2 ${plan.highlight ? 'text-blue-100' : 'text-white/60'}`}>{plan.name}</h3>
-                  <div className="flex items-baseline gap-1.5 mb-1">
-                    <span className="text-3xl font-extrabold text-white">{price === 0 ? 'Gratis' : `$${price}`}</span>
-                    {price > 0 && <span className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/30'}`}>/ mes</span>}
-                  </div>
-                  {price > 0 && (
-                    <p className={`text-xs mt-1 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>
-                      {annual
-                        ? <>Total anual: <span className="font-semibold text-white">${totalAnual}</span> · <span className="text-emerald-400 font-semibold">ahorras ${savingsAnual.toFixed(0)}/año</span></>
-                        : <>Total anual si pagas mes a mes: <span className="font-semibold">${(plan.monthlyPrice * 12).toFixed(0)}</span></>
-                      }
-                    </p>
+                  <h3 className={`text-sm font-semibold mb-3 ${plan.highlight ? 'text-blue-100' : 'text-white/60'}`}>{plan.name}</h3>
+                  {price === 0 ? (
+                    <div>
+                      <span className="text-3xl font-extrabold text-white">Gratis</span>
+                      <p className={`text-xs mt-1 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>Para siempre, sin tarjeta</p>
+                    </div>
+                  ) : annual ? (
+                    <div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-extrabold text-white">${totalAnual}</span>
+                        <span className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/30'}`}>/ año</span>
+                      </div>
+                      <p className={`text-xs mt-1 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>
+                        ${price}/mes · <span className="text-emerald-400 font-semibold">ahorras ${savingsAnual.toFixed(0)} vs mensual</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-extrabold text-white">${price}</span>
+                        <span className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/30'}`}>/ mes</span>
+                      </div>
+                      <p className={`text-xs mt-1 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>
+                        ${(plan.monthlyPrice * 12).toFixed(0)}/año · cambia a anual y <span className="text-emerald-400 font-semibold">ahorras ${savingsAnual.toFixed(0)}</span>
+                      </p>
+                    </div>
                   )}
-                  <p className={`text-sm mt-2 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>{plan.desc}</p>
+                  <p className={`text-sm mt-3 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>{plan.desc}</p>
                 </div>
                 <ul className="space-y-2.5 flex-1 mb-6">
                   {plan.features.map(f => (
