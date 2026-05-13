@@ -362,8 +362,8 @@ export default function LandingV2() {
               {
                 key: 'free',
                 name: 'Free',
-                price: '$0',
-                period: 'para siempre',
+                monthlyPrice: 0,
+                annualPrice: 0,
                 desc: 'Para personas y equipos pequeños.',
                 features: ['Mensajes ilimitados', 'Cifrado E2E', 'do AI (básico)', '1 GB de archivos', 'Hasta 5 contactos activos'],
                 cta: 'Empezar gratis',
@@ -373,8 +373,8 @@ export default function LandingV2() {
               {
                 key: 'pro',
                 name: 'Pro',
-                price: annual ? '$10' : '$12.99',
-                period: 'por usuario / mes',
+                monthlyPrice: 12.99,
+                annualPrice: 10,
                 desc: 'Para equipos que necesitan más poder.',
                 features: ['Todo en Free', 'do AI sin límites', '100 GB de archivos', 'Contactos ilimitados', 'Llamadas grupales', 'Soporte prioritario'],
                 cta: 'Probar gratis 14 días',
@@ -384,15 +384,19 @@ export default function LandingV2() {
               {
                 key: 'business',
                 name: 'Business',
-                price: annual ? '$79' : '$99',
-                period: 'por usuario / mes',
+                monthlyPrice: 99,
+                annualPrice: 79,
                 desc: 'Para empresas con necesidades avanzadas.',
                 features: ['Todo en Pro', 'Almacenamiento ilimitado', 'Integraciones custom', 'SLA garantizado', 'Soporte 24/7', 'Factura empresarial'],
                 cta: 'Contactar ventas',
                 highlight: false,
                 badge: '',
               },
-            ] as const).map(plan => (
+            ] as const).map(plan => {
+              const price = annual ? plan.annualPrice : plan.monthlyPrice
+              const totalAnual = plan.annualPrice * 12
+              const savingsAnual = (plan.monthlyPrice - plan.annualPrice) * 12
+              return (
               <div key={plan.name}
                 className={`rounded-2xl border p-7 flex flex-col relative transition-all ${plan.highlight ? 'bg-blue-600 border-blue-500 shadow-2xl shadow-blue-500/20' : 'bg-white/3 border-white/10 hover:bg-white/5'}`}>
                 {plan.badge && (
@@ -402,11 +406,19 @@ export default function LandingV2() {
                 )}
                 <div className="mb-5">
                   <h3 className={`text-sm font-semibold mb-2 ${plan.highlight ? 'text-blue-100' : 'text-white/60'}`}>{plan.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-3xl font-extrabold text-white">{plan.price}</span>
-                    {plan.period && <span className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/30'}`}>{plan.period}</span>}
+                  <div className="flex items-baseline gap-1.5 mb-1">
+                    <span className="text-3xl font-extrabold text-white">{price === 0 ? 'Gratis' : `$${price}`}</span>
+                    {price > 0 && <span className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/30'}`}>/ mes</span>}
                   </div>
-                  <p className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>{plan.desc}</p>
+                  {price > 0 && (
+                    <p className={`text-xs mt-1 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>
+                      {annual
+                        ? <>Total anual: <span className="font-semibold text-white">${totalAnual}</span> · <span className="text-emerald-400 font-semibold">ahorras ${savingsAnual.toFixed(0)}/año</span></>
+                        : <>Total anual si pagas mes a mes: <span className="font-semibold">${(plan.monthlyPrice * 12).toFixed(0)}</span></>
+                      }
+                    </p>
+                  )}
+                  <p className={`text-sm mt-2 ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>{plan.desc}</p>
                 </div>
                 <ul className="space-y-2.5 flex-1 mb-6">
                   {plan.features.map(f => (
@@ -430,7 +442,8 @@ export default function LandingV2() {
                   ) : plan.cta}
                 </button>
               </div>
-            ))}
+            )
+            })}
           </div>
           <p className="text-center text-sm text-white/20 mt-8">Todos los planes incluyen actualizaciones automáticas, cifrado E2E y soporte.</p>
         </div>
