@@ -40,10 +40,10 @@ export default function LandingV2() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-white font-sans antialiased">
+    <div className="min-h-screen bg-[#0d1f4a] text-white font-sans antialiased">
 
       {/* ── NAV ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080c14]/95 backdrop-blur-md border-b border-white/5' : ''}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0d1f4a]/95 backdrop-blur-md border-b border-white/5' : ''}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -71,7 +71,7 @@ export default function LandingV2() {
           </button>
         </div>
         {menuOpen && (
-          <div className="sm:hidden bg-[#0d1320] border-t border-white/5 px-6 py-4 space-y-3">
+          <div className="sm:hidden bg-[#0a1a3e] border-t border-white/5 px-6 py-4 space-y-3">
             <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Funciones</a>
             <a href="#como-funciona" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Cómo funciona</a>
             <Link href="/pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Precios</Link>
@@ -86,8 +86,8 @@ export default function LandingV2() {
       {/* ── HERO ── */}
       <section className="relative overflow-hidden pt-32 pb-28 px-6">
         {/* bg glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-20 left-1/4 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-20 left-1/4 w-64 h-64 bg-blue-400/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-8">
@@ -127,7 +127,7 @@ export default function LandingV2() {
             { n: '100%', label: 'Privado por diseño' },
             { n: '✦ do AI', label: 'IA integrada' },
           ].map(m => (
-            <div key={m.label} className="bg-[#0d1320] px-6 py-5 text-center">
+            <div key={m.label} className="bg-[#0a1a3e] px-6 py-5 text-center">
               <p className="text-lg font-bold text-white">{m.n}</p>
               <p className="text-xs text-white/40 mt-1">{m.label}</p>
             </div>
@@ -249,7 +249,7 @@ export default function LandingV2() {
           </div>
 
           {/* AI demo snippet */}
-          <div className="rounded-2xl bg-[#0d1320] border border-white/8 overflow-hidden">
+          <div className="rounded-2xl bg-[#0a1a3e] border border-white/8 overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
