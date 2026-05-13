@@ -6,8 +6,8 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 const PLAN_CONFIG: Record<string, { model: string; limit: number }> = {
   free:     { model: 'claude-haiku-4-5-20251001', limit: 5   },
-  pro:      { model: 'claude-sonnet-4-6',         limit: 200 },
-  business: { model: 'claude-sonnet-4-6',         limit: 999 },
+  pro:      { model: 'claude-sonnet-4-6',         limit: 50  },
+  business: { model: 'claude-sonnet-4-6',         limit: 250 },
 }
 
 export async function POST(req: NextRequest) {
