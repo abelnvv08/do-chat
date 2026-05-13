@@ -5,9 +5,9 @@ import Anthropic from '@anthropic-ai/sdk'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 const PLAN_CONFIG: Record<string, { model: string; limit: number }> = {
-  free:     { model: 'claude-haiku-4-5-20251001', limit: 15 },
-  pro:      { model: 'claude-sonnet-4-6',         limit: 80 },
-  business: { model: 'claude-sonnet-4-6',         limit: 200 },
+  free:     { model: 'claude-haiku-4-5-20251001', limit: 5   },
+  pro:      { model: 'claude-sonnet-4-6',         limit: 200 },
+  business: { model: 'claude-sonnet-4-6',         limit: 999 },
 }
 
 export async function POST(req: NextRequest) {
@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
     .eq('user_id', user_id).eq('type', 'ai').gte('created_at', todayStart.toISOString())
 
   if ((count ?? 0) >= planConfig.limit) {
-    const upgradeTip = plan === 'free' ? ' Upgrade to Pro for 80 queries/day. 👉 getdochat.com/pricing' : ''
-    const reply = `You've reached your ${planConfig.limit} daily query limit on the ${plan} plan.${upgradeTip} Limit resets at midnight. 🌙`
+    const upgradeTip = plan === 'free' ? ' Mejora a Pro para 200 consultas/día. 👉 getdochat.com/#precios' : ''
+    const reply = `Alcanzaste tu límite de ${planConfig.limit} consultas diarias del plan ${plan}.${upgradeTip} El límite se reinicia a medianoche. 🌙`
     return NextResponse.json({ reply })
   }
 
