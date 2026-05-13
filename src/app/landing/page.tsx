@@ -2,71 +2,15 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { useLanguage, LangToggle } from '@/lib/i18n'
+import { useRouter } from 'next/navigation'
 
-function Phone({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative w-[220px] shrink-0">
-      <div className="relative rounded-[2.2rem] p-2.5 shadow-2xl border bg-[#1a1a1a] border-white/10 shadow-black/40">
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-14 h-1 bg-white/20 rounded-full" />
-        <div className="rounded-[1.8rem] overflow-hidden" style={{ height: 420 }}>{children}</div>
-      </div>
-      <div className="absolute inset-0 rounded-[2.2rem] bg-blue-500/10 blur-2xl -z-10 scale-90" />
-    </div>
-  )
-}
-
-function ChatHeader({ name, sub, emoji, bg }: { name: string; sub: string; emoji: string; bg: string }) {
-  return (
-    <div className="bg-[#0f172a] px-3 pt-9 pb-2.5 flex items-center gap-2.5">
-      <div className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center text-sm shrink-0`}>{emoji}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-white text-xs font-semibold truncate">{name}</p>
-        <p className="text-blue-300/70 text-[9px]">{sub}</p>
-      </div>
-    </div>
-  )
-}
-
-function Msg({ own, text, time, avatar, reaction }: { own: boolean; text: string; time?: string; avatar?: string; reaction?: string }) {
-  return (
-    <div className={`flex ${own ? 'justify-end' : 'gap-1.5 items-end'}`}>
-      {!own && avatar && <div className={`w-5 h-5 rounded-full ${avatar} flex items-center justify-center text-[8px] text-white shrink-0`} />}
-      <div className="relative">
-        <div className={`rounded-xl px-2.5 py-1.5 max-w-[160px] text-[10px] leading-relaxed ${own ? 'bg-[#dbeafe] text-gray-800 rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm'} shadow-sm`}>
-          {text}
-          {time && <span className="block text-[8px] text-gray-400 text-right mt-0.5">{time} {own ? '✓✓' : ''}</span>}
-        </div>
-        {reaction && <div className="absolute -bottom-2 right-0 bg-white rounded-full px-1 py-0.5 text-[9px] shadow-sm border border-gray-100">{reaction}</div>}
-      </div>
-    </div>
-  )
-}
-
-function InputBar({ placeholder }: { placeholder: string }) {
-  return (
-    <div className="bg-[#f0f2f5] px-2.5 py-2 flex items-center gap-1.5">
-      <div className="flex-1 bg-white rounded-full px-3 py-1.5">
-        <p className="text-gray-400 text-[9px]">{placeholder}</p>
-      </div>
-      <div className="w-7 h-7 rounded-full bg-[#1a56db] flex items-center justify-center shrink-0">
-        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
-      </div>
-    </div>
-  )
-}
-
-const PLAN_COLORS = {
-  free:     { border: 'border-gray-200',   badge: '',            badgeBg: '',             cta: 'bg-gray-900 hover:bg-gray-700 text-white', href: '/login' },
-  pro:      { border: 'border-blue-500 ring-2 ring-blue-500', badge: '', badgeBg: 'bg-blue-600',   cta: 'bg-blue-600 hover:bg-blue-700 text-white',   href: '/pricing' },
-  business: { border: 'border-violet-500', badge: '',            badgeBg: 'bg-violet-600', cta: 'bg-violet-600 hover:bg-violet-700 text-white', href: '/pricing' },
-}
-
-export default function LandingPage() {
-  const { t, lang, setLang } = useLanguage()
-  const l = t.landing
+export default function LandingV2() {
+  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [annual, setAnnual] = useState(false)
+  const [pricingLoading, setPricingLoading] = useState<string | null>(null)
+  const [pricingError, setPricingError] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -74,311 +18,541 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const phoneMocks = [
-    <Phone key="ai">
-      <div className="flex flex-col h-full bg-[#f1f5f9]">
-        <ChatHeader name="DO AI" sub={t.app.chat.online} emoji="✦" bg="bg-blue-600" />
-        <div className="flex-1 px-2.5 py-2 space-y-2 overflow-hidden">
-          <Msg own time="9:01" text={lang === 'en' ? 'Summarize the key points from today\'s meeting' : 'Resume los puntos clave de la junta de hoy'} />
-          <Msg own={false} avatar="bg-blue-600" text={lang === 'en' ? '📋 3 agreements: approve Q3 budget, launch beta in July, review KPIs Friday.' : '📋 3 acuerdos: aprobar presupuesto Q3, lanzar beta en julio, revisar KPIs el viernes.'} time="9:01" />
-          <Msg own time="9:04" text={lang === 'en' ? 'Notify the team that the deadline is Thursday at 6pm' : 'Notifica al equipo que el cierre es el jueves a las 6pm'} />
-          <Msg own={false} avatar="bg-blue-600" text={lang === 'en' ? '✅ Message sent to 4 team contacts.' : '✅ Mensaje enviado a 4 contactos del equipo.'} time="9:04" />
-          <Msg own time="9:07" text={lang === 'en' ? 'Schedule review with Management for Monday' : 'Agenda revisión con Dirección para el lunes'} />
-          <Msg own={false} avatar="bg-blue-600" text={lang === 'en' ? '📅 Reminder set: Monday 9:00 AM — Review with Management.' : '📅 Recordatorio creado: Lunes 9:00 AM — Revisión con Dirección.'} time="9:07" />
-        </div>
-        <InputBar placeholder={t.app.chat.placeholder} />
-      </div>
-    </Phone>,
-    <Phone key="chats">
-      <div className="flex flex-col h-full bg-[#f1f5f9]">
-        <ChatHeader name={lang === 'en' ? 'Commercial Management' : 'Dirección Comercial'} sub={lang === 'en' ? 'Director, Manager, Coordinator · 4' : 'Directora, Gerente, Coordinador · 4'} emoji="🏢" bg="bg-slate-700" />
-        <div className="flex-1 px-2.5 py-2 space-y-2 overflow-hidden">
-          <Msg own={false} avatar="bg-slate-600" text={lang === 'en' ? 'Client confirmed the contract. Digital signature Wednesday.' : 'El cliente confirmó el contrato. Firma digital el miércoles.'} time="10:05" />
-          <Msg own={false} avatar="bg-blue-700" text={lang === 'en' ? 'Perfect. Coordinate technical delivery next week?' : 'Perfecto. ¿Coordinamos la entrega técnica para la siguiente semana?'} time="10:07" reaction="✅ 2" />
-          <Msg own time="10:09" text={lang === 'en' ? 'Confirmed. Preparing onboarding plan for Thursday.' : 'Confirmo. Preparo el plan de onboarding para el jueves.'} />
-          <Msg own={false} avatar="bg-slate-600" text={lang === 'en' ? 'Done. Shared contract in Projects.' : 'Listo. Compartí el contrato en Proyectos.'} time="10:11" />
-          <Msg own time="10:12" text={lang === 'en' ? 'Reviewed. All good. 👍' : 'Revisado. Todo en orden. 👍'} />
-        </div>
-        <InputBar placeholder={t.app.chat.placeholder} />
-      </div>
-    </Phone>,
-    <Phone key="tasks">
-      <div className="flex flex-col h-full bg-[#f2f2f7]">
-        <div className="bg-white px-3 pt-9 pb-2.5 border-b border-gray-100">
-          <p className="text-gray-900 text-sm font-bold">{l.features.items[2].tag}</p>
-          <p className="text-gray-400 text-[9px]">{lang === 'en' ? '3 for today · 2 urgent' : '3 para hoy · 2 urgentes'}</p>
-        </div>
-        <div className="flex-1 overflow-hidden px-3 py-2 space-y-1.5">
-          {[
-            { done: true,  text: lang === 'en' ? 'Send commercial proposal' : 'Enviar propuesta comercial',        sub: lang === 'en' ? 'Completed · yesterday' : 'Completado · ayer' },
-            { done: true,  text: lang === 'en' ? 'Validate client access'    : 'Validar accesos del cliente',       sub: lang === 'en' ? 'Completed · tue'       : 'Completado · mar' },
-            { done: false, text: lang === 'en' ? 'Review contract with legal' : 'Revisar contrato con legal',        sub: lang === 'en' ? 'Today · Urgent'        : 'Hoy · Urgente', red: true },
-            { done: false, text: lang === 'en' ? 'Present report to board'   : 'Presentar informe a dirección',     sub: lang === 'en' ? 'Today · Urgent'        : 'Hoy · Urgente', red: true },
-            { done: false, text: lang === 'en' ? 'Coordinate technical delivery' : 'Coordinar entrega técnica',    sub: lang === 'en' ? 'Thu May 8'             : 'Jue 8 mayo' },
-          ].map((task, i) => (
-            <div key={i} className="flex items-start gap-2.5 bg-white rounded-xl px-2.5 py-2 shadow-sm">
-              <div className={`w-4 h-4 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center ${task.done ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
-                {task.done && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-[10px] font-medium truncate ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.text}</p>
-                <p className={`text-[8px] mt-0.5 ${(task as any).red ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>{task.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Phone>,
-    <Phone key="projects">
-      <div className="flex flex-col h-full bg-[#f2f2f7]">
-        <div className="bg-white px-3 pt-9 pb-2.5 border-b border-gray-100">
-          <p className="text-gray-900 text-sm font-bold">{l.features.items[3].tag}</p>
-          <p className="text-[9px] text-gray-400">{lang === 'en' ? '4 active this month' : '4 activos este mes'}</p>
-        </div>
-        <div className="flex-1 overflow-hidden px-3 py-3 space-y-2.5">
-          {[
-            { initials: 'CC', name: lang === 'en' ? 'Nexum Client Closing' : 'Cierre Cliente Nexum', files: 5, color: 'bg-blue-50 border-blue-100', bg: 'bg-blue-600' },
-            { initials: 'RR', name: lang === 'en' ? 'Q2 Regulatory Report' : 'Informe Regulatorio Q2', files: 8, color: 'bg-slate-50 border-slate-200', bg: 'bg-slate-600' },
-            { initials: 'OP', name: lang === 'en' ? '2026 Operational Plan' : 'Plan Operativo 2026', files: 4, color: 'bg-indigo-50 border-indigo-100', bg: 'bg-indigo-600' },
-            { initials: 'CA', name: lang === 'en' ? 'Contract Audit' : 'Auditoría de Contratos', files: 11, color: 'bg-teal-50 border-teal-100', bg: 'bg-teal-600' },
-          ].map((p, i) => (
-            <div key={i} className={`bg-white rounded-xl p-3 shadow-sm border ${p.color}`}>
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <div className={`w-7 h-7 rounded-lg ${p.bg} flex items-center justify-center text-[9px] font-bold text-white shrink-0`}>{p.initials}</div>
-                <p className="text-[11px] font-bold text-gray-900 flex-1 truncate">{p.name}</p>
-              </div>
-              <p className="text-[9px] text-gray-400">{p.files} {lang === 'en' ? 'files · Updated today' : 'archivos · Actualizado hoy'}</p>
-              <div className="flex gap-1 mt-2">
-                {['pdf', 'docx', 'xlsx'].map((ext, j) => (
-                  <span key={j} className="text-[8px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-medium">.{ext}</span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Phone>,
-  ]
+  async function handlePlan(plan: string) {
+    if (plan === 'free') { router.push('/login'); return }
+    setPricingLoading(plan)
+    setPricingError(null)
+    try {
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const data = await res.json()
+      if (res.status === 401) { router.push('/login?next=/pricing'); return }
+      if (data.url) { window.location.href = data.url; return }
+      setPricingError(data.error ?? 'Algo salió mal. Intenta de nuevo.')
+    } catch {
+      setPricingError('Error de conexión. Intenta de nuevo.')
+    } finally {
+      setPricingLoading(null)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-[#080c14] text-white font-sans antialiased">
 
-      {/* NAV */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
+      {/* ── NAV ── */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#080c14]/95 backdrop-blur-md border-b border-white/5' : ''}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
               <Image src="/dochatlogo.png" alt="DO Chat" width={20} height={20} className="rounded-lg" />
             </div>
-            <span className={`text-lg font-extrabold tracking-tight transition-colors ${scrolled ? 'text-gray-900' : 'text-white'}`}>DO Chat</span>
+            <span className="text-base font-bold tracking-tight">DO Chat</span>
           </Link>
 
-          <div className="hidden sm:flex items-center gap-5">
-            <a href="#funciones" className={`text-sm font-medium transition-colors ${scrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/80 hover:text-white'}`}>{l.nav.features}</a>
-            <Link href="/pricing" className={`text-sm font-medium transition-colors ${scrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/80 hover:text-white'}`}>{l.nav.pricing}</Link>
-            <Link href="/login" className={`text-sm font-medium transition-colors ${scrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/80 hover:text-white'}`}>{l.nav.signIn}</Link>
-            <LangToggle className={scrolled ? 'border-gray-200 text-gray-600 hover:border-gray-400' : 'border-white/30 text-white/80 hover:border-white'} />
-            <Link href="/login?start=phone" className="px-5 py-2.5 rounded-full bg-[#1a56db] text-white text-sm font-semibold hover:bg-[#1648c8] transition-colors shadow-sm">
-              {l.nav.getStarted}
+          <div className="hidden sm:flex items-center gap-6">
+            <a href="#funciones" className="text-sm text-white/60 hover:text-white transition-colors">Funciones</a>
+            <a href="#como-funciona" className="text-sm text-white/60 hover:text-white transition-colors">Cómo funciona</a>
+            <a href="#seguridad" className="text-sm text-white/60 hover:text-white transition-colors">Seguridad</a>
+            <a href="#precios" className="text-sm text-white/60 hover:text-white transition-colors">Precios</a>
+            <Link href="/login" className="text-sm text-white/60 hover:text-white transition-colors">Iniciar sesión</Link>
+            <Link href="/login?start=phone"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20">
+              Empezar gratis
             </Link>
           </div>
 
           <button onClick={() => setMenuOpen(!menuOpen)} className="sm:hidden p-2">
-            <svg className={`w-5 h-5 ${scrolled ? 'text-gray-900' : 'text-white'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               {menuOpen ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
             </svg>
           </button>
         </div>
-
         {menuOpen && (
-          <div className="sm:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-3">
-            <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700">{l.nav.features}</a>
-            <Link href="/pricing" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700">{l.nav.pricing}</Link>
-            <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-gray-700">{l.nav.signIn}</Link>
-            <button onClick={() => { setLang(lang === 'en' ? 'es' : 'en'); setMenuOpen(false) }} className="block text-sm font-medium text-blue-600">
-              {lang === 'en' ? '🌐 Cambiar a Español' : '🌐 Switch to English'}
-            </button>
-            <Link href="/login?start=phone" className="block w-full text-center px-5 py-3 rounded-full bg-blue-600 text-white text-sm font-semibold">
-              {l.nav.getStarted}
+          <div className="sm:hidden bg-[#0d1320] border-t border-white/5 px-6 py-4 space-y-3">
+            <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Funciones</a>
+            <a href="#como-funciona" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Cómo funciona</a>
+            <Link href="/pricing" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Precios</Link>
+            <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-white/70">Iniciar sesión</Link>
+            <Link href="/login?start=phone" className="block w-full text-center px-4 py-3 rounded-lg bg-blue-600 text-white text-sm font-semibold">
+              Empezar gratis
             </Link>
           </div>
         )}
       </nav>
 
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#1a56db]">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-blue-400 blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-indigo-400 blur-3xl" />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-6 pt-32 pb-24 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-blue-200 text-xs font-medium mb-6 border border-white/20">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            {l.hero.badge}
+      {/* ── HERO ── */}
+      <section className="relative overflow-hidden pt-32 pb-28 px-6">
+        {/* bg glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-20 left-1/4 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            Disponible en iOS, Android y web — sin instalar nada
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-            {l.hero.title}<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">
-              {l.hero.titleHighlight}
+
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
+            Mensajería con IA<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-300 to-cyan-300">
+              para equipos que producen
             </span>
           </h1>
-          <p className="text-lg text-blue-100 mb-10 max-w-xl mx-auto leading-relaxed">{l.hero.subtitle}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/login?start=phone" className="px-10 py-4 rounded-full bg-white text-[#1a56db] font-bold text-base hover:bg-blue-50 transition-all shadow-xl hover:-translate-y-0.5 active:scale-95">
-              {l.hero.ctaPrimary}
+
+          <p className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed mb-10">
+            DO Chat combina mensajería cifrada end-to-end con una IA que gestiona tareas, recuerda compromisos y notifica a tu equipo — todo desde la misma conversación.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+            <Link href="/login?start=phone"
+              className="px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-base hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95">
+              Empezar gratis
             </Link>
-            <Link href="/pricing" className="px-8 py-4 rounded-full bg-white/10 text-white font-semibold text-base hover:bg-white/20 transition-all border border-white/20">
-              {l.hero.ctaSecondary}
-            </Link>
+            <a href="#precios"
+              className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-base hover:bg-white/10 transition-all">
+              Ver precios →
+            </a>
           </div>
-          <p className="text-blue-300/60 text-xs mt-5">{l.hero.disclaimer}</p>
+          <p className="text-white/25 text-sm">Sin tarjeta de crédito · Gratis para siempre en el plan básico</p>
+        </div>
+
+        {/* Metrics bar */}
+        <div className="relative max-w-3xl mx-auto mt-20 grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+          {[
+            { n: 'AES-256', label: 'Cifrado GCM' },
+            { n: '<100ms', label: 'Entrega de mensajes' },
+            { n: '100%', label: 'Privado por diseño' },
+            { n: '✦ do AI', label: 'IA integrada' },
+          ].map(m => (
+            <div key={m.label} className="bg-[#0d1320] px-6 py-5 text-center">
+              <p className="text-lg font-bold text-white">{m.n}</p>
+              <p className="text-xs text-white/40 mt-1">{m.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* TRUST BAR */}
-      <section className="bg-[#0f172a] border-t border-white/5 py-5">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="flex flex-wrap justify-center gap-x-10 gap-y-3">
+      {/* ── CAPABILITIES GRID ── */}
+      <section id="funciones" className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">01</span>
+            <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
+          </div>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-14">
+            <h2 className="text-3xl sm:text-4xl font-extrabold max-w-lg leading-tight">
+              Todo lo que necesita<br />un equipo moderno
+            </h2>
+            <p className="text-white/40 max-w-sm text-sm leading-relaxed">
+              Diseñado para que la comunicación y la productividad sucedan en el mismo lugar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: '🔒', text: l.trust.encryption },
-              { icon: '⚡', text: l.trust.ai },
-              { icon: '📱', text: l.trust.device },
-              { icon: '🌐', text: l.trust.noInstall },
-            ].map(item => (
-              <div key={item.text} className="flex items-center gap-2 text-white/60 text-sm">
-                <span>{item.icon}</span><span>{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="funciones" className="bg-[#f8fafc] py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">{l.features.sectionTitle}</h2>
-            <p className="text-gray-500 text-lg max-w-lg mx-auto">{l.features.sectionSub}</p>
-          </div>
-          <div className="space-y-24">
-            {l.features.items.map((f, i) => (
-              <div key={f.tag} className={`flex flex-col ${i % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12`}>
-                <div className="flex-1 text-center lg:text-left">
-                  <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wide mb-4">{f.tag}</span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-4">{f.title}</h3>
-                  <p className="text-gray-500 text-lg leading-relaxed max-w-md mx-auto lg:mx-0">{f.desc}</p>
+              {
+                icon: '✦',
+                title: 'IA integrada',
+                desc: 'do AI entiende el contexto de tus conversaciones, gestiona tareas y notifica a tu equipo automáticamente.',
+                color: 'from-blue-500/10 to-indigo-500/5',
+                border: 'border-blue-500/20',
+                iconBg: 'bg-blue-500/10 text-blue-400',
+              },
+              {
+                icon: '🔒',
+                title: 'Cifrado E2E',
+                desc: 'AES-256-GCM aplicado mensaje a mensaje. Ni nosotros podemos leer tu historial.',
+                color: 'from-emerald-500/10 to-teal-500/5',
+                border: 'border-emerald-500/20',
+                iconBg: 'bg-emerald-500/10 text-emerald-400',
+              },
+              {
+                icon: '✅',
+                title: 'Tareas y recordatorios',
+                desc: 'Crea, asigna y recibe alertas de tareas directamente en la conversación. La IA hace el seguimiento.',
+                color: 'from-violet-500/10 to-purple-500/5',
+                border: 'border-violet-500/20',
+                iconBg: 'bg-violet-500/10 text-violet-400',
+              },
+              {
+                icon: '📁',
+                title: 'Archivos y proyectos',
+                desc: 'Organiza documentos en proyectos compartidos. Fotos, PDFs, hojas de cálculo — todo accesible.',
+                color: 'from-amber-500/10 to-orange-500/5',
+                border: 'border-amber-500/20',
+                iconBg: 'bg-amber-500/10 text-amber-400',
+              },
+            ].map(c => (
+              <div key={c.title} className={`rounded-2xl bg-gradient-to-b ${c.color} border ${c.border} p-6 flex flex-col gap-4`}>
+                <div className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center text-lg`}>{c.icon}</div>
+                <div>
+                  <h3 className="font-bold text-white mb-2">{c.title}</h3>
+                  <p className="text-white/40 text-sm leading-relaxed">{c.desc}</p>
                 </div>
-                <div className="flex justify-center">{phoneMocks[i]}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SECURITY */}
-      <section className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="rounded-3xl bg-gradient-to-br from-[#0f172a] to-[#1e3a5f] p-10 lg:p-16 flex flex-col lg:flex-row items-center gap-10">
-            <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-blue-200 text-xs font-bold uppercase tracking-wide mb-5 border border-white/20">
-                {l.security.badge}
+      {/* ── HOW IT WORKS ── */}
+      <section id="como-funciona" className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">02</span>
+            <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
+          </div>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-14">
+            <h2 className="text-3xl sm:text-4xl font-extrabold max-w-lg leading-tight">
+              Listo en menos<br />de un minuto
+            </h2>
+            <p className="text-white/40 max-w-sm text-sm leading-relaxed">
+              Sin configuración. Sin servidores. Sin IT. Entra y empieza a producir.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mb-16">
+            {[
+              {
+                step: '01',
+                title: 'Crea tu cuenta',
+                desc: 'Regístrate con tu número de teléfono en segundos. Sin contraseñas. Sin formularios largos.',
+                detail: 'Solo tu número → código SMS → listo',
+              },
+              {
+                step: '02',
+                title: 'Invita a tu equipo',
+                desc: 'Busca contactos por número o @usuario. Crea grupos de trabajo con un toque.',
+                detail: 'Por contacto · Por grupo · Por proyecto',
+              },
+              {
+                step: '03',
+                title: 'Chatea y produce',
+                desc: 'La IA do AI está disponible en cualquier chat. Asigna tareas, recibe resúmenes, automatiza avisos.',
+                detail: 'IA contextual · Sin apps extra · Tiempo real',
+              },
+            ].map(s => (
+              <div key={s.step} className="rounded-2xl bg-white/3 border border-white/8 p-6 flex flex-col gap-4">
+                <span className="text-4xl font-extrabold text-white/10">{s.step}</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
+                  <p className="text-white/40 text-sm leading-relaxed mb-4">{s.desc}</p>
+                  <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/5">
+                    <p className="text-xs text-white/30 font-mono">{s.detail}</p>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-3xl font-extrabold text-white mb-4">{l.security.title}</h2>
-              <p className="text-blue-200 text-lg leading-relaxed mb-6">{l.security.subtitle}</p>
-              <div className="flex flex-col gap-2">
-                {l.security.bullets.map(b => (
-                  <div key={b} className="flex items-center gap-2 text-white/80 text-sm">
-                    <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    {b}
+            ))}
+          </div>
+
+          {/* AI demo snippet */}
+          <div className="rounded-2xl bg-[#0d1320] border border-white/8 overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+              <span className="ml-2 text-xs text-white/20 font-mono">do AI — conversación real</span>
+            </div>
+            <div className="px-6 py-5 space-y-3 font-mono text-sm">
+              <div className="flex items-start gap-3">
+                <span className="text-white/20 shrink-0 mt-0.5">Tu</span>
+                <span className="text-white/70">Notifica al equipo que el cierre de contrato es el viernes a las 5pm</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-blue-400 shrink-0 mt-0.5">✦</span>
+                <span className="text-white/50">Mensaje enviado a <span className="text-blue-400">4 contactos</span>. Recordatorio creado para el <span className="text-blue-400">viernes 17:00</span>.</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-white/20 shrink-0 mt-0.5">Tu</span>
+                <span className="text-white/70">Resume los puntos clave de la reunión de hoy</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-blue-400 shrink-0 mt-0.5">✦</span>
+                <span className="text-white/50"><span className="text-emerald-400">3 acuerdos</span>: aprobar presupuesto Q3, lanzar beta en julio, revisar KPIs el viernes.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECURITY ── */}
+      <section id="seguridad" className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">03</span>
+            <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
+          </div>
+          <div className="flex flex-col lg:flex-row gap-16 items-center">
+            <div className="flex-1">
+              <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 leading-tight">
+                Privacidad sin compromisos.<br />
+                <span className="text-white/40">Por diseño.</span>
+              </h2>
+              <p className="text-white/40 text-lg leading-relaxed mb-8">
+                Cada mensaje se cifra con AES-256-GCM antes de salir de tu dispositivo. Ni DO Chat tiene acceso a tu historial.
+              </p>
+              <div className="space-y-3">
+                {[
+                  { icon: '🔐', text: 'AES-256-GCM — el mismo estándar que usan los bancos' },
+                  { icon: '🚫', text: 'Sin anuncios. Sin venta de datos. Sin rastreo' },
+                  { icon: '🛡️', text: 'Cifrado punto a punto en mensajes, archivos y llamadas' },
+                  { icon: '✅', text: 'Solo tú y tus contactos pueden leer las conversaciones' },
+                ].map(b => (
+                  <div key={b.text} className="flex items-center gap-3 text-white/60 text-sm">
+                    <span className="text-base">{b.icon}</span>
+                    <span>{b.text}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="shrink-0">
-              <div className="w-32 h-32 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center">
-                <svg className="w-16 h-16 text-blue-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING PREVIEW */}
-      <section id="precios" className="py-20 bg-[#f8fafc]">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">{l.pricingSection.title}</h2>
-            <p className="text-gray-500 text-lg">{l.pricingSection.sub}</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {(['free', 'pro', 'business'] as const).map(key => {
-              const plan = l.plans[key]
-              const colors = PLAN_COLORS[key]
-              return (
-                <div key={key} className={`bg-white rounded-2xl border-2 p-7 flex flex-col relative ${colors.border} transition-shadow hover:shadow-lg`}>
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${colors.badgeBg}`}>{plan.badge}</span>
-                    </div>
-                  )}
-                  <div className="mb-5">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                      {key !== 'free' && <span className="text-gray-400 text-sm">/ {plan.period}</span>}
-                    </div>
-                  </div>
-                  <ul className="space-y-2.5 flex-1 mb-6">
-                    {plan.features.map(f => (
-                      <li key={f} className="flex items-start gap-2">
-                        <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        <span className="text-sm text-gray-700">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href={colors.href} className={`w-full py-3 rounded-xl font-semibold text-sm text-center transition-all active:scale-[0.98] ${colors.cta}`}>
-                    {plan.cta}
-                  </Link>
+            <div className="shrink-0 grid grid-cols-2 gap-4">
+              {[
+                { label: 'Cifrado', value: 'AES-256-GCM', icon: '🔒' },
+                { label: 'Acceso externo', value: 'Ninguno', icon: '🚫' },
+                { label: 'Datos vendidos', value: 'Cero', icon: '✋' },
+                { label: 'Privacidad', value: 'Por diseño', icon: '🛡️' },
+              ].map(c => (
+                <div key={c.label} className="rounded-2xl bg-white/3 border border-white/8 p-5 text-center w-36">
+                  <div className="text-2xl mb-2">{c.icon}</div>
+                  <p className="text-white font-bold text-sm">{c.value}</p>
+                  <p className="text-white/30 text-xs mt-1">{c.label}</p>
                 </div>
-              )
-            })}
-          </div>
-          <p className="text-center text-sm text-gray-400 mt-8">{l.pricingSection.disclaimer}</p>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-24 bg-gradient-to-br from-[#0f172a] to-[#1a56db]">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">{l.cta.title}</h2>
-          <p className="text-blue-200 text-lg mb-10 max-w-lg mx-auto">{l.cta.subtitle}</p>
-          <Link href="/login?start=phone" className="inline-block px-12 py-4 rounded-full bg-white text-[#1a56db] font-bold text-lg hover:bg-blue-50 transition-all shadow-xl hover:-translate-y-0.5 active:scale-95">
-            {l.cta.button}
-          </Link>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="bg-[#0f172a] py-10">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-                <Image src="/dochatlogo.png" alt="DO Chat" width={16} height={16} className="rounded-md" />
-              </div>
-              <span className="text-sm font-bold text-white/60 tracking-tight">DO Chat</span>
-            </Link>
-            <div className="flex gap-6 text-gray-500 text-sm">
-              <a href="#funciones" className="hover:text-white transition-colors">{l.footer.features}</a>
-              <Link href="/pricing" className="hover:text-white transition-colors">{l.footer.pricing}</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">{l.footer.privacy}</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">{l.footer.terms}</Link>
+              ))}
             </div>
           </div>
-          <div className="border-t border-white/5 pt-6">
-            <p className="text-gray-600 text-xs text-center">{l.footer.copyright}</p>
+        </div>
+      </section>
+
+      {/* ── FOR WHO ── */}
+      <section className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">04</span>
+            <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-14 max-w-xl leading-tight">
+            Construido para equipos que no pueden perder tiempo
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { emoji: '🏢', title: 'Empresas y directivos', desc: 'Comunicación segura y archivos organizados para toma de decisiones rápida.' },
+              { emoji: '⚖️', title: 'Despachos legales', desc: 'Documentos cifrados y conversaciones privadas con clientes y socios.' },
+              { emoji: '🏥', title: 'Salud y clínicas', desc: 'Coordinación de equipos médicos sin comprometer la privacidad del paciente.' },
+              { emoji: '🏗️', title: 'Construcción y campo', desc: 'Proyectos, planos y reportes centralizados. Sin correos perdidos.' },
+              { emoji: '📊', title: 'Ventas y comercial', desc: 'La IA recuerda seguimientos, agenda reuniones y notifica al equipo.' },
+              { emoji: '🎓', title: 'Educación', desc: 'Grupos de trabajo, tareas compartidas y comunicación con padres y alumnos.' },
+            ].map(u => (
+              <div key={u.title} className="rounded-2xl bg-white/3 border border-white/8 p-6 hover:bg-white/5 transition-colors">
+                <div className="text-2xl mb-3">{u.emoji}</div>
+                <h3 className="font-bold text-white mb-2">{u.title}</h3>
+                <p className="text-white/40 text-sm leading-relaxed">{u.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="precios" className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">05</span>
+            <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
+          </div>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-14">
+            <h2 className="text-3xl sm:text-4xl font-extrabold max-w-md leading-tight">
+              Precios simples,<br />sin sorpresas
+            </h2>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm ${!annual ? 'text-white' : 'text-white/40'}`}>Mensual</span>
+              <button onClick={() => setAnnual(!annual)}
+                className={`w-12 h-6 rounded-full transition-colors relative ${annual ? 'bg-blue-600' : 'bg-white/10'}`}>
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${annual ? 'left-7' : 'left-1'}`} />
+              </button>
+              <span className={`text-sm ${annual ? 'text-white' : 'text-white/40'}`}>
+                Anual <span className="text-emerald-400 text-xs font-bold">−20%</span>
+              </span>
+            </div>
+          </div>
+
+          {pricingError && (
+            <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-5 py-4 mb-8">
+              <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+              <p className="text-red-300 text-sm flex-1">{pricingError}</p>
+              <button onClick={() => setPricingError(null)} className="text-red-400 hover:text-red-200"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {([
+              {
+                key: 'free',
+                name: 'Free',
+                price: '$0',
+                period: 'para siempre',
+                desc: 'Para personas y equipos pequeños.',
+                features: ['Mensajes ilimitados', 'Cifrado E2E', 'do AI (básico)', '1 GB de archivos', 'Hasta 5 contactos activos'],
+                cta: 'Empezar gratis',
+                highlight: false,
+                badge: '',
+              },
+              {
+                key: 'pro',
+                name: 'Pro',
+                price: annual ? '$10' : '$12.99',
+                period: 'por usuario / mes',
+                desc: 'Para equipos que necesitan más poder.',
+                features: ['Todo en Free', 'do AI sin límites', '100 GB de archivos', 'Contactos ilimitados', 'Llamadas grupales', 'Soporte prioritario'],
+                cta: 'Probar gratis 14 días',
+                highlight: true,
+                badge: 'Más popular',
+              },
+              {
+                key: 'business',
+                name: 'Business',
+                price: 'A medida',
+                period: '',
+                desc: 'Para empresas con necesidades avanzadas.',
+                features: ['Todo en Pro', 'Almacenamiento ilimitado', 'Integraciones custom', 'SLA garantizado', 'Soporte 24/7', 'Factura empresarial'],
+                cta: 'Contactar ventas',
+                highlight: false,
+                badge: '',
+              },
+            ] as const).map(plan => (
+              <div key={plan.name}
+                className={`rounded-2xl border p-7 flex flex-col relative transition-all ${plan.highlight ? 'bg-blue-600 border-blue-500 shadow-2xl shadow-blue-500/20' : 'bg-white/3 border-white/10 hover:bg-white/5'}`}>
+                {plan.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="px-3 py-1 rounded-full bg-white text-blue-600 text-xs font-bold shadow">{plan.badge}</span>
+                  </div>
+                )}
+                <div className="mb-5">
+                  <h3 className={`text-sm font-semibold mb-2 ${plan.highlight ? 'text-blue-100' : 'text-white/60'}`}>{plan.name}</h3>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-3xl font-extrabold text-white">{plan.price}</span>
+                    {plan.period && <span className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/30'}`}>{plan.period}</span>}
+                  </div>
+                  <p className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-white/40'}`}>{plan.desc}</p>
+                </div>
+                <ul className="space-y-2.5 flex-1 mb-6">
+                  {plan.features.map(f => (
+                    <li key={f} className="flex items-center gap-2.5">
+                      <svg className={`w-4 h-4 shrink-0 ${plan.highlight ? 'text-blue-200' : 'text-emerald-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className={`text-sm ${plan.highlight ? 'text-white' : 'text-white/60'}`}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => handlePlan(plan.key)}
+                  disabled={pricingLoading === plan.key}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm text-center transition-all active:scale-[0.98] disabled:opacity-50 ${plan.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-white/8 text-white hover:bg-white/12 border border-white/10'}`}>
+                  {pricingLoading === plan.key ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${plan.highlight ? 'border-blue-600' : 'border-white'}`} />
+                      Redirigiendo...
+                    </span>
+                  ) : plan.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-sm text-white/20 mt-8">Todos los planes incluyen actualizaciones automáticas, cifrado E2E y soporte.</p>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIAL ── */}
+      <section className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-2xl sm:text-3xl font-bold text-white leading-snug mb-8">
+            "DO Chat cambió cómo trabaja nuestro equipo. La IA maneja los recordatorios y el cifrado nos da tranquilidad con los clientes."
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">CR</div>
+            <div className="text-left">
+              <p className="text-white text-sm font-semibold">Carlos R.</p>
+              <p className="text-white/30 text-xs">Director Comercial, Grupo Nexum</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section className="py-24 px-6 border-t border-white/5">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-5xl font-extrabold mb-4 leading-tight">
+            Tu equipo merece<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+              una mejor herramienta
+            </span>
+          </h2>
+          <p className="text-white/40 text-lg mb-10 max-w-lg mx-auto">
+            Empieza gratis hoy. Sin tarjeta. Sin instalación. Listo en menos de un minuto.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/login?start=phone"
+              className="px-10 py-4 rounded-xl bg-blue-600 text-white font-bold text-base hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5 active:scale-95">
+              Empezar gratis ahora
+            </Link>
+            <Link href="/pricing"
+              className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-base hover:bg-white/10 transition-all">
+              Ver planes →
+            </Link>
+          </div>
+          <p className="text-white/20 text-sm mt-6">Sin tarjeta de crédito · Cancela cuando quieras</p>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-white/5 py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 mb-14">
+            <div className="col-span-2 sm:col-span-1">
+              <Link href="/" className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <Image src="/dochatlogo.png" alt="DO Chat" width={20} height={20} className="rounded-lg" />
+                </div>
+                <span className="font-bold text-white">DO Chat</span>
+              </Link>
+              <p className="text-white/30 text-sm leading-relaxed">
+                Mensajería con IA para equipos que necesitan producir más y preocuparse menos.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/20 uppercase tracking-widest mb-4">Producto</p>
+              <div className="space-y-3">
+                <a href="#funciones" className="block text-sm text-white/40 hover:text-white transition-colors">Funciones</a>
+                <a href="#como-funciona" className="block text-sm text-white/40 hover:text-white transition-colors">Cómo funciona</a>
+                <a href="#precios" className="block text-sm text-white/40 hover:text-white transition-colors">Precios</a>
+                <a href="#seguridad" className="block text-sm text-white/40 hover:text-white transition-colors">Seguridad</a>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/20 uppercase tracking-widest mb-4">Empresa</p>
+              <div className="space-y-3">
+                <Link href="/privacy" className="block text-sm text-white/40 hover:text-white transition-colors">Privacidad</Link>
+                <Link href="/terms" className="block text-sm text-white/40 hover:text-white transition-colors">Términos</Link>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white/20 uppercase tracking-widest mb-4">Soporte</p>
+              <div className="space-y-3">
+                <Link href="/login" className="block text-sm text-white/40 hover:text-white transition-colors">Iniciar sesión</Link>
+                <Link href="/login?start=phone" className="block text-sm text-white/40 hover:text-white transition-colors">Registrarse</Link>
+                <a href="mailto:hola@getdochat.com" className="block text-sm text-white/40 hover:text-white transition-colors">hola@getdochat.com</a>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-white/20 text-xs">© 2025 DO Chat. Todos los derechos reservados.</p>
+            <div className="flex items-center gap-2 text-xs text-white/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              Todos los sistemas operativos
+            </div>
           </div>
         </div>
       </footer>
