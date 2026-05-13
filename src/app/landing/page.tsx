@@ -326,40 +326,11 @@ export default function LandingV2() {
         </div>
       </section>
 
-      {/* ── FOR WHO ── */}
-      <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">04</span>
-            <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-14 max-w-xl leading-tight">
-            Construido para equipos que no pueden perder tiempo
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { emoji: '🏢', title: 'Empresas y directivos', desc: 'Comunicación segura y archivos organizados para toma de decisiones rápida.' },
-              { emoji: '⚖️', title: 'Despachos legales', desc: 'Documentos cifrados y conversaciones privadas con clientes y socios.' },
-              { emoji: '🏥', title: 'Salud y clínicas', desc: 'Coordinación de equipos médicos sin comprometer la privacidad del paciente.' },
-              { emoji: '🏗️', title: 'Construcción y campo', desc: 'Proyectos, planos y reportes centralizados. Sin correos perdidos.' },
-              { emoji: '📊', title: 'Ventas y comercial', desc: 'La IA recuerda seguimientos, agenda reuniones y notifica al equipo.' },
-              { emoji: '🎓', title: 'Educación', desc: 'Grupos de trabajo, tareas compartidas y comunicación con padres y alumnos.' },
-            ].map(u => (
-              <div key={u.title} className="rounded-2xl bg-white/3 border border-white/8 p-6 hover:bg-white/5 transition-colors">
-                <div className="text-2xl mb-3">{u.emoji}</div>
-                <h3 className="font-bold text-white mb-2">{u.title}</h3>
-                <p className="text-white/40 text-sm leading-relaxed">{u.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── PRICING ── */}
       <section id="precios" className="py-24 px-6 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">05</span>
+            <span className="text-xs font-bold text-white/20 tracking-widest uppercase">04</span>
             <div className="h-px flex-1 bg-white/5 max-w-[60px]" />
           </div>
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-14">
