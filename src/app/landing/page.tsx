@@ -436,17 +436,139 @@ export default function LandingV2() {
         </div>
       </section>
 
-      {/* ── TESTIMONIAL ── */}
+      {/* ── USE CASES ── */}
       <section className="py-24 px-6 border-t border-white/5">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-2xl sm:text-3xl font-bold text-white leading-snug mb-8">
-            "DO Chat cambió cómo trabaja nuestro equipo. La IA maneja los recordatorios y el cifrado nos da tranquilidad con los clientes."
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">CR</div>
-            <div className="text-left">
-              <p className="text-white text-sm font-semibold">Carlos R.</p>
-              <p className="text-white/30 text-xs">Director Comercial, Grupo Nexum</p>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 leading-tight">
+              Para cada momento de tu vida
+            </h2>
+            <p className="text-white/40 text-lg max-w-xl mx-auto">
+              DO Chat es para todos. Úsalo con tu familia, tus amigos, tu equipo de trabajo — o los tres a la vez.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Card 1 — Familia/amigos */}
+            <div className="rounded-2xl bg-white/3 border border-white/8 overflow-hidden">
+              <div className="bg-[#0d1320] px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center text-sm">👨‍👩‍👧</div>
+                <div>
+                  <p className="text-white text-xs font-semibold">Familia 🏡</p>
+                  <p className="text-white/30 text-[10px]">4 miembros · en línea</p>
+                </div>
+              </div>
+              <div className="px-4 py-4 space-y-3">
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-orange-400/20 text-orange-300 flex items-center justify-center text-[10px] shrink-0">M</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]">
+                    <p className="text-white/80 text-xs">¿A qué hora llegamos mañana?</p>
+                    <p className="text-white/25 text-[9px] mt-1">10:14</p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <div className="bg-blue-600 rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%]">
+                    <p className="text-white text-xs">Como a las 3pm, les aviso cuando salga 🚗</p>
+                    <p className="text-blue-200/60 text-[9px] mt-1 text-right">10:15 ✓✓</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-purple-400/20 text-purple-300 flex items-center justify-center text-[10px] shrink-0">P</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]">
+                    <p className="text-white/80 text-xs">Yo hago la carnita 🔥🔥🔥</p>
+                    <p className="text-white/25 text-[9px] mt-1">10:16</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-emerald-400/20 text-emerald-300 flex items-center justify-center text-[10px] shrink-0">L</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2">
+                    <p className="text-white/80 text-xs">❤️❤️ los queremos mucho</p>
+                    <p className="text-white/25 text-[9px] mt-1">10:17</p>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                <p className="text-white/20 text-[11px] text-center">Cifrado · Solo tu familia lo lee</p>
+              </div>
+            </div>
+
+            {/* Card 2 — Amigos */}
+            <div className="rounded-2xl bg-white/3 border border-white/8 overflow-hidden">
+              <div className="bg-[#0d1320] px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center text-sm">🎉</div>
+                <div>
+                  <p className="text-white text-xs font-semibold">Los del barrio</p>
+                  <p className="text-white/30 text-[10px]">7 miembros · 3 en línea</p>
+                </div>
+              </div>
+              <div className="px-4 py-4 space-y-3">
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-blue-400/20 text-blue-300 flex items-center justify-center text-[10px] shrink-0">R</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[75%]">
+                    <p className="text-white/80 text-xs">¿Viernes de partido o sábado?</p>
+                    <p className="text-white/25 text-[9px] mt-1">18:02</p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <div className="bg-blue-600 rounded-2xl rounded-br-sm px-3 py-2">
+                    <p className="text-white text-xs">Sábado para mí 🙌</p>
+                    <p className="text-blue-200/60 text-[9px] mt-1 text-right">18:03 ✓✓</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-rose-400/20 text-rose-300 flex items-center justify-center text-[10px] shrink-0">✦</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[80%]">
+                    <p className="text-white/80 text-xs">📊 Sábado: 5 votos · Viernes: 2 votos</p>
+                    <p className="text-white/25 text-[9px] mt-1">do AI · 18:03</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center text-[10px] shrink-0">K</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2">
+                    <p className="text-white/80 text-xs">Jajaja la IA votó 😂 sábado es</p>
+                    <p className="text-white/25 text-[9px] mt-1">18:04</p>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                <p className="text-white/20 text-[11px] text-center">La IA te ayuda sin que se lo pidas</p>
+              </div>
+            </div>
+
+            {/* Card 3 — Trabajo */}
+            <div className="rounded-2xl bg-white/3 border border-white/8 overflow-hidden">
+              <div className="bg-[#0d1320] px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-sm">💼</div>
+                <div>
+                  <p className="text-white text-xs font-semibold">Equipo Ventas</p>
+                  <p className="text-white/30 text-[10px]">5 miembros · reunión activa</p>
+                </div>
+              </div>
+              <div className="px-4 py-4 space-y-3">
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-slate-400/20 text-slate-300 flex items-center justify-center text-[10px] shrink-0">A</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[80%]">
+                    <p className="text-white/80 text-xs">Cliente confirmó contrato ✅</p>
+                    <p className="text-white/25 text-[9px] mt-1">09:41</p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <div className="bg-blue-600 rounded-2xl rounded-br-sm px-3 py-2 max-w-[75%]">
+                    <p className="text-white text-xs">Avisa al equipo legal por favor</p>
+                    <p className="text-blue-200/60 text-[9px] mt-1 text-right">09:42 ✓✓</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <div className="w-6 h-6 rounded-full bg-rose-400/20 text-rose-300 flex items-center justify-center text-[10px] shrink-0">✦</div>
+                  <div className="bg-white/8 rounded-2xl rounded-bl-sm px-3 py-2 max-w-[80%]">
+                    <p className="text-white/80 text-xs">✅ Notifiqué a Legal. Recordatorio creado: revisar contrato hoy 17:00.</p>
+                    <p className="text-white/25 text-[9px] mt-1">do AI · 09:42</p>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                <p className="text-white/20 text-[11px] text-center">IA que actúa, no solo responde</p>
+              </div>
             </div>
           </div>
         </div>
