@@ -8,7 +8,7 @@ export default function LandingV2() {
   const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [annual, setAnnual] = useState(false)
+  const [annual, setAnnual] = useState(true)
   const [pricingLoading, setPricingLoading] = useState<string | null>(null)
   const [pricingError, setPricingError] = useState<string | null>(null)
 
