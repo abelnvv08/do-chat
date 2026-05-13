@@ -7,8 +7,8 @@ import Link from 'next/link'
 import { useLanguage } from '@/lib/i18n'
 
 const PLAN_KEYS = ['free', 'pro', 'business'] as const
-const PLAN_PRICES = { free: 0, pro: 12.99, business: 29.99 }
-const PLAN_PRICES_ANNUAL = { free: 0, pro: 10, business: 24 }
+const PLAN_PRICES = { free: 0, pro: 12.99, business: 99 }
+const PLAN_PRICES_ANNUAL = { free: 0, pro: 10, business: 79 }
 const PLAN_API_KEYS = { free: 'free', pro: 'pro', business: 'business' }
 const PLAN_NOT_OK = {
   free: [false, false, false, false, true, true, true],

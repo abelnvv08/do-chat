@@ -413,8 +413,8 @@ export default function LandingV2() {
               {
                 key: 'business',
                 name: 'Business',
-                price: 'A medida',
-                period: '',
+                price: annual ? '$79' : '$99',
+                period: 'por usuario / mes',
                 desc: 'Para empresas con necesidades avanzadas.',
                 features: ['Todo en Pro', 'Almacenamiento ilimitado', 'Integraciones custom', 'SLA garantizado', 'Soporte 24/7', 'Factura empresarial'],
                 cta: 'Contactar ventas',
