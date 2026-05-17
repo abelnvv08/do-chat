@@ -1,0 +1,20 @@
+{
+  "appId": "com.dochat.app",
+  "appName": "DO Chat",
+  "webDir": "out",
+  "server": {
+    "url": "https://getdochat.com",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 500,
+      "launchAutoHide": true,
+      "backgroundColor": "#080c14",
+      "showSpinner": false
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

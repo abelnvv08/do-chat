@@ -39,9 +39,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  if (user && pathname === '/') {
-    return NextResponse.redirect(new URL(`/chat/${user.id}`, req.url))
-  }
+  // Root page handles its own redirect client-side (splash screen)
 
   return res
 }

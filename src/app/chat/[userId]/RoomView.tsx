@@ -365,6 +365,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [loading, setLoading] = useState(false)
   const [aiTyping, setAiTyping] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [taskContent, setTaskContent] = useState('')
+  const [taskDueDate, setTaskDueDate] = useState('')
+  const [sendingTask, setSendingTask] = useState(false)
   const [showAIPanel, setShowAIPanel] = useState(false)
   const [aiQuery, setAiQuery] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -667,14 +672,15 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     if (!container) return
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
     const isNearBottom = distanceFromBottom < 120
+    const isFirstLoad = lastMsgCountRef.current === 0
     const gotNewMessages = messages.length > lastMsgCountRef.current
     const newCount = messages.length - lastMsgCountRef.current
     lastMsgCountRef.current = messages.length
-    if (isNearBottom || !gotNewMessages) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (isFirstLoad || isNearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: isFirstLoad ? 'instant' : 'smooth' })
       setUnreadWhileUp(0)
       setIsScrolledUp(false)
-    } else {
+    } else if (gotNewMessages) {
       setUnreadWhileUp(prev => prev + newCount)
     }
   }, [messages, aiTyping])
@@ -695,10 +701,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     function update() {
       setContainerHeight(`${vv!.height}px`)
       window.scrollTo(0, 0)
-      // Keep messages scrolled to bottom when keyboard opens
-      setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'instant' })
-      }, 50)
+      // Only scroll to bottom on keyboard open if user was already at bottom
+      if (!isScrolledUp) {
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+        }, 50)
+      }
     }
     vv.addEventListener('resize', update)
     return () => vv.removeEventListener('resize', update)
@@ -745,6 +753,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
           const res = await fetch('/api/chat/upload', { method: 'POST', body: fd })
           const data = await res.json()
+          if (!res.ok) { setUploadError(data.error ?? 'Error al subir archivo'); break }
           if (data.message?.content) {
             try {
               const meta = JSON.parse(data.message.content)
@@ -794,7 +803,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       for (const file of filesToSend) {
         const fd = new FormData()
         fd.append('file', file); fd.append('user_id', userId); fd.append('room_id', roomId)
-        await fetch('/api/chat/upload', { method: 'POST', body: fd })
+        const r = await fetch('/api/chat/upload', { method: 'POST', body: fd })
+        if (!r.ok) { const d = await r.json(); setUploadError(d.error ?? 'Error al subir archivo'); break }
       }
       if (content) {
         const optimisticId = `optimistic-${Date.now()}`
@@ -1088,19 +1098,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           remoteVideoRef.current.play().catch(() => {})
         }
       } else {
-        // Route audio through AudioContext — plays through earpiece on iOS by default
-        try {
-          const ctx = new AudioContext()
-          audioCtxRef.current = ctx
-          const src = ctx.createMediaStreamSource(stream)
-          audioSrcRef.current = src
-          src.connect(ctx.destination)
-        } catch {
-          // Fallback to audio element if AudioContext fails
-          if (remoteAudioRef.current) {
-            remoteAudioRef.current.srcObject = stream
-            remoteAudioRef.current.play().catch(() => {})
-          }
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = stream
+          remoteAudioRef.current.muted = false
+          remoteAudioRef.current.volume = 1
+          remoteAudioRef.current.play().catch(() => {})
         }
       }
     }
@@ -1145,6 +1147,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         if (callStateRef.current === 'calling') {
           onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: 'outgoing', status: 'missed', duration: 0, ts: Date.now() })
           channelRef.current?.send({ type: 'broadcast', event: 'call-end', payload: { from: userId } })
+          // Leave missed call message in chat
+          fetch('/api/chat/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, content: video ? '📹 Videollamada perdida' : '📞 Llamada perdida', room_id: roomId, type: 'system' }),
+          }).catch(() => {})
           cleanupCall()
         }
       }, 30000)
@@ -1183,6 +1191,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   function rejectCall() {
     onCallLog?.({ roomId, roomName: room?.name ?? '', roomEmoji: room?.emoji ?? '💬', type: 'incoming', status: 'declined', duration: 0, ts: Date.now() })
     channelRef.current?.send({ type: 'broadcast', event: 'call-reject', payload: { from: userId } })
+    fetch('/api/chat/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, content: '📞 Llamada rechazada', room_id: roomId, type: 'system' }),
+    }).catch(() => {})
     cleanupCall()
   }
 
@@ -1237,12 +1250,42 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       formData.append('file', files[0])
       formData.append('user_id', userId)
       formData.append('room_id', roomId)
-      await fetch('/api/chat/upload', { method: 'POST', body: formData })
+      const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json()
+        setUploadError(errData.error ?? 'Error al subir archivo')
+        setUploading(false)
+        e.target.value = ''
+        return
+      }
       channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
       await fetchMessages()
       setUploading(false)
     }
     e.target.value = ''
+  }
+
+  async function sendTask() {
+    if (!taskContent.trim() || !room?.otherUserId) return
+    setSendingTask(true)
+    await fetch('/api/chat/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        content: taskContent.trim(),
+        due_date: taskDueDate || null,
+        assigned_to: room.otherUserId,
+        assigned_by: userId,
+        assigned_by_name: messages.find(m => m.user_id === userId)?.user?.name ?? 'Tú',
+        assigned_by_emoji: messages.find(m => m.user_id === userId)?.user?.emoji ?? '👤',
+        assigned_to_name: room.name,
+      }),
+    })
+    setTaskContent('')
+    setTaskDueDate('')
+    setShowTaskModal(false)
+    setSendingTask(false)
   }
 
   function handleKey(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -1497,18 +1540,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 onClick={() => {
                   const next = !speakerOn
                   setSpeakerOn(next)
-                  // Toggle between AudioContext (earpiece) and audio element (speaker)
-                  if (audioSrcRef.current && audioCtxRef.current) {
-                    if (next) {
-                      // Speaker: disconnect AudioContext, use audio element
-                      audioSrcRef.current.disconnect()
-                    } else {
-                      // Earpiece: reconnect AudioContext
-                      audioSrcRef.current.connect(audioCtxRef.current.destination)
-                    }
-                  }
                   if (remoteAudioRef.current) {
-                    remoteAudioRef.current.muted = next // mute audio element when using AudioContext
+                    remoteAudioRef.current.muted = false
+                    remoteAudioRef.current.volume = next ? 1 : 0.3
                   }
                 }}
                 className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${speakerOn ? 'bg-white/20' : 'bg-white/10'}`}
@@ -2054,6 +2088,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             <span className="text-xs text-gray-400">Subiendo…</span>
           </div>
         )}
+        {uploadError && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+            <span className="text-xs text-red-600 flex-1">{uploadError}</span>
+            <button onClick={() => setUploadError(null)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+          </div>
+        )}
         {mentionSuggestions.length > 0 && (
           <div className="mb-1 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
             {mentionSuggestions.slice(0, 5).map(m => (
@@ -2109,6 +2149,15 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 <PaperclipIcon className="h-4 w-4" />
               </button>
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp" multiple className="hidden" onChange={handleFile} />
+              {!isAIRoom && room?.otherUserId && (
+                <button onClick={() => setShowTaskModal(true)}
+                  className="h-8 w-8 mb-0.5 shrink-0 text-gray-400 hover:text-blue-500 flex items-center justify-center transition-colors"
+                  title="Asignar tarea">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </button>
+              )}
               <TextareaAutosize
                 ref={mainInputRef}
                 value={input}
@@ -2442,6 +2491,42 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             </div>
 
             <div className="h-8" />
+          </div>
+        </div>
+      )}
+
+      {/* ── Task assignment modal ── */}
+      {showTaskModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => setShowTaskModal(false)}>
+          <div className="w-full max-w-lg bg-white rounded-t-3xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900">Asignar tarea a {room?.name}</h3>
+              <button onClick={() => setShowTaskModal(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <textarea
+              autoFocus
+              value={taskContent}
+              onChange={e => setTaskContent(e.target.value)}
+              placeholder="Describe la tarea…"
+              rows={3}
+              className="w-full text-sm bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-blue-400 text-gray-800 placeholder:text-gray-400 resize-none"
+            />
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-500 shrink-0">Fecha límite</label>
+              <input type="date" value={taskDueDate} onChange={e => setTaskDueDate(e.target.value)}
+                className="text-sm bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400 text-gray-600" />
+              {taskDueDate && <button onClick={() => setTaskDueDate('')} className="text-xs text-gray-400 hover:text-gray-600">Quitar</button>}
+            </div>
+            <button
+              onClick={sendTask}
+              disabled={!taskContent.trim() || sendingTask}
+              className="w-full py-3 rounded-2xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
+              {sendingTask
+                ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
+                : 'Enviar tarea'}
+            </button>
           </div>
         </div>
       )}

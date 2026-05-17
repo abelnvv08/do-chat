@@ -1,31 +1,61 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { formatMessageTime } from '@/lib/utils'
 
-type Task = { id: string; content: string; done: boolean; created_at: string; source_room: string | null; due_date: string | null }
+type Task = {
+  id: string
+  content: string
+  done: boolean
+  created_at: string
+  source_room: string | null
+  due_date: string | null
+  task_status: string | null
+  assigned_to: string | null
+  assigned_by: string | null
+  assigned_by_name: string | null
+  assigned_by_emoji: string | null
+  assigned_to_name: string | null
+  evidence_url: string | null
+  evidence_name: string | null
+  completed_at: string | null
+}
+
+type Reminder = { id: string; content: string; remind_at: string }
 
 export default function PendientesPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
-  const router = useRouter()
-  type Reminder = { id: string; content: string; remind_at: string }
   const [tasks, setTasks] = useState<Task[]>([])
+  const [received, setReceived] = useState<Task[]>([])
+  const [sent, setSent] = useState<Task[]>([])
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [loading, setLoading] = useState(true)
   const [newTask, setNewTask] = useState('')
   const [newDueDate, setNewDueDate] = useState('')
   const [adding, setAdding] = useState(false)
+  const [tab, setTab] = useState<'personal' | 'recibidas' | 'enviadas'>('personal')
+  const [completingId, setCompletingId] = useState<string | null>(null)
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null)
+  const [uploadingEvidence, setUploadingEvidence] = useState(false)
+  const evidenceRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetchTasks()
-    fetchReminders()
-    const interval = setInterval(() => { fetchTasks(); fetchReminders() }, 4000)
+    fetchAll()
+    const interval = setInterval(fetchAll, 5000)
     return () => clearInterval(interval)
   }, [])
 
-  async function fetchReminders() {
+  async function fetchAll() {
+    try {
+      const res = await fetch(`/api/chat/tasks?user_id=${userId}`)
+      const data = await res.json()
+      setTasks(data.tasks ?? [])
+      setReceived(data.received ?? [])
+      setSent(data.sent ?? [])
+    } finally {
+      setLoading(false)
+    }
     try {
       const res = await fetch(`/api/chat/reminders?user_id=${userId}`)
       const { reminders: r } = await res.json()
@@ -35,39 +65,17 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
 
   async function dismissReminder(id: string) {
     setReminders(prev => prev.filter(r => r.id !== id))
-    await fetch('/api/chat/reminders', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-  }
-
-  async function fetchTasks() {
-    try {
-      const res = await fetch(`/api/chat/tasks?user_id=${userId}`)
-      const { tasks: t } = await res.json()
-      setTasks(t ?? [])
-    } finally {
-      setLoading(false)
-    }
+    await fetch('/api/chat/reminders', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
   }
 
   async function toggleDone(id: string, done: boolean) {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, done } : t))
-    await fetch('/api/chat/tasks', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, done }),
-    })
+    await fetch('/api/chat/tasks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, done }) })
   }
 
   async function deleteTask(id: string) {
     setTasks(prev => prev.filter(t => t.id !== id))
-    await fetch('/api/chat/tasks', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
+    await fetch('/api/chat/tasks', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
   }
 
   async function addTask() {
@@ -85,146 +93,287 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
     setAdding(false)
   }
 
+  async function handleAction(id: string, action: 'accept' | 'reject') {
+    setReceived(prev => prev.map(t => t.id === id ? { ...t, task_status: action === 'accept' ? 'in_progress' : 'rejected' } : t))
+    await fetch('/api/chat/tasks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action }) })
+    fetchAll()
+  }
 
-  const pending = tasks
-    .filter(t => !t.done)
-    .sort((a, b) => {
-      if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date)
-      if (a.due_date) return -1
-      if (b.due_date) return 1
-      return 0
+  async function handleComplete(id: string) {
+    setUploadingEvidence(true)
+    let evidence_url = null
+    let evidence_name = null
+
+    if (evidenceFile) {
+      const fd = new FormData()
+      fd.append('file', evidenceFile)
+      fd.append('user_id', userId)
+      fd.append('room_id', 'task-evidence')
+      const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: fd })
+      const uploadData = await uploadRes.json()
+      if (uploadData.message?.content) {
+        try {
+          const meta = JSON.parse(uploadData.message.content)
+          evidence_url = meta.url
+          evidence_name = evidenceFile.name
+        } catch {
+          evidence_url = uploadData.message.content
+          evidence_name = evidenceFile.name
+        }
+      }
+    }
+
+    await fetch('/api/chat/tasks', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'complete', evidence_url, evidence_name }),
     })
-  const done = tasks.filter(t => t.done)
+    setCompletingId(null)
+    setEvidenceFile(null)
+    setUploadingEvidence(false)
+    fetchAll()
+  }
+
+  const pendingPersonal = tasks.filter(t => !t.done).sort((a, b) => {
+    if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date)
+    if (a.due_date) return -1; if (b.due_date) return 1; return 0
+  })
+  const donePersonal = tasks.filter(t => t.done)
+  const pendingReceived = received.filter(t => t.task_status === 'pending')
+  const inProgressReceived = received.filter(t => t.task_status === 'in_progress')
+  const completedReceived = received.filter(t => t.task_status === 'completed' || t.task_status === 'rejected')
+
+  const totalBadge = pendingReceived.length + inProgressReceived.length
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between mb-1">
-          <h1 className="text-2xl font-bold text-gray-900">Mis pendientes</h1>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-600 font-semibold">
-            {pending.length} activas
-          </span>
+      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-0 sticky top-0 z-10">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-2xl font-bold text-gray-900">Tareas</h1>
+          {totalBadge > 0 && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-600 font-semibold">
+              {totalBadge} pendiente{totalBadge > 1 ? 's' : ''}
+            </span>
+          )}
         </div>
-        <p className="text-sm text-gray-400">Tareas extraídas por do AI o agregadas por vos</p>
+        {/* Tabs */}
+        <div className="flex gap-0 border-b border-gray-100">
+          {(['personal', 'recibidas', 'enviadas'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors relative ${tab === t ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              {t === 'personal' ? 'Mis tareas' : t === 'recibidas' ? 'Recibidas' : 'Enviadas'}
+              {t === 'recibidas' && totalBadge > 0 && (
+                <span className="ml-1.5 text-[10px] bg-red-500 text-white rounded-full px-1.5 py-0.5">{totalBadge}</span>
+              )}
+              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Add task */}
-        <div className="px-4 py-3 bg-white border-b border-gray-100 space-y-2">
-          <div className="flex gap-2">
-            <input
-              value={newTask}
-              onChange={e => setNewTask(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addTask()}
-              placeholder="Agregar tarea manualmente…"
-              className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-400 text-gray-800 placeholder:text-gray-400"
-            />
-            <button
-              onClick={addTask}
-              disabled={!newTask.trim() || adding}
-              className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors shrink-0"
-            >
-              +
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 shrink-0">Fecha límite:</span>
-            <input
-              type="date"
-              value={newDueDate}
-              onChange={e => setNewDueDate(e.target.value)}
-              className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600"
-            />
-            {newDueDate && (
-              <button onClick={() => setNewDueDate('')} className="text-xs text-gray-400 hover:text-gray-600">Quitar</button>
-            )}
-          </div>
-        </div>
-
         {loading && (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {!loading && tasks.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
-            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl">✓</div>
-            <p className="text-gray-600 font-medium">Sin pendientes por ahora</p>
-            <p className="text-sm text-gray-400">Pedile a @do que extraiga tareas de tus conversaciones</p>
-            <Link
-              href={`/chat/${userId}/ai-${userId}`}
-              className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              Abrir do AI
-            </Link>
-          </div>
+        {/* ── MIS TAREAS ── */}
+        {!loading && tab === 'personal' && (
+          <>
+            {/* Add task */}
+            <div className="px-4 py-3 bg-white border-b border-gray-100 space-y-2">
+              <div className="flex gap-2">
+                <input
+                  value={newTask}
+                  onChange={e => setNewTask(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addTask()}
+                  placeholder="Agregar tarea…"
+                  className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-400 text-gray-800 placeholder:text-gray-400"
+                />
+                <button onClick={addTask} disabled={!newTask.trim() || adding}
+                  className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors shrink-0">+</button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 shrink-0">Fecha límite:</span>
+                <input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)}
+                  className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600" />
+                {newDueDate && <button onClick={() => setNewDueDate('')} className="text-xs text-gray-400 hover:text-gray-600">Quitar</button>}
+              </div>
+            </div>
+
+            {/* Reminders */}
+            {reminders.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recordatorios</p>
+                <div className="space-y-2">
+                  {reminders.map(r => {
+                    const dt = new Date(r.remind_at)
+                    const isPast = dt <= new Date()
+                    return (
+                      <div key={r.id} className={`rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm ${isPast ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
+                        <div className="shrink-0 mt-0.5">
+                          {isPast
+                            ? <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
+                            : <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-800 leading-snug">{r.content}</p>
+                          <p className={`text-xs mt-1 ${isPast ? 'text-blue-500 font-medium' : 'text-gray-400'}`}>
+                            {isPast ? 'Ahora · ' : ''}{dt.toLocaleDateString('es', { day: 'numeric', month: 'short' })} {dt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <button onClick={() => dismissReminder(r.id)} className="text-gray-300 hover:text-red-400 shrink-0 mt-0.5">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {tasks.length === 0 && reminders.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
+                <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl">✓</div>
+                <p className="text-gray-600 font-medium">Sin pendientes por ahora</p>
+                <p className="text-sm text-gray-400">Pedile a @do que extraiga tareas de tus conversaciones</p>
+              </div>
+            )}
+
+            {pendingPersonal.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Por hacer</p>
+                <div className="space-y-2">
+                  {pendingPersonal.map(task => (
+                    <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {donePersonal.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Completadas</p>
+                <div className="space-y-2 opacity-60">
+                  {donePersonal.map(task => (
+                    <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Reminders */}
-        {reminders.length > 0 && (
-          <div className="px-4 py-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recordatorios</p>
-            <div className="space-y-2">
-              {reminders.map(r => {
-                const dt = new Date(r.remind_at)
-                const now = new Date()
-                const isPast = dt <= now
-                return (
-                  <div key={r.id} className={`rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm ${isPast ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
-                    <div className="shrink-0 mt-0.5">{isPast ? <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg> : <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 leading-snug">{r.content}</p>
-                      <p className={`text-xs mt-1 ${isPast ? 'text-blue-500 font-medium' : 'text-gray-400'}`}>
-                        {isPast ? 'Ahora · ' : ''}{dt.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} {dt.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <button onClick={() => dismissReminder(r.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+        {/* ── RECIBIDAS ── */}
+        {!loading && tab === 'recibidas' && (
+          <>
+            {received.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
+                <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center text-2xl">📋</div>
+                <p className="text-gray-600 font-medium">Sin tareas recibidas</p>
+                <p className="text-sm text-gray-400">Cuando alguien te asigne una tarea aparecerá aquí</p>
+              </div>
+            )}
+
+            {pendingReceived.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Esperando tu respuesta</p>
+                <div className="space-y-3">
+                  {pendingReceived.map(task => (
+                    <ReceivedTaskCard key={task.id} task={task}
+                      onAccept={() => handleAction(task.id, 'accept')}
+                      onReject={() => handleAction(task.id, 'reject')}
+                      onStartComplete={() => setCompletingId(task.id)}
+                      completing={completingId === task.id}
+                      evidenceFile={evidenceFile}
+                      onEvidenceChange={setEvidenceFile}
+                      onConfirmComplete={() => handleComplete(task.id)}
+                      onCancelComplete={() => { setCompletingId(null); setEvidenceFile(null) }}
+                      uploading={uploadingEvidence}
+                      evidenceRef={evidenceRef}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {inProgressReceived.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">En proceso</p>
+                <div className="space-y-3">
+                  {inProgressReceived.map(task => (
+                    <ReceivedTaskCard key={task.id} task={task}
+                      onAccept={() => {}}
+                      onReject={() => {}}
+                      onStartComplete={() => setCompletingId(task.id)}
+                      completing={completingId === task.id}
+                      evidenceFile={evidenceFile}
+                      onEvidenceChange={setEvidenceFile}
+                      onConfirmComplete={() => handleComplete(task.id)}
+                      onCancelComplete={() => { setCompletingId(null); setEvidenceFile(null) }}
+                      uploading={uploadingEvidence}
+                      evidenceRef={evidenceRef}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {completedReceived.length > 0 && (
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Historial</p>
+                <div className="space-y-3 opacity-60">
+                  {completedReceived.map(task => (
+                    <ReceivedTaskCard key={task.id} task={task}
+                      onAccept={() => {}} onReject={() => {}} onStartComplete={() => {}}
+                      completing={false} evidenceFile={null} onEvidenceChange={() => {}}
+                      onConfirmComplete={() => {}} onCancelComplete={() => {}}
+                      uploading={false} evidenceRef={evidenceRef}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Pending tasks */}
-        {pending.length > 0 && (
-          <div className="px-4 py-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Por hacer</p>
-            <div className="space-y-2">
-              {pending.map(task => (
-                <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Done tasks */}
-        {done.length > 0 && (
-          <div className="px-4 py-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Completadas</p>
-            <div className="space-y-2 opacity-60">
-              {done.map(task => (
-                <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} />
-              ))}
-            </div>
-          </div>
+        {/* ── ENVIADAS ── */}
+        {!loading && tab === 'enviadas' && (
+          <>
+            {sent.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
+                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center text-2xl">📤</div>
+                <p className="text-gray-600 font-medium">Sin tareas enviadas</p>
+                <p className="text-sm text-gray-400">Asigna tareas desde un chat para verlas aquí</p>
+              </div>
+            )}
+            {sent.length > 0 && (
+              <div className="px-4 py-3 space-y-3">
+                {sent.map(task => (
+                  <SentTaskCard key={task.id} task={task} />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         <div className="h-4" />
       </div>
+
+      <input ref={evidenceRef} type="file" className="hidden"
+        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov"
+        onChange={e => setEvidenceFile(e.target.files?.[0] ?? null)} />
 
       <BottomNav userId={userId} active="tasks" />
     </div>
   )
 }
 
-function dueDateLabel(due: string | null, done: boolean): { label: string; className: string } | null {
+function dueDateLabel(due: string | null, done: boolean) {
   if (!due || done) return null
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const d = new Date(due + 'T00:00:00')
@@ -233,46 +382,167 @@ function dueDateLabel(due: string | null, done: boolean): { label: string; class
   if (diff === 0) return { label: 'Vence hoy', className: 'text-orange-500 bg-orange-50 border-orange-200' }
   if (diff === 1) return { label: 'Vence mañana', className: 'text-yellow-600 bg-yellow-50 border-yellow-200' }
   if (diff <= 7) return { label: `${diff}d restantes`, className: 'text-blue-500 bg-blue-50 border-blue-200' }
-  return { label: d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }), className: 'text-gray-400 bg-gray-50 border-gray-200' }
+  return { label: d.toLocaleDateString('es', { day: 'numeric', month: 'short' }), className: 'text-gray-400 bg-gray-50 border-gray-200' }
+}
+
+function statusBadge(status: string | null) {
+  if (!status || status === 'personal') return null
+  const map: Record<string, { label: string; className: string }> = {
+    pending:   { label: 'Esperando aceptación', className: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
+    in_progress: { label: 'En proceso', className: 'bg-blue-50 text-blue-600 border-blue-200' },
+    completed: { label: 'Completada ✓', className: 'bg-green-50 text-green-600 border-green-200' },
+    rejected:  { label: 'Rechazada', className: 'bg-red-50 text-red-500 border-red-200' },
+  }
+  return map[status] ?? null
 }
 
 function TaskCard({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string, done: boolean) => void; onDelete: (id: string) => void }) {
   const badge = dueDateLabel(task.due_date, task.done)
   return (
-    <div className={`bg-white rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm transition-all ${task.done ? 'border-gray-100' : 'border-gray-200'}`}>
-      <button
-        onClick={() => onToggle(task.id, !task.done)}
-        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-          task.done ? 'bg-blue-600 border-blue-600' : 'border-gray-300 hover:border-blue-400'
-        }`}
-      >
-        {task.done && (
-          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-          </svg>
-        )}
+    <div className={`bg-white rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm ${task.done ? 'border-gray-100' : 'border-gray-200'}`}>
+      <button onClick={() => onToggle(task.id, !task.done)}
+        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${task.done ? 'bg-blue-600 border-blue-600' : 'border-gray-300 hover:border-blue-400'}`}>
+        {task.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
       </button>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-          {task.content}
-        </p>
+        <p className={`text-sm leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.content}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          {badge && (
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>
-              {badge.label}
-            </span>
-          )}
+          {badge && <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
           <p className="text-xs text-gray-400">{formatMessageTime(task.created_at)}</p>
         </div>
       </div>
-      <button
-        onClick={() => onDelete(task.id)}
-        className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
+      <button onClick={() => onDelete(task.id)} className="text-gray-300 hover:text-red-400 shrink-0 mt-0.5">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
       </button>
+    </div>
+  )
+}
+
+function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completing, evidenceFile, onEvidenceChange, onConfirmComplete, onCancelComplete, uploading, evidenceRef }: {
+  task: Task
+  onAccept: () => void
+  onReject: () => void
+  onStartComplete: () => void
+  completing: boolean
+  evidenceFile: File | null
+  onEvidenceChange: (f: File | null) => void
+  onConfirmComplete: () => void
+  onCancelComplete: () => void
+  uploading: boolean
+  evidenceRef: React.RefObject<HTMLInputElement | null>
+}) {
+  const badge = statusBadge(task.task_status)
+  const isPending = task.task_status === 'pending'
+  const isInProgress = task.task_status === 'in_progress'
+  const isCompleted = task.task_status === 'completed'
+  const isRejected = task.task_status === 'rejected'
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-4 py-3">
+        {/* From */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-base">{task.assigned_by_emoji ?? '👤'}</span>
+          <span className="text-xs text-gray-400">De <span className="font-medium text-gray-600">{task.assigned_by_name ?? 'Alguien'}</span></span>
+          {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
+        </div>
+
+        <p className="text-sm text-gray-800 leading-snug font-medium">{task.content}</p>
+
+        {task.due_date && (
+          <p className="text-xs text-gray-400 mt-1">Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}</p>
+        )}
+
+        {/* Evidence on completed */}
+        {isCompleted && task.evidence_url && (
+          <a href={task.evidence_url} target="_blank" rel="noopener noreferrer"
+            className="mt-2 flex items-center gap-2 text-xs text-blue-600 hover:underline">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+            {task.evidence_name ?? 'Ver evidencia'}
+          </a>
+        )}
+      </div>
+
+      {/* Actions */}
+      {isPending && (
+        <div className="px-4 pb-3 flex gap-2">
+          <button onClick={onReject}
+            className="flex-1 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+            Rechazar
+          </button>
+          <button onClick={onAccept}
+            className="flex-1 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+            Aceptar
+          </button>
+        </div>
+      )}
+
+      {isInProgress && !completing && (
+        <div className="px-4 pb-3">
+          <button onClick={onStartComplete}
+            className="w-full py-2 rounded-xl text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors">
+            Marcar como terminada
+          </button>
+        </div>
+      )}
+
+      {isInProgress && completing && (
+        <div className="px-4 pb-3 space-y-2">
+          <p className="text-xs text-gray-500 font-medium">¿Adjuntar evidencia? (opcional)</p>
+          {evidenceFile ? (
+            <div className="flex items-center gap-2 bg-blue-50 rounded-xl px-3 py-2">
+              <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+              <span className="text-xs text-blue-700 truncate flex-1">{evidenceFile.name}</span>
+              <button onClick={() => onEvidenceChange(null)} className="text-blue-400 hover:text-blue-600 text-xs">✕</button>
+            </div>
+          ) : (
+            <button onClick={() => evidenceRef.current?.click()}
+              className="w-full py-2 rounded-xl text-sm border border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors">
+              + Adjuntar archivo / foto
+            </button>
+          )}
+          <div className="flex gap-2">
+            <button onClick={onCancelComplete}
+              className="flex-1 py-2 rounded-xl text-sm border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={onConfirmComplete} disabled={uploading}
+              className="flex-1 py-2 rounded-xl text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1">
+              {uploading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Subiendo…</> : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isRejected && (
+        <div className="px-4 pb-3">
+          <p className="text-xs text-red-400 text-center">Tarea rechazada</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SentTaskCard({ task }: { task: Task }) {
+  const badge = statusBadge(task.task_status)
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="text-base">{task.assigned_by_emoji ?? '👤'}</span>
+        <span className="text-xs text-gray-400">Para <span className="font-medium text-gray-600">{task.assigned_to_name ?? 'Alguien'}</span></span>
+        {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
+      </div>
+      <p className="text-sm text-gray-800 leading-snug">{task.content}</p>
+      {task.due_date && (
+        <p className="text-xs text-gray-400 mt-1">Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}</p>
+      )}
+      {task.task_status === 'completed' && task.evidence_url && (
+        <a href={task.evidence_url} target="_blank" rel="noopener noreferrer"
+          className="mt-2 flex items-center gap-2 text-xs text-blue-600 hover:underline">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+          Ver evidencia — {task.evidence_name ?? 'archivo'}
+        </a>
+      )}
     </div>
   )
 }

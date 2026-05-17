@@ -1,15 +1,39 @@
-import { redirect } from 'next/navigation'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+'use client'
 
-export default async function RootPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
+import Image from 'next/image'
+
+export default function RootPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        router.replace(`/chat/${user.id}`)
+      } else {
+        router.replace('/login')
+      }
+    })
+  }, [router])
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-[#080c14]">
+      <div className="flex flex-col items-center gap-4">
+        <Image
+          src="/dologo.png"
+          alt="DO Chat"
+          width={80}
+          height={80}
+          className="rounded-2xl animate-pulse"
+          priority
+        />
+      </div>
+    </div>
   )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect(`/chat/${user.id}`)
-  redirect('/landing')
 }
