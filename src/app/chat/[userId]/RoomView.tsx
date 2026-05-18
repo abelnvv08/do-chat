@@ -402,7 +402,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [editLastName, setEditLastName] = useState('')
   const [savingContact, setSavingContact] = useState(false)
   const [contactIsSaved, setContactIsSaved] = useState(true)
-  const [groupMembers, setGroupMembers] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null }[]>([])
+  const [groupMembers, setGroupMembers] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null; role: 'admin' | 'member' }[]>([])
   const [groupContacts, setGroupContacts] = useState<{ id: string; name: string; emoji: string; bg: string; avatar_url?: string | null; room_id: string }[]>([])
   const [groupCreatedBy, setGroupCreatedBy] = useState<string | null>(null)
   const [addingMembers, setAddingMembers] = useState(false)
@@ -985,6 +985,16 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       body: JSON.stringify({ room_id: roomId, remove_user_id: memberId }),
     })
     setGroupMembers(prev => prev.filter(m => m.id !== memberId))
+  }
+
+  async function toggleAdmin(memberId: string, currentRole: 'admin' | 'member') {
+    const key = currentRole === 'admin' ? 'demote_user_id' : 'promote_user_id'
+    await fetch('/api/chat/rooms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_id: roomId, [key]: memberId }),
+    })
+    setGroupMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: currentRole === 'admin' ? 'member' : 'admin' } : m))
   }
 
   async function addMembers() {
@@ -2405,7 +2415,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                     {savingGroupName ? '…' : 'OK'}
                   </button>
                 </div>
-              ) : (
+              ) : groupMembers.find(m => m.id === userId)?.role === 'admin' ? (
                 <button onClick={() => { setNewGroupName(roomData.name); setEditingGroupName(true) }}
                   className="flex items-center gap-1.5 group">
                   <p className="text-lg font-bold text-gray-900">{roomData.name}</p>
@@ -2413,6 +2423,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                     <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                   </svg>
                 </button>
+              ) : (
+                <p className="text-lg font-bold text-gray-900">{roomData.name}</p>
               )}
               <p className="text-sm text-gray-400 mt-1">Grupo · {groupMembers.length} participantes</p>
             </div>
@@ -2421,11 +2433,13 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             <div className="mt-3 bg-white">
               <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{groupMembers.length} participantes</p>
-                <button onClick={() => setShowAddMembers(v => !v)}
-                  className="flex items-center gap-1 text-xs text-blue-600 font-medium">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  Agregar
-                </button>
+                {groupMembers.find(m => m.id === userId)?.role === 'admin' && (
+                  <button onClick={() => setShowAddMembers(v => !v)}
+                    className="flex items-center gap-1 text-xs text-blue-600 font-medium">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Agregar
+                  </button>
+                )}
               </div>
 
               {/* Add members picker */}
@@ -2461,19 +2475,32 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
 
               {/* Member list */}
               <div className="divide-y divide-gray-50">
-                {groupMembers.map(member => (
-                  <div key={member.id} className="flex items-center gap-3 px-5 py-3">
-                    {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className={`w-10 h-10 rounded-full ${member.bg} flex items-center justify-center text-lg text-white shrink-0`}>{member.emoji}</div>}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{member.name}</p>
-                      {member.id === groupCreatedBy && <p className="text-xs text-blue-500">Admin</p>}
-                      {member.id === userId && <p className="text-xs text-gray-400">Tú</p>}
+                {groupMembers.map(member => {
+                  const amAdmin = groupMembers.find(m => m.id === userId)?.role === 'admin'
+                  const isMe = member.id === userId
+                  return (
+                    <div key={member.id} className="flex items-center gap-3 px-5 py-3">
+                      {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className={`w-10 h-10 rounded-full ${member.bg} flex items-center justify-center text-lg text-white shrink-0`}>{member.emoji}</div>}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">{member.name}{isMe ? ' (Tú)' : ''}</p>
+                        <p className={`text-xs font-medium ${member.role === 'admin' ? 'text-blue-500' : 'text-gray-400'}`}>
+                          {member.role === 'admin' ? 'Admin' : 'Miembro'}
+                        </p>
+                      </div>
+                      {amAdmin && !isMe && (
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => toggleAdmin(member.id, member.role)}
+                            className={`text-xs font-medium transition-colors ${member.role === 'admin' ? 'text-orange-400 hover:text-orange-600' : 'text-blue-400 hover:text-blue-600'}`}
+                          >
+                            {member.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+                          </button>
+                          <button onClick={() => removeMember(member.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium">Eliminar</button>
+                        </div>
+                      )}
                     </div>
-                    {member.id !== userId && groupCreatedBy === userId && (
-                      <button onClick={() => removeMember(member.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium">Eliminar</button>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 

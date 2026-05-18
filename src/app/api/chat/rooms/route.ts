@@ -13,12 +13,12 @@ export async function GET(req: NextRequest) {
   const { data: room } = await supabase.from('demo_rooms').select('*').eq('id', room_id).single()
   const { data: members } = await supabase
     .from('demo_room_members')
-    .select('user_id, demo_profiles(id, name, phone, emoji, bg, avatar_url)')
+    .select('user_id, role, demo_profiles(id, name, phone, emoji, bg, avatar_url)')
     .eq('room_id', room_id)
 
   const memberList = (members ?? []).map((m: any) => {
     const p = Array.isArray(m.demo_profiles) ? m.demo_profiles[0] : m.demo_profiles
-    return p ? { id: p.id, name: p.name, phone: p.phone ?? null, emoji: p.emoji, bg: p.bg, avatar_url: p.avatar_url ?? null } : null
+    return p ? { id: p.id, name: p.name, phone: p.phone ?? null, emoji: p.emoji, bg: p.bg, avatar_url: p.avatar_url ?? null, role: m.role ?? 'member' } : null
   }).filter(Boolean)
 
   return NextResponse.json({ room, members: memberList })
@@ -43,14 +43,14 @@ export async function POST(req: NextRequest) {
 
   const allMembers = [...new Set([user_id, ...member_ids])]
   await supabase.from('demo_room_members').insert(
-    allMembers.map(uid => ({ room_id: roomId, user_id: uid }))
+    allMembers.map(uid => ({ room_id: roomId, user_id: uid, role: uid === user_id ? 'admin' : 'member' }))
   )
 
   return NextResponse.json({ room_id: roomId })
 }
 
 export async function PATCH(req: NextRequest) {
-  const { room_id, name, add_member_ids, remove_user_id } = await req.json()
+  const { room_id, name, add_member_ids, remove_user_id, promote_user_id, demote_user_id } = await req.json()
   if (!room_id) return NextResponse.json({ error: 'Missing room_id' }, { status: 400 })
 
   const supabase = admin()
@@ -61,12 +61,20 @@ export async function PATCH(req: NextRequest) {
 
   if (add_member_ids?.length) {
     await supabase.from('demo_room_members').upsert(
-      add_member_ids.map((uid: string) => ({ room_id, user_id: uid }))
+      add_member_ids.map((uid: string) => ({ room_id, user_id: uid, role: 'member' }))
     )
   }
 
   if (remove_user_id) {
     await supabase.from('demo_room_members').delete().eq('room_id', room_id).eq('user_id', remove_user_id)
+  }
+
+  if (promote_user_id) {
+    await supabase.from('demo_room_members').update({ role: 'admin' }).eq('room_id', room_id).eq('user_id', promote_user_id)
+  }
+
+  if (demote_user_id) {
+    await supabase.from('demo_room_members').update({ role: 'member' }).eq('room_id', room_id).eq('user_id', demote_user_id)
   }
 
   return NextResponse.json({ ok: true })
