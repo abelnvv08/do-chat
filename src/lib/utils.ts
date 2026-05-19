@@ -9,9 +9,12 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatMessageTime(date: string) {
   const d = new Date(date)
-  if (isToday(d)) return format(d, 'HH:mm')
-  if (isYesterday(d)) return 'Ayer'
-  return format(d, 'dd/MM/yyyy')
+  const time = format(d, 'HH:mm')
+  if (isToday(d)) return time
+  if (isYesterday(d)) return `Ayer ${time}`
+  const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000)
+  if (diffDays < 7) return format(d, 'EEE HH:mm', { locale: es })
+  return format(d, 'dd/MM/yy HH:mm')
 }
 
 export function formatRelativeTime(date: string) {
