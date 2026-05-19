@@ -8,7 +8,7 @@ export default withSentryConfig(nextConfig, {
   project: 'javascript-nextjs',
   silent: true,
   widenClientFileUpload: true,
-  hideSourceMaps: true,
   disableLogger: true,
   automaticVercelMonitors: true,
+  sourcemaps: { disable: true },
 })
