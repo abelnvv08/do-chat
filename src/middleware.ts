@@ -5,11 +5,9 @@ import { NextRequest, NextResponse } from 'next/server'
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
 const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
-  '/api/chat/ai-chat':   { max: 20,  windowMs: 60_000 },   // 20 AI requests/min
-  '/api/chat/messages':  { max: 60,  windowMs: 60_000 },   // 60 messages/min
-  '/api/chat/upload':    { max: 10,  windowMs: 60_000 },   // 10 uploads/min
-  '/api/auth':           { max: 10,  windowMs: 60_000 },   // 10 auth attempts/min
-  '/api/admin':          { max: 30,  windowMs: 60_000 },   // 30 admin reqs/min
+  '/api/chat/ai-chat': { max: 20, windowMs: 60_000 },  // 20 consultas IA/min (cuesta dinero)
+  '/api/chat/upload':  { max: 10, windowMs: 60_000 },  // 10 uploads/min (evita abuso storage)
+  '/api/auth':         { max: 10, windowMs: 60_000 },  // 10 intentos login/min (anti brute force)
 }
 
 function getIP(req: NextRequest): string {
