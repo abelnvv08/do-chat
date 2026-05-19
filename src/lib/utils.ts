@@ -17,6 +17,16 @@ export function formatMessageTime(date: string) {
   return format(d, 'dd/MM/yy HH:mm')
 }
 
+// For conversation list — like WhatsApp: no time for past days
+export function formatChatListTime(date: string) {
+  const d = new Date(date)
+  if (isToday(d)) return format(d, 'HH:mm')
+  if (isYesterday(d)) return 'Ayer'
+  const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000)
+  if (diffDays < 7) return format(d, 'EEE', { locale: es })
+  return format(d, 'dd/MM/yy')
+}
+
 export function formatRelativeTime(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: es })
 }

@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { usersCache, type Room } from '@/lib/demo'
-import { formatMessageTime } from '@/lib/utils'
+import { formatMessageTime, formatChatListTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
 import { RoomView, type CallLogEntry } from './RoomView'
 import { ProjectWorkspace } from './ProjectWorkspace'
@@ -2084,7 +2084,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
             </div>
             {room.lastMsg && (
               <span className={`text-[11px] shrink-0 tabular-nums ${hasUnread ? 'text-blue-600 font-semibold' : 'text-slate-500'}`}>
-                {formatMessageTime(room.lastMsg.created_at)}
+                {formatChatListTime(room.lastMsg.created_at)}
               </span>
             )}
           </div>
