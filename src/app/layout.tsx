@@ -18,7 +18,15 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: 'DO Chat',
-    images: [{ url: '/icon-512.png', width: 512, height: 512 }],
+    title: 'DO Chat — Mensajería profesional con IA',
+    description: 'Chats cifrados, DO AI integrado, tareas con seguimiento. Todo en un solo lugar.',
+    images: [{ url: '/api/og', width: 1200, height: 630, alt: 'DO Chat' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DO Chat — Mensajería profesional con IA',
+    description: 'Chats cifrados, DO AI integrado, tareas con seguimiento.',
+    images: ['/api/og'],
   },
 }
 

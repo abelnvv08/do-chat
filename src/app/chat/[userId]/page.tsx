@@ -638,6 +638,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
     document.documentElement.classList.toggle('dark', darkMode)
   }, [darkMode])
 
+  useEffect(() => {
+    const total = rooms.reduce((s, r) => s + (r.unread ?? 0), 0)
+    document.title = total > 0 ? `(${total > 99 ? '99+' : total}) DO Chat` : 'DO Chat'
+  }, [rooms])
+
   function toggleDark() {
     const next = !darkMode
     setDarkMode(next)

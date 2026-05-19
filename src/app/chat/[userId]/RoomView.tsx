@@ -421,6 +421,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const mainInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [encKey, setEncKey] = useState<CryptoKey | null>(null)
   const [encReady, setEncReady] = useState(false)
+  const [firstLoadDone, setFirstLoadDone] = useState(false)
 
   // ── Typing indicators ───────────────────────────────────────────────────────
   const [peerTyping, setPeerTyping] = useState<string | null>(null)
@@ -676,6 +677,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     const gotNewMessages = messages.length > lastMsgCountRef.current
     const newCount = messages.length - lastMsgCountRef.current
     lastMsgCountRef.current = messages.length
+    if (isFirstLoad) setFirstLoadDone(true)
     if (isFirstLoad || isNearBottom) {
       bottomRef.current?.scrollIntoView({ behavior: isFirstLoad ? 'instant' : 'smooth' })
       setUnreadWhileUp(0)
@@ -970,6 +972,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   }
 
   async function leaveGroup() {
+    await sendSystemMsg(`${me?.name ?? 'Alguien'} salió del grupo`)
     await fetch('/api/chat/rooms', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -978,13 +981,23 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     onBack()
   }
 
+  async function sendSystemMsg(content: string) {
+    await fetch('/api/chat/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, room_id: roomId, content, type: 'system' }),
+    })
+  }
+
   async function removeMember(memberId: string) {
+    const member = groupMembers.find(m => m.id === memberId)
     await fetch('/api/chat/rooms', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ room_id: roomId, remove_user_id: memberId }),
     })
     setGroupMembers(prev => prev.filter(m => m.id !== memberId))
+    if (member) sendSystemMsg(`${me?.name ?? 'Admin'} eliminó a ${member.name} del grupo`)
   }
 
   async function toggleAdmin(memberId: string, currentRole: 'admin' | 'member') {
@@ -1006,6 +1019,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       body: JSON.stringify({ room_id: roomId, add_member_ids: selectedToAdd }),
     })
     await fetchGroupInfo()
+    const names = selectedToAdd.map(id => groupContacts.find(c => c.id === id)?.name).filter(Boolean).join(', ')
+    if (names) sendSystemMsg(`${me?.name ?? 'Admin'} agregó a ${names}`)
     setSelectedToAdd([])
     setShowAddMembers(false)
     setAddingMembers(false)
@@ -1796,7 +1811,18 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         </button>
       )}
       <div className="max-w-3xl mx-auto px-3 py-3 space-y-1 pb-4">
-        {messages.length === 0 && (
+        {!firstLoadDone && (
+          <div className="space-y-3 py-4 animate-pulse">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`flex items-end gap-2 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+                <div className="w-6 h-6 rounded-full bg-gray-200 shrink-0" />
+                <div className={`h-10 rounded-2xl bg-gray-200 ${i % 2 === 0 ? 'rounded-bl-sm' : 'rounded-br-sm'}`}
+                  style={{ width: `${[45, 60, 35, 55, 40, 65][i]}%` }} />
+              </div>
+            ))}
+          </div>
+        )}
+        {firstLoadDone && messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${isAIRoom ? 'bg-blue-100' : 'bg-gray-100'}`}>
               {isAIRoom ? '✦' : roomData.emoji}
@@ -1805,6 +1831,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             {isAIRoom && <p className="text-xs text-gray-400 max-w-[220px]">Puedo leer tus chats, resumirlos, extraer tareas y enviar mensajes</p>}
           </div>
         )}
+
 
         {(() => {
           const q = searchQuery.trim().toLowerCase()
@@ -1828,6 +1855,14 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           const sender = usersCache[msg.user_id]
           const isSearchMatch = showSearch && q && searchMatchIds.has(msg.id)
           const isActiveMatch = isSearchMatch && msg.id === activeMatchId
+
+          if (msg.type === 'system') {
+            return (
+              <div key={msg.id} className="flex justify-center py-1">
+                <span className="text-[11px] text-gray-400 bg-gray-100 rounded-full px-3 py-1">{msg.content}</span>
+              </div>
+            )
+          }
 
           if (isAI) {
             return (

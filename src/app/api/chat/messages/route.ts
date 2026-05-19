@@ -94,8 +94,8 @@ export async function POST(req: NextRequest) {
 
   await broadcastToRoom(room_id)
 
-  // Push notifications to other room members
-  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  // Push notifications to other room members (skip for system messages)
+  if (type !== 'system' && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
       `mailto:${process.env.VAPID_SUBJECT ?? 'noreply@getdochat.com'}`,
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
