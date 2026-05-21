@@ -82,6 +82,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [rooms, setRooms] = useState<RoomWithMeta[]>([])
   const [prefs, setPrefs] = useState<RoomPref[]>([])
   const [loading, setLoading] = useState(true)
+  const [doPreviewText, setDoPreviewText] = useState('Tu asistente · siempre activo')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -215,6 +216,10 @@ const [darkMode, setDarkMode] = useState(() => {
       if (stored) fetch('/api/chat/e2ee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, public_key: stored }) }).catch(() => {})
     })
     fetchRooms()
+    fetch(`/api/chat/do-context?user_id=${userId}`)
+      .then(r => r.json())
+      .then(d => { if (d.previewText) setDoPreviewText(d.previewText) })
+      .catch(() => {})
     fetchPrefs()
     fetchContacts()
     checkReminders()
@@ -831,7 +836,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0 backdrop-blur-sm border border-white/20">✦</div>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-white font-bold text-sm">do AI</p>
-                      <p className="text-slate-600 text-xs truncate">{aiRoom.lastMsg?.content ?? a.chats.aiSubtitle}</p>
+                      <p className="text-blue-100/80 text-xs truncate">{doPreviewText}</p>
                     </div>
                     {aiRoom.unread > 0 && <span className="min-w-[20px] h-5 rounded-full bg-white text-blue-600 text-[10px] font-bold flex items-center justify-center px-1.5">{aiRoom.unread}</span>}
                     <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
