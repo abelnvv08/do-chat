@@ -68,11 +68,13 @@ export async function POST(req: NextRequest) {
   const type = isImage ? 'image' : isAudio ? 'audio' : 'file'
   const content = isImage ? publicUrl : isAudio ? publicUrl : JSON.stringify({ url: publicUrl, name: file.name, size: file.size })
 
-  const { data: msg } = await supabase
+  const { data: msg, error: msgError } = await supabase
     .from('demo_messages')
     .insert({ user_id: userId, content, type, room_id: roomId })
-    .select('*, user:demo_profiles(*)')
+    .select('*')
     .single()
+
+  if (msgError) return NextResponse.json({ error: msgError.message }, { status: 500 })
 
   return NextResponse.json({ message: msg })
 }
