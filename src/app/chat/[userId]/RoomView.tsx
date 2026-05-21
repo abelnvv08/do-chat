@@ -352,6 +352,26 @@ const STUN_ONLY: RTCConfiguration = {
   ],
 }
 
+function formatLastSeen(iso: string | null): string {
+  if (!iso) return 'última vez hace poco'
+  const then = new Date(iso)
+  const now = new Date()
+  const diffMs = now.getTime() - then.getTime()
+  if (diffMs < 90000) return 'en línea' // <90 s → treat as online
+  const timeStr = then.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true })
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000)
+  const weekStart = new Date(todayStart.getTime() - 6 * 86400000)
+  if (then >= todayStart) return `última vez hoy a las ${timeStr}`
+  if (then >= yesterdayStart) return `última vez ayer a las ${timeStr}`
+  if (then >= weekStart) {
+    const day = then.toLocaleDateString('es-MX', { weekday: 'long' })
+    return `última vez el ${day} a las ${timeStr}`
+  }
+  const date = then.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
+  return `última vez el ${date}`
+}
+
 export type CallLogEntry = { roomId: string; roomName: string; roomEmoji: string; type: 'outgoing' | 'incoming'; status: 'completed' | 'missed' | 'declined'; duration: number; ts: number }
 
 export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCallLog }: { userId: string; roomId: string; onBack: () => void; initialRoom?: { id: string; name: string; emoji: string; type: string; otherUserId?: string } | null; autoCall?: boolean; onCallLog?: (log: CallLogEntry) => void }) {
@@ -400,7 +420,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [showSearch, setShowSearch] = useState(false)
   const [showGroupInfo, setShowGroupInfo] = useState(false)
   const [showContactInfo, setShowContactInfo] = useState(false)
-  const [otherProfile, setOtherProfile] = useState<{ id: string; name: string; firstName?: string; lastName?: string; phone?: string | null; emoji: string; bg: string; avatar_url?: string | null } | null>(null)
+  const [otherProfile, setOtherProfile] = useState<{ id: string; name: string; firstName?: string; lastName?: string; phone?: string | null; emoji: string; bg: string; avatar_url?: string | null; last_seen?: string | null } | null>(null)
+  const [peerLastSeen, setPeerLastSeen] = useState<string | null>(null)
   const [editingContact, setEditingContact] = useState(false)
   const [editFirstName, setEditFirstName] = useState('')
   const [editLastName, setEditLastName] = useState('')
@@ -516,6 +537,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         const saved = (contacts ?? []).find((c: any) => c.id === other.id)
         setContactIsSaved(!!saved)
         setOtherProfile({ ...other, name: saved?.name ?? initialRoom?.name ?? other.phone ?? other.name, firstName: saved?.firstName ?? '', lastName: saved?.lastName ?? '' })
+        setPeerLastSeen(other.last_seen ?? null)
       }).catch(() => {})
     }
     // Reset deleted flag so the room reappears in chats after re-entering
@@ -537,7 +559,18 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState<{ userId: string }>()
         const others = Object.values(state).flat().filter((p: any) => p.userId !== userId)
-        setPeerOnline(others.length > 0)
+        const nowOnline = others.length > 0
+        setPeerOnline(nowOnline)
+        // When peer goes offline, fetch their fresh last_seen
+        if (!nowOnline && isDMRoom) {
+          const otherUid = initialRoom?.otherUserId
+          if (otherUid) {
+            fetch(`/api/chat/presence?user_id=${otherUid}`)
+              .then(r => r.json())
+              .then(({ last_seen }) => { if (last_seen) setPeerLastSeen(last_seen) })
+              .catch(() => {})
+          }
+        }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_messages', filter: `room_id=eq.${roomId}` }, () => { fetchMessages(); fetchReads() })
       // ── Call signaling ──────────────────────────────────────────
@@ -631,6 +664,18 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       setOtherReads(map)
     } catch { /* ignore */ }
   }
+
+  // Keep own last_seen fresh while the room is open
+  useEffect(() => {
+    const update = () => fetch('/api/chat/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    }).catch(() => {})
+    update()
+    const interval = setInterval(update, 60000)
+    return () => clearInterval(interval)
+  }, [userId])
 
   useEffect(() => {
     const container = scrollContainerRef.current
@@ -1771,7 +1816,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             >
               <h1 className="text-sm font-semibold text-white">{isAIRoom ? 'do AI' : roomData.name}</h1>
               <p className="text-xs text-white/60 flex items-center gap-1">
-                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : peerTyping ? `${peerTyping} está escribiendo…` : peerOnline ? 'en línea' : 'última vez hace poco'}
+                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : peerTyping ? `${peerTyping} está escribiendo…` : peerOnline ? 'en línea' : formatLastSeen(peerLastSeen)}
               </p>
             </button>
 

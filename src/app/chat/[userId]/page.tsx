@@ -229,6 +229,10 @@ const [darkMode, setDarkMode] = useState(() => {
       if (stored) fetch('/api/chat/e2ee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, public_key: stored }) }).catch(() => {})
     })
     fetchRooms()
+    // Update own last_seen on app load and every 60 s
+    const updatePresence = () => fetch('/api/chat/presence', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) }).catch(() => {})
+    updatePresence()
+    const presenceInterval = setInterval(updatePresence, 60000)
     fetch(`/api/chat/block?user_id=${userId}`)
       .then(r => r.json())
       .then(d => setBlockedIds(new Set(d.blocked ?? [])))
@@ -246,7 +250,7 @@ const [darkMode, setDarkMode] = useState(() => {
       .then(() => fetchRooms()).catch(() => {})
     const reminderInterval = setInterval(checkReminders, 30000)
     const fallback = setInterval(fetchRooms, 30000)
-    return () => { clearInterval(reminderInterval); clearInterval(fallback) }
+    return () => { clearInterval(reminderInterval); clearInterval(fallback); clearInterval(presenceInterval) }
   }, [])
 
   useEffect(() => {
