@@ -1266,21 +1266,25 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       setPendingFiles(prev => [...prev, ...files])
     } else {
       setUploading(true)
-      const formData = new FormData()
-      formData.append('file', files[0])
-      formData.append('user_id', userId)
-      formData.append('room_id', roomId)
-      const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json()
-        setUploadError(errData.error ?? 'Error al subir archivo')
+      setUploadError(null)
+      try {
+        const formData = new FormData()
+        formData.append('file', files[0])
+        formData.append('user_id', userId)
+        formData.append('room_id', roomId)
+        const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}))
+          setUploadError(errData.error ?? 'Error al subir archivo')
+          return
+        }
+        channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
+        await fetchMessages()
+      } catch {
+        setUploadError('No se pudo subir el archivo. Revisá tu conexión.')
+      } finally {
         setUploading(false)
-        e.target.value = ''
-        return
       }
-      channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
-      await fetchMessages()
-      setUploading(false)
     }
     e.target.value = ''
   }
