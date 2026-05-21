@@ -367,6 +367,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [aiTyping, setAiTyping] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [previewFile, setPreviewFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewCaption, setPreviewCaption] = useState('')
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [taskContent, setTaskContent] = useState('')
   const [taskDueDate, setTaskDueDate] = useState('')
@@ -1258,6 +1261,47 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     setTimeout(() => { el.focus(); el.selectionStart = el.selectionEnd = replaced.length }, 0)
   }
 
+  function closePreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewFile(null)
+    setPreviewUrl(null)
+    setPreviewCaption('')
+  }
+
+  async function sendWithPreview() {
+    if (!previewFile) return
+    const file = previewFile
+    const caption = previewCaption.trim()
+    closePreview()
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('user_id', userId)
+      formData.append('room_id', roomId)
+      const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}))
+        setUploadError(errData.error ?? 'Error al subir archivo')
+        return
+      }
+      if (caption) {
+        await fetch('/api/chat/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, room_id: roomId, content: caption, type: 'text' }),
+        })
+      }
+      channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
+      await fetchMessages()
+    } catch {
+      setUploadError('No se pudo subir el archivo. Revisá tu conexión.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
@@ -1265,26 +1309,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       // In AI room: attach as pending files, let user type their question first
       setPendingFiles(prev => [...prev, ...files])
     } else {
-      setUploading(true)
-      setUploadError(null)
-      try {
-        const formData = new FormData()
-        formData.append('file', files[0])
-        formData.append('user_id', userId)
-        formData.append('room_id', roomId)
-        const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json().catch(() => ({}))
-          setUploadError(errData.error ?? 'Error al subir archivo')
-          return
-        }
-        channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
-        await fetchMessages()
-      } catch {
-        setUploadError('No se pudo subir el archivo. Revisá tu conexión.')
-      } finally {
-        setUploading(false)
-      }
+      const file = files[0]
+      setPreviewFile(file)
+      setPreviewUrl(file.type.startsWith('image/') ? URL.createObjectURL(file) : null)
+      setPreviewCaption('')
     }
     e.target.value = ''
   }
@@ -2527,6 +2555,61 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
                 : 'Enviar tarea'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── File / Photo preview modal (WhatsApp-style) ───────────────────── */}
+      {previewFile && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-black">
+          {/* Top bar */}
+          <div className="flex items-center gap-3 px-4 pt-safe-top pt-4 pb-3 bg-black/80">
+            <button onClick={closePreview} className="p-1 text-white/80 hover:text-white transition-colors">
+              <XIcon className="w-6 h-6" />
+            </button>
+            <span className="flex-1 text-white text-sm font-medium truncate">{previewFile.name}</span>
+            <span className="text-white/50 text-xs">{(previewFile.size / 1024).toFixed(0)} KB</span>
+          </div>
+
+          {/* Preview area */}
+          <div className="flex-1 flex items-center justify-center overflow-hidden px-4">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="preview"
+                className="max-w-full max-h-full object-contain rounded-xl"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center">
+                  <FileIcon className="w-10 h-10 text-white/60" />
+                </div>
+                <p className="text-white/70 text-sm text-center max-w-[240px] break-all">{previewFile.name}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Caption + send bar */}
+          <div className="px-3 pb-safe-bottom pb-6 pt-3 bg-black/80">
+            <div className="flex items-end gap-3 bg-white/10 rounded-3xl px-4 py-2">
+              <textarea
+                value={previewCaption}
+                onChange={e => setPreviewCaption(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWithPreview() } }}
+                placeholder="Añadir una descripción…"
+                rows={1}
+                className="flex-1 bg-transparent text-white placeholder-white/40 text-sm resize-none focus:outline-none min-h-[24px] max-h-[96px]"
+                style={{ overflowY: 'auto' }}
+              />
+              <button
+                onClick={sendWithPreview}
+                className="w-10 h-10 shrink-0 rounded-full bg-[#25d366] flex items-center justify-center hover:bg-[#1fbe5b] transition-colors"
+              >
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
