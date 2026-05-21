@@ -18,83 +18,105 @@ export type DoChip =
 
 export type DoContextResponse = {
   chips: DoChip[]
-  previewText: string   // for the chat list row
+  previewText: string
 }
+
+const ONE_DAY_MS          = 86_400_000
+const FORTY_EIGHT_HOURS_MS = 172_800_000
+const ONE_HOUR_MS          = 3_600_000
+const THIRTY_DAYS_MS       = 30 * ONE_DAY_MS
+const MESSAGES_LIMIT       = 1_000
 
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get('user_id')
   if (!userId) return NextResponse.json({ chips: [], previewText: 'Tu asistente · siempre activo' })
 
-  const db = admin()
-  const now = new Date()
-  const todayStr = now.toISOString().slice(0, 10)           // YYYY-MM-DD
-  const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().slice(0, 10)
-  const fortyEightHoursAgo = new Date(now.getTime() - 172800000).toISOString()
+  const db    = admin()
+  const now   = new Date()
+  const todayStr         = now.toISOString().slice(0, 10)
+  const tomorrowStr      = new Date(now.getTime() + ONE_DAY_MS).toISOString().slice(0, 10)
+  const fortyEightHrsAgo = new Date(now.getTime() - FORTY_EIGHT_HOURS_MS).toISOString()
+  const thirtyDaysAgo    = new Date(now.getTime() - THIRTY_DAYS_MS).toISOString()
 
-  // ── Query 1: tasks due today ──────────────────────────────────────────────
-  const { count: todayCount } = await db
-    .from('demo_tasks')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('due_date', todayStr)
-    .eq('done', false)
+  // ── Run independent queries in parallel ──────────────────────────────────
+  const [
+    { count: todayCount },
+    { count: tomorrowCount },
+    { data: reads },
+    { data: memberRows },
+  ] = await Promise.all([
+    db.from('demo_tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('due_date', todayStr)
+      .eq('done', false),
 
-  // ── Query 2: tasks due tomorrow ───────────────────────────────────────────
-  const { count: tomorrowCount } = await db
-    .from('demo_tasks')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('due_date', tomorrowStr)
-    .eq('done', false)
+    db.from('demo_tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('due_date', tomorrowStr)
+      .eq('done', false),
 
-  // ── Query 3: rooms with unread messages (non-AI) ──────────────────────────
-  // Get this user's last-read timestamps
-  const { data: reads } = await db
-    .from('demo_reads')
-    .select('room_id, last_read_at')
-    .eq('user_id', userId)
+    db.from('demo_reads')
+      .select('room_id, last_read_at')
+      .eq('user_id', userId),
+
+    db.from('demo_room_members')
+      .select('room_id, demo_rooms!inner(id, name, type)')
+      .eq('user_id', userId)
+      .neq('demo_rooms.type', 'ai'),
+  ])
 
   const readsMap: Record<string, string> = {}
   for (const r of reads ?? []) readsMap[r.room_id] = r.last_read_at
 
-  // Get all rooms the user is in (non-AI)
-  const { data: memberRows } = await db
-    .from('demo_room_members')
-    .select('room_id, demo_rooms!inner(id, name, type)')
-    .eq('user_id', userId)
-    .neq('demo_rooms.type', 'ai')
-
-  const nonAiRoomIds = (memberRows ?? [])
+  const nonAiRooms = (memberRows ?? [])
     .map((m: any) => {
       const r = Array.isArray(m.demo_rooms) ? m.demo_rooms[0] : m.demo_rooms
       return r ? { id: r.id as string, name: (r.name ?? r.id) as string } : null
     })
     .filter(Boolean) as { id: string; name: string }[]
 
-  let activeChatChip: DoChip | null = null
-  if (nonAiRoomIds.length > 0) {
-    // Count unread per room
-    const roomIdList = nonAiRoomIds.map(r => r.id)
-    const { data: unreadMsgs } = await db
-      .from('demo_messages')
-      .select('room_id, created_at, user_id')
-      .in('room_id', roomIdList)
-      .neq('user_id', userId)
+  // ── Single messages fetch — used for both unread counts and awaiting-reply ─
+  let activeChatChip:    DoChip | null = null
+  let awaitingReplyChip: DoChip | null = null
 
+  if (nonAiRooms.length > 0) {
+    const roomIdList = nonAiRooms.map(r => r.id)
+
+    const { data: messages } = await db
+      .from('demo_messages')
+      .select('room_id, user_id, created_at')
+      .in('room_id', roomIdList)
+      .gte('created_at', thirtyDaysAgo)
+      .order('created_at', { ascending: false })
+      .limit(MESSAGES_LIMIT)
+
+    // Compute unread counts (messages NOT from me, newer than last_read_at)
     const unreadCountMap: Record<string, number> = {}
-    for (const msg of unreadMsgs ?? []) {
-      const lastRead = readsMap[msg.room_id]
-      if (!lastRead || msg.created_at > lastRead) {
-        unreadCountMap[msg.room_id] = (unreadCountMap[msg.room_id] ?? 0) + 1
+    // Compute last message per room (first occurrence since ordered desc)
+    const lastMsgPerRoom: Record<string, { userId: string; createdAt: string }> = {}
+
+    for (const m of messages ?? []) {
+      // Last message per room
+      if (!lastMsgPerRoom[m.room_id]) {
+        lastMsgPerRoom[m.room_id] = { userId: m.user_id, createdAt: m.created_at }
+      }
+      // Unread: not mine, newer than last read
+      if (m.user_id !== userId) {
+        const lastRead = readsMap[m.room_id]
+        if (!lastRead || m.created_at > lastRead) {
+          unreadCountMap[m.room_id] = (unreadCountMap[m.room_id] ?? 0) + 1
+        }
       }
     }
 
-    // Find room with most unread messages
+    // Active chat chip: room with most unread
     const [topRoomId, topCount] = Object.entries(unreadCountMap)
       .sort(([, a], [, b]) => b - a)[0] ?? [null, 0]
 
     if (topRoomId && topCount > 0) {
-      const roomName = nonAiRoomIds.find(r => r.id === topRoomId)?.name ?? 'Chat'
+      const roomName = nonAiRooms.find(r => r.id === topRoomId)?.name ?? 'Chat'
       activeChatChip = {
         type: 'active_chat',
         label: `${topCount} mensaje${topCount > 1 ? 's' : ''} nuevo${topCount > 1 ? 's' : ''}`,
@@ -102,43 +124,19 @@ export async function GET(req: NextRequest) {
         unread: topCount,
       }
     }
-  }
 
-  // ── Query 4: awaiting reply (last msg is mine, no reply since, > 48h) ────
-  let awaitingReplyChip: DoChip | null = null
-  if (nonAiRoomIds.length > 0) {
-    const roomIdList = nonAiRoomIds.map(r => r.id)
-    const { data: lastMsgs } = await db
-      .from('demo_messages')
-      .select('room_id, user_id, created_at')
-      .in('room_id', roomIdList)
-      .order('created_at', { ascending: false })
-
-    // Group last message per room
-    const lastMsgPerRoom: Record<string, { userId: string; createdAt: string }> = {}
-    for (const m of lastMsgs ?? []) {
-      if (!lastMsgPerRoom[m.room_id]) {
-        lastMsgPerRoom[m.room_id] = { userId: m.user_id, createdAt: m.created_at }
-      }
-    }
-
-    // Find a room where last msg is mine and it's older than 48h
-    for (const { id: roomId, name: roomName } of nonAiRoomIds) {
+    // Awaiting reply chip: room where last msg is mine and > 48h old
+    for (const { id: roomId, name: roomName } of nonAiRooms) {
       const last = lastMsgPerRoom[roomId]
-      if (last?.userId === userId && last.createdAt < fortyEightHoursAgo) {
-        const diffHours = Math.floor((now.getTime() - new Date(last.createdAt).getTime()) / 3600000)
-        awaitingReplyChip = {
-          type: 'awaiting_reply',
-          label: `Sin respuesta ${diffHours}h`,
-          roomName,
-          hours: diffHours,
-        }
+      if (last?.userId === userId && last.createdAt < fortyEightHrsAgo) {
+        const diffHours = Math.floor((now.getTime() - new Date(last.createdAt).getTime()) / ONE_HOUR_MS)
+        awaitingReplyChip = { type: 'awaiting_reply', label: `Sin respuesta ${diffHours}h`, roomName, hours: diffHours }
         break
       }
     }
   }
 
-  // ── Build chips in priority order (max 3) ────────────────────────────────
+  // ── Assemble chips in priority order (max 3) ─────────────────────────────
   const chips: DoChip[] = []
 
   if ((todayCount ?? 0) > 0) {
@@ -148,7 +146,6 @@ export async function GET(req: NextRequest) {
       count: todayCount!,
     })
   }
-
   if (chips.length < 3 && (tomorrowCount ?? 0) > 0) {
     chips.push({
       type: 'task_tomorrow',
@@ -156,14 +153,12 @@ export async function GET(req: NextRequest) {
       count: tomorrowCount!,
     })
   }
-
-  if (chips.length < 3 && activeChatChip) chips.push(activeChatChip)
+  if (chips.length < 3 && activeChatChip)    chips.push(activeChatChip)
   if (chips.length < 3 && awaitingReplyChip) chips.push(awaitingReplyChip)
 
-  // Fill remaining slots with generics
   const generics: DoChip[] = [
-    { type: 'generic', label: 'Resumí mis chats', text: 'Resumí los chats más activos de esta semana' },
-    { type: 'generic', label: 'Ver pendientes', text: '¿Qué tengo pendiente esta semana?' },
+    { type: 'generic', label: 'Resumí mis chats',  text: 'Resumí los chats más activos de esta semana' },
+    { type: 'generic', label: 'Ver pendientes',    text: '¿Qué tengo pendiente esta semana?' },
     { type: 'generic', label: '¿En qué quedamos?', text: 'Revisá mis conversaciones y decime qué quedó pendiente de resolver' },
   ]
   for (const g of generics) {
@@ -171,11 +166,14 @@ export async function GET(req: NextRequest) {
     chips.push(g)
   }
 
-  // ── Build preview text for chat list ─────────────────────────────────────
+  // ── Preview text for chat list ────────────────────────────────────────────
   const parts: string[] = []
-  if ((todayCount ?? 0) > 0) parts.push(`${todayCount} tarea${todayCount! > 1 ? 's' : ''} vence hoy`)
-  else if ((tomorrowCount ?? 0) > 0) parts.push(`${tomorrowCount} tarea${tomorrowCount! > 1 ? 's' : ''} para mañana`)
-  if (activeChatChip) parts.push(`${activeChatChip.unread} chats sin leer`)
+  if ((todayCount ?? 0) > 0)
+    parts.push(`${todayCount} tarea${todayCount! > 1 ? 's' : ''} vence${todayCount! > 1 ? 'n' : ''} hoy`)
+  else if ((tomorrowCount ?? 0) > 0)
+    parts.push(`${tomorrowCount} tarea${tomorrowCount! > 1 ? 's' : ''} para mañana`)
+  if (activeChatChip) parts.push(`${activeChatChip.unread} chat${activeChatChip.unread > 1 ? 's' : ''} sin leer`)
+
   const previewText = parts.length > 0 ? parts.join(' · ') : 'Tu asistente · siempre activo'
 
   return NextResponse.json({ chips, previewText } satisfies DoContextResponse)
