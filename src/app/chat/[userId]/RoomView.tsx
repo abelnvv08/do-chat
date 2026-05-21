@@ -414,8 +414,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const searchRef = useRef<HTMLInputElement>(null)
   const matchRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const [matchIdx, setMatchIdx] = useState(0)
-  const [showExportMenu, setShowExportMenu] = useState(false)
-  const [exporting, setExporting] = useState(false)
   const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; emoji: string }[]>([])
   const mainInputRef = useRef<HTMLTextAreaElement | null>(null)
   const sendBtnRef = useRef<HTMLButtonElement>(null)
@@ -607,48 +605,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       sseAbortRef.current?.abort()
     }
   }, [roomId])
-
-  async function exportChat(format: 'docx' | 'pdf') {
-    setExporting(true); setShowExportMenu(false)
-    try {
-      const url = `/api/chat/export?room_id=${roomId}&user_id=${userId}&format=${format}`
-      if (format === 'docx') {
-        const res = await fetch(url)
-        const blob = await res.blob()
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(blob)
-        a.download = `chat.docx`
-        a.click()
-        URL.revokeObjectURL(a.href)
-      } else {
-        const res = await fetch(url)
-        const data = await res.json()
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${data.roomName}</title><style>
-          body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 0 auto; padding: 24px; color: #111827; }
-          h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-          .meta { font-size: 12px; color: #9ca3af; margin-bottom: 32px; }
-          .msg { margin-bottom: 16px; }
-          .sender { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
-          .sender.ai { color: #2563eb; }
-          .sender.user { color: #111827; }
-          .time { font-size: 11px; color: #9ca3af; margin-left: 8px; font-weight: 400; }
-          .content { font-size: 14px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
-          .divider { border: none; border-top: 1px solid #f3f4f6; margin: 12px 0; }
-          @media print { body { padding: 0; } }
-        </style></head><body>
-          <h1>${data.roomName}</h1>
-          <div class="meta">Exportado el ${new Date(data.exportedAt).toLocaleString('es-AR')} · ${data.messages.length} mensajes</div>
-          ${data.messages.map((m: any) => `
-            <div class="msg">
-              <div class="sender ${m.isAI ? 'ai' : 'user'}">${m.emoji} ${m.sender}<span class="time">${m.time}</span></div>
-              <div class="content">${m.content.replace(/</g, '&lt;')}</div>
-            </div><hr class="divider">`).join('')}
-        </body></html>`
-        const win = window.open('', '_blank')
-        if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 400) }
-      }
-    } finally { setExporting(false) }
-  }
 
   async function markRead() {
     await fetch('/api/chat/reads', {
@@ -1774,45 +1730,23 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
               </svg>
             </button>
 
-            <div className="relative shrink-0">
-              <button onClick={() => setShowExportMenu(v => !v)} className="text-white/80 hover:text-white transition-colors p-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="4" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="16" r="1.5"/></svg>
+            {isAIRoom && (
+              <button onClick={async () => {
+                if (!confirm('¿Limpiar todo el historial con do AI?')) return
+                await fetch('/api/chat/messages', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ room_id: roomId }),
+                })
+                setMessages([])
+              }}
+                title="Limpiar chat"
+                className="text-white/60 hover:text-red-300 transition-colors p-1 shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
               </button>
-              {showExportMenu && (
-                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden min-w-[168px]"
-                  onMouseLeave={() => setShowExportMenu(false)}>
-                  <p className="px-4 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Exportar chat</p>
-                  <button onClick={() => exportChat('pdf')} disabled={exporting}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40">
-                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                    {exporting ? 'Exportando…' : 'Exportar PDF'}
-                  </button>
-                  <button onClick={() => exportChat('docx')} disabled={exporting}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 border-t border-gray-100">
-                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                    {exporting ? 'Exportando…' : 'Exportar Word'}
-                  </button>
-                  {isAIRoom && (
-                    <button onClick={async () => {
-                      setShowExportMenu(false)
-                      if (!confirm('¿Limpiar todo el historial con do AI?')) return
-                      await fetch('/api/chat/messages', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ room_id: roomId }),
-                      })
-                      setMessages([])
-                    }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                      </svg>
-                      Limpiar chat
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
 
           </div>
         )}
