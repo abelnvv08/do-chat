@@ -805,7 +805,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   {msgs.map(result => (
                     <button key={result.id} onClick={() => { setSearchQuery(''); setActiveRoomId(result.room_id) }}
                       className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 border-b border-slate-100 text-left">
-                      <div className={`w-9 h-9 shrink-0 flex items-center justify-center text-sm mt-0.5 ${result.type === 'ai' ? 'rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 text-white shadow-sm' : 'rounded-full bg-slate-100'}`}>{result.type === 'ai' ? '✦' : result.sender_emoji}</div>
+                      <div className={`w-9 h-9 shrink-0 flex items-center justify-center mt-0.5 ${result.type === 'ai' ? 'rounded-xl bg-gradient-to-br from-slate-800 to-indigo-900 shadow-sm' : 'rounded-full bg-slate-100 text-sm'}`}>
+                        {result.type === 'ai'
+                          ? <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+                          : result.sender_emoji}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
                           <p className="text-sm font-semibold text-slate-800">{result.sender_name}</p>
@@ -856,7 +860,9 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="px-4 pt-4 pb-2">
                   <button onClick={() => setActiveRoomId(aiRoom.id)}
                     className="w-full flex items-center gap-3 bg-gradient-to-r from-blue-700 to-indigo-600 rounded-2xl px-4 py-3.5 shadow-md active:scale-[0.98] transition-all">
-                    <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0 backdrop-blur-sm border border-white/20">✦</div>
+                    <div className="w-10 h-10 rounded-2xl bg-slate-900/60 flex items-center justify-center shrink-0 backdrop-blur-sm border border-white/10">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+                    </div>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-white font-bold text-sm">do AI</p>
                       <p className="text-blue-100/80 text-xs truncate">{doPreviewText}</p>
@@ -1842,7 +1848,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setActionRoom(null)}>
           <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${actionRoom.type === 'ai' ? 'bg-blue-400 text-white' : 'bg-gray-100'}`}>{actionRoom.type === 'ai' ? '✦' : actionRoom.emoji}</div>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${actionRoom.type === 'ai' ? 'bg-gradient-to-br from-slate-800 to-indigo-900' : 'bg-gray-100 text-lg'}`}>
+                {actionRoom.type === 'ai'
+                  ? <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+                  : actionRoom.emoji}
+              </div>
               <p className="font-semibold text-gray-900">{actionRoom.type === 'ai' ? 'do AI' : actionRoom.name}</p>
             </div>
             <div className="py-2">
