@@ -345,7 +345,7 @@ function AudioMessage({ url, isOwn }: { url: string; isOwn: boolean }) {
   )
 }
 
-const RTC_CONFIG: RTCConfiguration = {
+const STUN_ONLY: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -461,6 +461,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([])
   const callTypeRef = useRef<'outgoing' | 'incoming' | null>(null)
   const callSecondsRef = useRef(0)
+  const iceConfigRef = useRef<RTCConfiguration>(STUN_ONLY)
 
   useEffect(() => {
     if (!isAIRoom && !room) {
@@ -1133,8 +1134,20 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     pendingCandidatesRef.current = []
   }
 
-  function buildPC(): RTCPeerConnection {
-    const pc = new RTCPeerConnection(RTC_CONFIG)
+  async function fetchIceConfig(): Promise<RTCConfiguration> {
+    try {
+      const res = await fetch('/api/chat/ice-config')
+      if (res.ok) {
+        const data = await res.json()
+        iceConfigRef.current = { iceServers: data.iceServers }
+      }
+    } catch { /* usar STUN fallback */ }
+    return iceConfigRef.current
+  }
+
+  async function buildPC(): Promise<RTCPeerConnection> {
+    const rtcConfig = await fetchIceConfig()
+    const pc = new RTCPeerConnection(rtcConfig)
     pcRef.current = pc
     pc.onicecandidate = ({ candidate }) => {
       if (candidate) {
@@ -1173,7 +1186,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoConstraints })
       localStreamRef.current = stream
       setIsVideoCall(video)
-      const pc = buildPC()
+      const pc = await buildPC()
       stream.getTracks().forEach(t => pc.addTrack(t, stream))
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
@@ -1222,7 +1235,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       const videoConstraints = video ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: videoConstraints })
       localStreamRef.current = stream
-      const pc = buildPC()
+      const pc = await buildPC()
       stream.getTracks().forEach(t => pc.addTrack(t, stream))
       await pc.setRemoteDescription({ type: 'offer', sdp: incomingOffer.sdp })
       for (const c of pendingCandidatesRef.current) await pc.addIceCandidate(c).catch(() => {})
