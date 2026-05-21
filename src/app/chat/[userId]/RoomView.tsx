@@ -419,6 +419,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; emoji: string }[]>([])
   const mainInputRef = useRef<HTMLTextAreaElement | null>(null)
   const sendBtnRef = useRef<HTMLButtonElement>(null)
+  const sseAbortRef = useRef<AbortController | null>(null)
   const [encKey, setEncKey] = useState<CryptoKey | null>(null)
   const [encReady, setEncReady] = useState(false)
   const [firstLoadDone, setFirstLoadDone] = useState(false)
@@ -602,6 +603,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       channelRef.current = null
       clearInterval(interval)
       cleanupCall()
+      sseAbortRef.current?.abort()
     }
   }, [roomId])
 
@@ -782,10 +784,15 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             ? `[Archivos adjuntos: ${fileNames}] ¿Qué contienen estos archivos?`
             : content
 
+          sseAbortRef.current?.abort()
+          const abortController = new AbortController()
+          sseAbortRef.current = abortController
+
           const aiRes = await fetch('/api/chat/ai-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
+            signal: abortController.signal,
           })
 
           setAiTyping(false)
@@ -796,32 +803,39 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             let sseBuffer = ''
             let accumulated = ''
 
-            outer: while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              sseBuffer += decoder.decode(value, { stream: true })
+            try {
+              outer: while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                sseBuffer += decoder.decode(value, { stream: true })
 
-              const lines = sseBuffer.split('\n')
-              sseBuffer = lines.pop() ?? ''
+                const lines = sseBuffer.split('\n')
+                sseBuffer = lines.pop() ?? ''
 
-              for (const line of lines) {
-                if (!line.startsWith('data: ')) continue
-                try {
-                  const data = JSON.parse(line.slice(6))
-                  if (data.text !== undefined) {
-                    accumulated += data.text
-                    setDoStreamText(accumulated)
-                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-                  }
-                  if (data.done) {
-                    setDoStreamText('')
-                    broadcast()
-                    await fetchMessages()
-                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-                    break outer
-                  }
-                } catch { /* ignore SSE parse errors */ }
+                for (const line of lines) {
+                  if (!line.startsWith('data: ')) continue
+                  try {
+                    const data = JSON.parse(line.slice(6))
+                    if (data.text !== undefined) {
+                      accumulated += data.text
+                      setDoStreamText(accumulated)
+                      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                    if (data.done) {
+                      setDoStreamText('')
+                      broadcast()
+                      await fetchMessages()
+                      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+                      break outer
+                    }
+                  } catch { /* ignore SSE parse errors */ }
+                }
               }
+              // flush any remaining bytes in the decoder buffer
+              sseBuffer += decoder.decode()
+            } catch (err: any) {
+              if (err?.name !== 'AbortError') throw err
+              // AbortError = component unmounted, ignore silently
             }
           } else {
             broadcast()
@@ -833,6 +847,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       } finally {
         setLoading(false)
         setAiTyping(false)
+        setDoStreamText('')
       }
       return
     }
