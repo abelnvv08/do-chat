@@ -77,41 +77,56 @@ export async function GET(req: NextRequest) {
     })
     .filter(Boolean) as { id: string; name: string }[]
 
-  // ── Single messages fetch — used for both unread counts and awaiting-reply ─
+  // ── Two targeted messages queries (run in parallel) ───────────────────────
+  // Split by purpose so neither cap corrupts the other's result:
+  //   Q5a — others' messages only  → unread counts   (MESSAGES_LIMIT rows, 30-day window)
+  //   Q5b — my messages only       → awaiting-reply  (≤N*5 rows, no time filter)
   let activeChatChip:    DoChip | null = null
   let awaitingReplyChip: DoChip | null = null
 
   if (nonAiRooms.length > 0) {
     const roomIdList = nonAiRooms.map(r => r.id)
 
-    const { data: messages } = await db
-      .from('demo_messages')
-      .select('room_id, user_id, created_at')
-      .in('room_id', roomIdList)
-      .gte('created_at', thirtyDaysAgo)
-      .order('created_at', { ascending: false })
-      .limit(MESSAGES_LIMIT)
+    const [{ data: othersMsgs }, { data: myLatestMsgs }] = await Promise.all([
+      // Q5a: Messages from others → unread-count map (active_chat chip)
+      db.from('demo_messages')
+        .select('room_id, created_at')
+        .in('room_id', roomIdList)
+        .neq('user_id', userId)
+        .gte('created_at', thirtyDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(MESSAGES_LIMIT),
 
-    // Compute unread counts (messages NOT from me, newer than last_read_at)
-    const unreadCountMap: Record<string, number> = {}
-    // Compute last message per room (first occurrence since ordered desc)
-    const lastMsgPerRoom: Record<string, { userId: string; createdAt: string }> = {}
+      // Q5b: My own messages → find my latest per room (awaiting-reply chip)
+      // *5 ensures we see at least one of my messages per room even in active rooms
+      db.from('demo_messages')
+        .select('room_id, created_at')
+        .in('room_id', roomIdList)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(roomIdList.length * 5),
+    ])
 
-    for (const m of messages ?? []) {
-      // Last message per room
-      if (!lastMsgPerRoom[m.room_id]) {
-        lastMsgPerRoom[m.room_id] = { userId: m.user_id, createdAt: m.created_at }
-      }
-      // Unread: not mine, newer than last read
-      if (m.user_id !== userId) {
-        const lastRead = readsMap[m.room_id]
-        if (!lastRead || m.created_at > lastRead) {
-          unreadCountMap[m.room_id] = (unreadCountMap[m.room_id] ?? 0) + 1
-        }
+    // Unread count per room + others' latest message per room (for cross-check below)
+    const unreadCountMap: Record<string, number>  = {}
+    const othersLatestPerRoom: Record<string, string> = {}
+
+    for (const m of othersMsgs ?? []) {
+      // First occurrence = latest (ordered desc)
+      if (!othersLatestPerRoom[m.room_id]) othersLatestPerRoom[m.room_id] = m.created_at
+      const lastRead = readsMap[m.room_id]
+      if (!lastRead || m.created_at > lastRead) {
+        unreadCountMap[m.room_id] = (unreadCountMap[m.room_id] ?? 0) + 1
       }
     }
 
-    // Active chat chip: room with most unread
+    // My latest message per room (first occurrence = most recent, since ordered desc)
+    const myLatestPerRoom: Record<string, string> = {}
+    for (const m of myLatestMsgs ?? []) {
+      if (!myLatestPerRoom[m.room_id]) myLatestPerRoom[m.room_id] = m.created_at
+    }
+
+    // Active chat chip: room with most unread messages
     const [topRoomId, topCount] = Object.entries(unreadCountMap)
       .sort(([, a], [, b]) => b - a)[0] ?? [null, 0]
 
@@ -125,14 +140,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Awaiting reply chip: room where last msg is mine and > 48h old
+    // Awaiting reply chip: room where my last message received no reply for 48h+
     for (const { id: roomId, name: roomName } of nonAiRooms) {
-      const last = lastMsgPerRoom[roomId]
-      if (last?.userId === userId && last.createdAt < fortyEightHrsAgo) {
-        const diffHours = Math.floor((now.getTime() - new Date(last.createdAt).getTime()) / ONE_HOUR_MS)
-        awaitingReplyChip = { type: 'awaiting_reply', label: `Sin respuesta ${diffHours}h`, roomName, hours: diffHours }
-        break
-      }
+      const myLast = myLatestPerRoom[roomId]
+      if (!myLast) continue                           // I never sent here
+      if (myLast >= fortyEightHrsAgo) continue        // My last message is recent
+      const othersLast = othersLatestPerRoom[roomId]
+      if (othersLast && othersLast > myLast) continue // Someone replied after me
+      const diffHours = Math.floor((now.getTime() - new Date(myLast).getTime()) / ONE_HOUR_MS)
+      awaitingReplyChip = { type: 'awaiting_reply', label: `Sin respuesta ${diffHours}h`, roomName, hours: diffHours }
+      break
     }
   }
 
