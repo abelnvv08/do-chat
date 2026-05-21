@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
   const { data: inserted } = await supabase.from('demo_messages').insert(row).select('*').single()
   if (!inserted) return NextResponse.json({ error: 'Insert failed' }, { status: 500 })
 
+  // Update sender's last_seen on every message sent (fire-and-forget)
+  supabase.from('demo_profiles').update({ last_seen: new Date().toISOString() }).eq('id', user_id).then(() => {})
+
   const { data: profile } = await supabase.from('demo_profiles').select('id, name, emoji, bg').eq('id', user_id).single()
   const message = { ...inserted, content: await decrypt(encryptedContent), user: profile ?? null }
 
