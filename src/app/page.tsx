@@ -17,7 +17,7 @@ export default function RootPage() {
       if (user) {
         router.replace(`/chat/${user.id}`)
       } else {
-        router.replace('/login')
+        router.replace('/landing')
       }
     })
   }, [router])
