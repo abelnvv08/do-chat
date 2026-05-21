@@ -954,7 +954,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             }
             const file = files.find(f => f.id === id)
             if (file) {
-              await fetch('/api/chat/messages', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message_id: id }) })
+              await fetch('/api/chat/messages', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message_id: id, user_id: userId }) })
               setFiles(prev => prev.filter(f => f.id !== id))
             }
           }
