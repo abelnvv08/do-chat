@@ -613,5 +613,27 @@ export async function POST(req: NextRequest) {
   // Broadcast to all rooms that got messages
   await Promise.all([...ctx.sentRooms].map(r => broadcastToRoom(r)))
 
-  return NextResponse.json({ reply: finalReply, actions: [] })
+  // Stream the reply back word-by-word so the client sees it appear progressively
+  const encoder = new TextEncoder()
+  const tokens = finalReply.split(/(\s+)/)
+  const stream = new ReadableStream({
+    async start(controller) {
+      for (const token of tokens) {
+        if (!token) continue
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: token })}\n\n`))
+        if (token.trim()) await new Promise(r => setTimeout(r, 18))
+      }
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  })
 }
