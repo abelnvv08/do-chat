@@ -367,9 +367,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [aiTyping, setAiTyping] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [previewFile, setPreviewFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewFiles, setPreviewFiles] = useState<File[]>([])
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  const [previewActiveIdx, setPreviewActiveIdx] = useState(0)
   const [previewCaption, setPreviewCaption] = useState('')
+  const previewAddRef = useRef<HTMLInputElement>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [taskContent, setTaskContent] = useState('')
   const [taskDueDate, setTaskDueDate] = useState('')
@@ -1262,29 +1264,42 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   }
 
   function closePreview() {
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setPreviewFile(null)
-    setPreviewUrl(null)
+    previewUrls.forEach(u => { if (u) URL.revokeObjectURL(u) })
+    setPreviewFiles([])
+    setPreviewUrls([])
+    setPreviewActiveIdx(0)
     setPreviewCaption('')
   }
 
+  function removePreviewFile(idx: number) {
+    if (previewUrls[idx]) URL.revokeObjectURL(previewUrls[idx])
+    const newFiles = previewFiles.filter((_, i) => i !== idx)
+    const newUrls = previewUrls.filter((_, i) => i !== idx)
+    if (newFiles.length === 0) { closePreview(); return }
+    setPreviewFiles(newFiles)
+    setPreviewUrls(newUrls)
+    setPreviewActiveIdx(prev => Math.min(prev, newFiles.length - 1))
+  }
+
   async function sendWithPreview() {
-    if (!previewFile) return
-    const file = previewFile
+    if (!previewFiles.length) return
+    const files = [...previewFiles]
     const caption = previewCaption.trim()
     closePreview()
     setUploading(true)
     setUploadError(null)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('user_id', userId)
-      formData.append('room_id', roomId)
-      const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json().catch(() => ({}))
-        setUploadError(errData.error ?? 'Error al subir archivo')
-        return
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('user_id', userId)
+        formData.append('room_id', roomId)
+        const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData })
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}))
+          setUploadError(errData.error ?? 'Error al subir archivo')
+          return
+        }
       }
       if (caption) {
         await fetch('/api/chat/messages', {
@@ -1302,17 +1317,32 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     }
   }
 
+  function openFilesInPreview(files: File[]) {
+    if (!files.length) return
+    const urls = files.map(f => f.type.startsWith('image/') ? URL.createObjectURL(f) : '')
+    setPreviewFiles(files)
+    setPreviewUrls(urls)
+    setPreviewActiveIdx(0)
+    setPreviewCaption('')
+  }
+
+  function handleAddMoreToPreview(e: React.ChangeEvent<HTMLInputElement>) {
+    const newFiles = Array.from(e.target.files ?? [])
+    if (!newFiles.length) return
+    const newUrls = newFiles.map(f => f.type.startsWith('image/') ? URL.createObjectURL(f) : '')
+    setPreviewActiveIdx(previewFiles.length) // first of newly added
+    setPreviewFiles(prev => [...prev, ...newFiles])
+    setPreviewUrls(prev => [...prev, ...newUrls])
+    e.target.value = ''
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
     if (isAIRoom) {
-      // In AI room: attach as pending files, let user type their question first
       setPendingFiles(prev => [...prev, ...files])
     } else {
-      const file = files[0]
-      setPreviewFile(file)
-      setPreviewUrl(file.type.startsWith('image/') ? URL.createObjectURL(file) : null)
-      setPreviewCaption('')
+      openFilesInPreview(files)
     }
     e.target.value = ''
   }
@@ -2573,58 +2603,119 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         </div>
       )}
 
-      {/* ── File / Photo preview modal (WhatsApp-style) ───────────────────── */}
-      {previewFile && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-black">
-          {/* Top bar */}
-          <div className="flex items-center gap-3 px-4 pt-safe-top pt-4 pb-3 bg-black/80">
-            <button onClick={closePreview} className="p-1 text-white/80 hover:text-white transition-colors">
-              <XIcon className="w-6 h-6" />
+      {/* ── Media preview modal ───────────────────────────────────────────── */}
+      {previewFiles.length > 0 && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-[#0d1520]">
+
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 pt-safe pt-5 pb-3">
+            <button onClick={closePreview} className="p-1.5 text-white/60 hover:text-white transition-colors">
+              <ArrowLeftIcon className="w-5 h-5" />
             </button>
-            <span className="flex-1 text-white text-sm font-medium truncate">{previewFile.name}</span>
-            <span className="text-white/50 text-xs">{(previewFile.size / 1024).toFixed(0)} KB</span>
+            <div className="flex-1 text-center">
+              <p className="text-white text-sm font-semibold leading-tight">
+                {room?.name ?? 'Chat'}
+              </p>
+              {previewFiles.length > 1 && (
+                <p className="text-white/40 text-xs mt-0.5">
+                  {previewActiveIdx + 1} de {previewFiles.length}
+                </p>
+              )}
+            </div>
+            <div className="w-8" />
           </div>
 
-          {/* Preview area */}
-          <div className="flex-1 flex items-center justify-center overflow-hidden px-4">
-            {previewUrl ? (
+          {/* Main preview */}
+          <div className="flex-1 flex items-center justify-center overflow-hidden px-6 py-2">
+            {previewUrls[previewActiveIdx] ? (
               <img
-                src={previewUrl}
+                src={previewUrls[previewActiveIdx]}
                 alt="preview"
-                className="max-w-full max-h-full object-contain rounded-xl"
+                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
               />
             ) : (
               <div className="flex flex-col items-center gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center">
-                  <FileIcon className="w-10 h-10 text-white/60" />
+                <div className="w-24 h-24 rounded-3xl bg-white/8 border border-white/10 flex items-center justify-center">
+                  <FileIcon className="w-10 h-10 text-white/40" />
                 </div>
-                <p className="text-white/70 text-sm text-center max-w-[240px] break-all">{previewFile.name}</p>
+                <p className="text-white/50 text-sm text-center max-w-[240px] break-all leading-relaxed">
+                  {previewFiles[previewActiveIdx]?.name}
+                </p>
+                <p className="text-white/30 text-xs">
+                  {((previewFiles[previewActiveIdx]?.size ?? 0) / 1024).toFixed(0)} KB
+                </p>
               </div>
             )}
           </div>
 
-          {/* Caption + send bar */}
-          <div className="px-3 pb-safe-bottom pb-6 pt-3 bg-black/80">
-            <div className="flex items-end gap-3 bg-white/10 rounded-3xl px-4 py-2">
+          {/* Thumbnail strip */}
+          <div className="flex items-center gap-2 px-4 py-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {previewFiles.map((f, i) => (
+              <button
+                key={i}
+                onClick={() => setPreviewActiveIdx(i)}
+                className={`relative shrink-0 w-[52px] h-[52px] rounded-xl overflow-hidden transition-all ${
+                  i === previewActiveIdx
+                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#0d1520] opacity-100'
+                    : 'opacity-50 hover:opacity-75'
+                }`}
+              >
+                {previewUrls[i] ? (
+                  <img src={previewUrls[i]} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                    <FileIcon className="w-5 h-5 text-white/50" />
+                  </div>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); removePreviewFile(i) }}
+                  className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 flex items-center justify-center"
+                >
+                  <XIcon className="w-2.5 h-2.5 text-white" />
+                </button>
+              </button>
+            ))}
+            {/* Add more button */}
+            <button
+              onClick={() => previewAddRef.current?.click()}
+              className="shrink-0 w-[52px] h-[52px] rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center hover:border-blue-400/60 hover:bg-blue-500/10 transition-colors"
+            >
+              <svg className="w-5 h-5 text-white/40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Caption + send */}
+          <div className="px-4 pb-safe pb-8 pt-1">
+            <div className="flex items-end gap-3 bg-white/6 rounded-2xl px-4 py-3 border border-white/8">
               <textarea
                 value={previewCaption}
                 onChange={e => setPreviewCaption(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWithPreview() } }}
-                placeholder="Añadir una descripción…"
+                placeholder="Agregar descripción…"
                 rows={1}
-                className="flex-1 bg-transparent text-white placeholder-white/40 text-sm resize-none focus:outline-none min-h-[24px] max-h-[96px]"
+                className="flex-1 bg-transparent text-white placeholder-white/25 text-sm resize-none focus:outline-none min-h-[22px] max-h-[88px]"
                 style={{ overflowY: 'auto' }}
               />
               <button
                 onClick={sendWithPreview}
-                className="w-10 h-10 shrink-0 rounded-full bg-[#25d366] flex items-center justify-center hover:bg-[#1fbe5b] transition-colors"
+                className="w-10 h-10 shrink-0 rounded-xl bg-blue-600 flex items-center justify-center hover:bg-blue-500 active:scale-95 transition-all"
               >
-                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                </svg>
+                <SendHorizonalIcon className="w-4 h-4 text-white" />
               </button>
             </div>
           </div>
+
+          {/* Hidden input for adding more files in preview */}
+          <input
+            ref={previewAddRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp"
+            multiple
+            className="hidden"
+            onChange={handleAddMoreToPreview}
+          />
         </div>
       )}
     </div>
