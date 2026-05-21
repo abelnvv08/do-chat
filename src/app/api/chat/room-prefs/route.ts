@@ -16,12 +16,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { user_id, room_id, pinned, archived, deleted } = await req.json()
+  const { user_id, room_id, pinned, archived, deleted, muted_until } = await req.json()
   if (!user_id || !room_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   const update: Record<string, unknown> = {}
   if (pinned !== undefined) update.pinned = pinned
   if (archived !== undefined) update.archived = archived
   if (deleted !== undefined) update.deleted = deleted
+  if (muted_until !== undefined) update.muted_until = muted_until
   const { data } = await admin()
     .from('demo_room_prefs')
     .upsert({ user_id, room_id, ...update }, { onConflict: 'user_id,room_id' })
