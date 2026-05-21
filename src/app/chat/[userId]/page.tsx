@@ -19,13 +19,25 @@ function UserIcon({ className }: { className?: string }) {
   )
 }
 
-function Avatar({ emoji, bg, size = 'md', avatarUrl }: { emoji: string; bg: string; size?: 'sm' | 'md' | 'lg'; avatarUrl?: string | null }) {
-  const sizeClass = size === 'lg' ? 'w-12 h-12 text-xl' : size === 'sm' ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-lg'
+function Avatar({ size = 'md', avatarUrl }: { emoji?: string; bg?: string; size?: 'sm' | 'md' | 'lg'; avatarUrl?: string | null }) {
+  const sizeClass = size === 'lg' ? 'w-12 h-12' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
   const iconClass = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
   if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
   return (
-    <div className={`${sizeClass} rounded-full flex items-center justify-center shrink-0 ${bg} text-white`}>
-      {emoji ? emoji : <UserIcon className={`${iconClass} text-slate-700`} />}
+    <div className={`${sizeClass} rounded-full flex items-center justify-center shrink-0 bg-slate-100`}>
+      <UserIcon className={`${iconClass} text-slate-400`} />
+    </div>
+  )
+}
+
+// Reusable person avatar for contacts (rounded-2xl, like app style)
+function ContactAvatar({ avatarUrl, size = 'md', className = '' }: { avatarUrl?: string | null; size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
+  const sizeClass = size === 'xl' ? 'w-20 h-20' : size === 'lg' ? 'w-16 h-16' : size === 'md' ? 'w-11 h-11' : 'w-8 h-8'
+  const iconClass = size === 'xl' ? 'w-9 h-9' : size === 'lg' ? 'w-7 h-7' : size === 'md' ? 'w-5 h-5' : 'w-4 h-4'
+  if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-2xl object-cover shrink-0 ${className}`} />
+  return (
+    <div className={`${sizeClass} rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 ${className}`}>
+      <UserIcon className={`${iconClass} text-slate-400`} />
     </div>
   )
 }
@@ -1140,10 +1152,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   {filtered.map(c => (
                     <button key={c.id} onClick={() => setSelectedContact(c)}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 text-left transition-colors">
-                      {c.avatar_url
-                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
-                        : <div className={`w-11 h-11 rounded-2xl ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
-                      }
+                      <ContactAvatar avatarUrl={c.avatar_url} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
                       </div>
@@ -1190,10 +1199,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         </button>
                       </div>
                       <div className="flex flex-col items-center mb-5">
-                        {selectedContact.avatar_url
-                          ? <img src={selectedContact.avatar_url} alt="" className="w-16 h-16 rounded-2xl object-cover" />
-                          : <div className={`w-16 h-16 rounded-2xl ${selectedContact.bg} flex items-center justify-center text-2xl`}>{selectedContact.emoji}</div>
-                        }
+                        <ContactAvatar avatarUrl={selectedContact.avatar_url} size="lg" />
                       </div>
                       <div className="space-y-3">
                         <div className="bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3">
@@ -1213,10 +1219,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   ) : (
                     <>
                       <div className="flex flex-col items-center pt-4 pb-5">
-                        {selectedContact.avatar_url
-                          ? <img src={selectedContact.avatar_url} alt="" className="w-20 h-20 rounded-2xl object-cover mb-3" />
-                          : <div className={`w-20 h-20 rounded-2xl ${selectedContact.bg} flex items-center justify-center text-3xl mb-3`}>{selectedContact.emoji}</div>
-                        }
+                        <ContactAvatar avatarUrl={selectedContact.avatar_url} size="xl" className="mb-3" />
                         <p className="text-lg font-bold text-slate-800">{selectedContact.name}</p>
                       </div>
                       <div className="flex mx-5 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 mb-4">
@@ -1292,10 +1295,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     })()
                     return (
                       <div key={i} className="flex items-center gap-3 px-4 py-3">
-                        {contact?.avatar_url
-                          ? <img src={contact.avatar_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
-                          : <div className={`w-11 h-11 rounded-2xl ${contact?.bg ?? 'bg-slate-700'} flex items-center justify-center text-lg shrink-0`}>{contact?.emoji ?? '👤'}</div>
-                        }
+                        <ContactAvatar avatarUrl={contact?.avatar_url} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-slate-800 truncate">{log.roomName}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
@@ -1333,10 +1333,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div className="divide-y divide-slate-100">
                   {contacts.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
                     <div key={c.id} className="flex items-center gap-3 px-4 py-3">
-                      {c.avatar_url
-                        ? <img src={c.avatar_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
-                        : <div className={`w-11 h-11 rounded-2xl ${c.bg} flex items-center justify-center text-lg shrink-0`}>{c.emoji}</div>
-                      }
+                      <ContactAvatar avatarUrl={c.avatar_url} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
                         <p className="text-xs text-slate-500">{a.calls.tapToCall}</p>
@@ -2106,9 +2103,13 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
         <div className="relative shrink-0">
           {room.otherAvatarUrl
             ? <img src={room.otherAvatarUrl} alt="" className="w-12 h-12 rounded-2xl object-cover shadow-sm" />
-            : <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${room.type === 'group' ? 'bg-gradient-to-br from-violet-500 to-purple-700' : room.type === 'dm' ? 'bg-gradient-to-br from-slate-600 to-slate-800' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}>
-                {room.emoji ? <span className="text-xl">{room.emoji}</span> : <UserIcon className="w-6 h-6 text-slate-700" />}
-              </div>
+            : room.type === 'dm'
+              ? <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 shadow-sm">
+                  <UserIcon className="w-6 h-6 text-slate-400" />
+                </div>
+              : <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${room.type === 'group' ? 'bg-gradient-to-br from-violet-500 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}>
+                  {room.emoji ? <span className="text-xl">{room.emoji}</span> : <UserIcon className="w-6 h-6 text-white" />}
+                </div>
           }
           {hasUnread && (
             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-blue-400 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm shadow-blue-300/40">
