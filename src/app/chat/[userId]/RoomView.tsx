@@ -7,6 +7,7 @@ import { usersCache, getAIRoom, DemoMessage } from '@/lib/demo'
 import { deriveSharedKey, deriveRoomKey, encryptMsg, decryptMsg, isEncrypted } from '@/lib/e2ee'
 import { formatMessageTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
+import { DoWelcomeScreen } from './DoWelcomeScreen'
 
 function renderInline(text: string, myName?: string): React.ReactNode[] {
   const parts: React.ReactNode[] = []
@@ -370,12 +371,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [taskContent, setTaskContent] = useState('')
   const [taskDueDate, setTaskDueDate] = useState('')
   const [sendingTask, setSendingTask] = useState(false)
-  const [showAIPanel, setShowAIPanel] = useState(false)
-  const [aiQuery, setAiQuery] = useState('')
+  const [doStreamText, setDoStreamText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const aiInputRef = useRef<HTMLTextAreaElement>(null)
   const fetchingRef = useRef(false)
   const pendingFetchRef = useRef(false)
   const lastMsgCountRef = useRef(0)
@@ -419,6 +418,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const [exporting, setExporting] = useState(false)
   const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; emoji: string }[]>([])
   const mainInputRef = useRef<HTMLTextAreaElement | null>(null)
+  const sendBtnRef = useRef<HTMLButtonElement>(null)
   const [encKey, setEncKey] = useState<CryptoKey | null>(null)
   const [encReady, setEncReady] = useState(false)
   const [firstLoadDone, setFirstLoadDone] = useState(false)
@@ -781,13 +781,52 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             : uploadedFiles.length > 0
             ? `[Archivos adjuntos: ${fileNames}] ¿Qué contienen estos archivos?`
             : content
-          await fetch('/api/chat/ai-chat', {
+
+          const aiRes = await fetch('/api/chat/ai-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, query }),
+            body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
           })
-          broadcast()
-          await fetchMessages()
+
+          setAiTyping(false)
+
+          if (aiRes.ok && aiRes.body) {
+            const reader = aiRes.body.getReader()
+            const decoder = new TextDecoder()
+            let sseBuffer = ''
+            let accumulated = ''
+
+            outer: while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              sseBuffer += decoder.decode(value, { stream: true })
+
+              const lines = sseBuffer.split('\n')
+              sseBuffer = lines.pop() ?? ''
+
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue
+                try {
+                  const data = JSON.parse(line.slice(6))
+                  if (data.text !== undefined) {
+                    accumulated += data.text
+                    setDoStreamText(accumulated)
+                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+                  }
+                  if (data.done) {
+                    setDoStreamText('')
+                    broadcast()
+                    await fetchMessages()
+                    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+                    break outer
+                  }
+                } catch { /* ignore SSE parse errors */ }
+              }
+            }
+          } else {
+            broadcast()
+            await fetchMessages()
+          }
         }
       } catch {
         // ignore
@@ -849,34 +888,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       // ignore
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function askAI() {
-    if (!aiQuery.trim()) return
-    const query = aiQuery.trim()
-    setAiQuery('')
-    setShowAIPanel(false)
-    setAiTyping(true)
-    try {
-      await fetch('/api/chat/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, content: `@do ${query}`, room_id: roomId }),
-      })
-      channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
-      await fetchMessages()
-      await fetch('/api/chat/ai-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
-      })
-      channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
-      await fetchMessages()
-    } catch {
-      // ignore
-    } finally {
-      setAiTyping(false)
     }
   }
 
@@ -1618,7 +1629,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       )}
 
       {/* Header */}
-      <div className="bg-[#0f172a] px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)' }}>
+      <div className="px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 12px)', background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)' }}>
         {showSearch ? (
           /* Search mode — full header replaced */
           (() => {
@@ -1775,14 +1786,6 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
               )}
             </div>
 
-            {!isAIRoom && (
-              <button
-                onClick={() => { setShowAIPanel(true); setTimeout(() => aiInputRef.current?.focus(), 50) }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 text-white text-xs font-semibold hover:bg-white/30 transition-colors shrink-0"
-              >
-                ✦ @do
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -1823,13 +1826,23 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           </div>
         )}
         {firstLoadDone && messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${isAIRoom ? 'bg-blue-100' : 'bg-gray-100'}`}>
-              {isAIRoom ? '✦' : roomData.emoji}
+          isAIRoom ? (
+            <DoWelcomeScreen
+              userId={userId}
+              userName={me?.name ?? ''}
+              onSend={(text) => {
+                setInput(text)
+                setTimeout(() => sendBtnRef.current?.click(), 0)
+              }}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-gray-100">
+                {roomData.emoji}
+              </div>
+              <p className="text-gray-500 text-sm font-medium">Sin mensajes aún</p>
             </div>
-            <p className="text-gray-500 text-sm font-medium">{isAIRoom ? 'Cuéntame qué necesitas' : 'Sin mensajes aún'}</p>
-            {isAIRoom && <p className="text-xs text-gray-400 max-w-[220px]">Puedo leer tus chats, resumirlos, extraer tareas y enviar mensajes</p>}
-          </div>
+          )
         )}
 
 
@@ -2020,72 +2033,31 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
 
         {aiTyping && (
           <div className="flex items-center gap-2.5 py-1">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm shrink-0 shadow-sm">✦</div>
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-              <div className="flex gap-1 items-center h-4">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm shrink-0 shadow-sm animate-pulse">✦</div>
+            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm flex items-center gap-2.5">
+              <div className="flex gap-1 items-center">
                 <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
                 <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:150ms]" />
                 <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
+              <span className="text-xs text-gray-400 font-medium">do AI está pensando…</span>
+            </div>
+          </div>
+        )}
+        {isAIRoom && doStreamText && (
+          <div className="flex gap-2 items-start px-4 py-2 max-w-[85%]">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm shrink-0 shadow-sm">
+              ✦
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm flex-1">
+              <RenderAIContent content={doStreamText} />
+              <span className="inline-block w-1 h-3.5 bg-blue-500 animate-pulse ml-0.5 align-text-bottom rounded-full" />
             </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
       </div>
-
-      {/* @do AI Panel */}
-      {showAIPanel && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowAIPanel(false)}>
-          <div className="w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white shadow-sm">✦</div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-900">do AI</p>
-                <p className="text-xs text-gray-400">¿Qué necesitás de este chat?</p>
-              </div>
-              <button onClick={() => { setShowAIPanel(false); setAiQuery('') }} className="text-gray-400 hover:text-gray-600">
-                <XIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {['Resumir este chat', 'Extraer tareas', 'Buscar acuerdos', 'Generar reporte'].map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setAiQuery(s)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors bg-gray-50"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2 items-end bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 px-3.5 py-2.5 transition-colors">
-                <TextareaAutosize
-                  ref={aiInputRef}
-                  value={aiQuery}
-                  onChange={e => setAiQuery(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askAI() } }}
-                  placeholder="Ej: resume los pendientes, extrae compromisos…"
-                  className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none min-h-[20px] max-h-28 py-0.5"
-                  minRows={1}
-                  maxRows={4}
-                />
-                <button
-                  onClick={askAI}
-                  disabled={!aiQuery.trim()}
-                  className="h-8 w-8 shrink-0 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:opacity-40 rounded-xl flex items-center justify-center transition-all shadow-sm"
-                >
-                  <SendHorizonalIcon className="h-4 w-4 text-white" />
-                </button>
-              </div>
-            </div>
-            <div className="h-6" />
-          </div>
-        </div>
-      )}
 
       {/* Input bar */}
       <div className="bg-white/90 backdrop-blur-sm border-t border-gray-100/60 px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)' }}>
@@ -2249,7 +2221,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 autoFocus
               />
               {(input.trim() || pendingFiles.length > 0) ? (
-                <button onClick={send} disabled={loading}
+                <button ref={sendBtnRef} onClick={send} disabled={loading}
                   className="h-8 w-8 mb-0.5 shrink-0 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-sm">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
@@ -2259,7 +2231,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                   <MicIcon className="h-4 w-4" />
                 </button>
               ) : (
-                <button onClick={send} disabled={!input.trim() || loading}
+                <button ref={sendBtnRef} onClick={send} disabled={!input.trim() || loading}
                   className="h-8 w-8 mb-0.5 shrink-0 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-sm">
                   <SendHorizonalIcon className="h-4 w-4 text-white" />
                 </button>
