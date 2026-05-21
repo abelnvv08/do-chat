@@ -94,26 +94,58 @@ export async function POST(req: NextRequest) {
 
   await broadcastToRoom(room_id)
 
-  // Push notifications to other room members (skip for system messages)
+  // Push notifications (con detección de @menciones)
   if (type !== 'system' && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
       `mailto:${process.env.VAPID_SUBJECT ?? 'noreply@getdochat.com'}`,
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
     )
-    const { data: members } = await supabase.from('demo_room_members').select('user_id').eq('room_id', room_id).neq('user_id', user_id)
-    if (members?.length) {
-      const otherIds = members.map((m: any) => m.user_id)
-      const { data: subs } = await supabase.from('demo_push_subscriptions').select('user_id, subscription').in('user_id', otherIds)
+
+    // Obtener miembros del room con sus nombres (para detectar menciones)
+    const { data: membersWithProfiles } = await supabase
+      .from('demo_room_members')
+      .select('user_id, demo_profiles!inner(name)')
+      .eq('room_id', room_id)
+      .neq('user_id', user_id)
+
+    if (membersWithProfiles?.length) {
       const senderName = profile?.name ?? 'Mensaje nuevo'
-      const bodyText = type === 'image' ? 'Imagen' : type === 'file' ? 'Archivo' : type === 'audio' ? 'Audio' : content
+      const bodyText = type === 'image' ? '🖼 Imagen' : type === 'file' ? '📎 Archivo' : type === 'audio' ? '🎤 Audio' : content
+
+      // Detectar quiénes fueron mencionados: @NombreCompleto en el contenido
+      const mentionedIds = new Set(
+        (type === 'text' ? membersWithProfiles : [])
+          .filter((m: any) => {
+            const name: string = m.demo_profiles?.name ?? ''
+            return name.length > 0 && content.toLowerCase().includes(`@${name.toLowerCase()}`)
+          })
+          .map((m: any) => m.user_id as string)
+      )
+
+      const otherIds = membersWithProfiles.map((m: any) => m.user_id as string)
+      const { data: subs } = await supabase
+        .from('demo_push_subscriptions')
+        .select('user_id, subscription')
+        .in('user_id', otherIds)
+
       await Promise.allSettled((subs ?? []).map((s: any) => {
-        const payload = JSON.stringify({
-          title: senderName,
-          body: bodyText,
-          tag: `msg-${room_id}`,
-          data: { url: `/chat/${s.user_id}` },
-        })
+        const isMentioned = mentionedIds.has(s.user_id)
+        const payload = JSON.stringify(
+          isMentioned
+            ? {
+                title: `💬 ${senderName} te mencionó`,
+                body: bodyText,
+                tag: `mention-${room_id}`,
+                data: { url: `/chat/${s.user_id}` },
+              }
+            : {
+                title: senderName,
+                body: bodyText,
+                tag: `msg-${room_id}`,
+                data: { url: `/chat/${s.user_id}` },
+              }
+        )
         return webpush.sendNotification(s.subscription as webpush.PushSubscription, payload)
       }))
     }
