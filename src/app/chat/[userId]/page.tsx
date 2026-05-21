@@ -82,6 +82,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [rooms, setRooms] = useState<RoomWithMeta[]>([])
   const [prefs, setPrefs] = useState<RoomPref[]>([])
   const [loading, setLoading] = useState(true)
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
   const [doPreviewText, setDoPreviewText] = useState('Tu asistente · siempre activo')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -216,6 +217,10 @@ const [darkMode, setDarkMode] = useState(() => {
       if (stored) fetch('/api/chat/e2ee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, public_key: stored }) }).catch(() => {})
     })
     fetchRooms()
+    fetch(`/api/chat/block?user_id=${userId}`)
+      .then(r => r.json())
+      .then(d => setBlockedIds(new Set(d.blocked ?? [])))
+      .catch(() => {})
     fetch(`/api/chat/do-context?user_id=${userId}`)
       .then(r => r.json())
       .then(d => { if (d.previewText) setDoPreviewText(d.previewText) })
@@ -666,8 +671,14 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
     return true
   })
   const aiRoom = visibleRooms.find(r => r.type === 'ai')
-  const pinnedRooms = visibleRooms.filter(r => r.type !== 'ai' && getPref(r.id).pinned && !getPref(r.id).archived)
-  const normalRooms = visibleRooms.filter(r => r.type !== 'ai' && !getPref(r.id).pinned && !getPref(r.id).archived)
+  const pinnedRooms = visibleRooms.filter(r =>
+    r.type !== 'ai' && getPref(r.id).pinned && !getPref(r.id).archived
+    && !(r.type === 'dm' && r.otherUserId && blockedIds.has(r.otherUserId))
+  )
+  const normalRooms = visibleRooms.filter(r =>
+    r.type !== 'ai' && !getPref(r.id).pinned && !getPref(r.id).archived
+    && !(r.type === 'dm' && r.otherUserId && blockedIds.has(r.otherUserId))
+  )
   const archivedRooms = visibleRooms.filter(r => r.type !== 'ai' && getPref(r.id).archived)
   const pinnedCount = pinnedRooms.length
   const isMuted = (pref: RoomPref) => !!pref.muted_until && new Date(pref.muted_until) > new Date()
@@ -1874,6 +1885,31 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           </button>
                         ))}
                       </div>
+                    )
+                  })()}
+                  {actionRoom.type === 'dm' && actionRoom.otherUserId && (() => {
+                    const isBlocked = blockedIds.has(actionRoom.otherUserId!)
+                    return (
+                      <button onClick={async () => {
+                        const method = isBlocked ? 'DELETE' : 'POST'
+                        await fetch('/api/chat/block', {
+                          method,
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ user_id: userId, blocked_user_id: actionRoom.otherUserId }),
+                        })
+                        setBlockedIds(prev => {
+                          const next = new Set(prev)
+                          if (isBlocked) next.delete(actionRoom.otherUserId!)
+                          else next.add(actionRoom.otherUserId!)
+                          return next
+                        })
+                        setActionRoom(null)
+                      }} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 text-left">
+                        <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        <p className="text-sm font-medium text-orange-500">{isBlocked ? 'Desbloquear usuario' : 'Bloquear usuario'}</p>
+                      </button>
                     )
                   })()}
                   {actionRoom.type === 'dm' && actionRoom.otherUserId && (
