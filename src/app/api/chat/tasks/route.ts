@@ -10,29 +10,58 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ tasks: [], received: [], sent: [] })
   const db = admin()
 
-  // Personal tasks
+  // Personal tasks (all of mine, regardless of source)
   const { data: tasks } = await db
     .from('demo_tasks')
     .select('*')
     .eq('user_id', userId)
     .eq('task_status', 'personal')
-    .not('source_room', 'like', 'invite|%')
-    .not('source_room', 'like', 'sent-invite|%')
     .order('created_at', { ascending: false })
 
-  // Tasks assigned TO me (I need to accept/complete)
-  const { data: received } = await db
+  // Tasks assigned TO me (new system: assigned_to field)
+  const { data: receivedNew } = await db
     .from('demo_tasks')
     .select('*')
     .eq('assigned_to', userId)
     .order('created_at', { ascending: false })
 
-  // Tasks I sent to others
-  const { data: sent } = await db
+  // Tasks received via old invite system (source_room starts with 'invite|')
+  const { data: receivedOld } = await db
+    .from('demo_tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .like('source_room', 'invite|%')
+    .order('created_at', { ascending: false })
+
+  // Merge received, deduplicate by id
+  type TaskRow = NonNullable<typeof receivedNew>[number]
+  const receivedMap = new Map<string, TaskRow>()
+  for (const t of [...(receivedNew ?? []), ...(receivedOld ?? [])]) receivedMap.set(t.id, t)
+  const received = [...receivedMap.values()].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
+
+  // Tasks I sent (new system: assigned_by field)
+  const { data: sentNew } = await db
     .from('demo_tasks')
     .select('*')
     .eq('assigned_by', userId)
     .order('created_at', { ascending: false })
+
+  // Tasks sent via old invite system (source_room starts with 'sent-invite|')
+  const { data: sentOld } = await db
+    .from('demo_tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .like('source_room', 'sent-invite|%')
+    .order('created_at', { ascending: false })
+
+  // Merge sent, deduplicate by id
+  const sentMap = new Map<string, TaskRow>()
+  for (const t of [...(sentNew ?? []), ...(sentOld ?? [])]) sentMap.set(t.id, t)
+  const sent = [...sentMap.values()].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
 
   return NextResponse.json({
     tasks: tasks ?? [],

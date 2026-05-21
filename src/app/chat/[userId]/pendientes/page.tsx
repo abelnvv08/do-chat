@@ -405,7 +405,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: Task; onToggle: (id: str
         {task.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
       </button>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.content}</p>
+        <p className={`text-sm leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{parseContent(task.content)}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {badge && <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
           <p className="text-xs text-gray-400">{formatMessageTime(task.created_at)}</p>
@@ -437,17 +437,18 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
   const isCompleted = task.task_status === 'completed'
   const isRejected = task.task_status === 'rejected'
 
+  const senderName = task.assigned_by_name ?? parseSourceRoom(task.source_room).name ?? 'Alguien'
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="px-4 py-3">
         {/* From */}
         <div className="flex items-center gap-1.5 mb-2">
           <span className="text-base">{task.assigned_by_emoji ?? '👤'}</span>
-          <span className="text-xs text-gray-400">De <span className="font-medium text-gray-600">{task.assigned_by_name ?? 'Alguien'}</span></span>
+          <span className="text-xs text-gray-400">De <span className="font-medium text-gray-600">{senderName}</span></span>
           {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
         </div>
 
-        <p className="text-sm text-gray-800 leading-snug font-medium">{task.content}</p>
+        <p className="text-sm text-gray-800 leading-snug font-medium">{parseContent(task.content)}</p>
 
         {task.due_date && (
           <p className="text-xs text-gray-400 mt-1">Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}</p>
@@ -523,16 +524,33 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
   )
 }
 
+// Parse name from source_room like 'sent-invite|userId|Name||type' or 'invite|userId|Name||type'
+function parseSourceRoom(source: string | null) {
+  if (!source) return { name: null }
+  const parts = source.split('|')
+  return { name: parts[2] || null }
+}
+
+// Parse content — handles plain text and old JSON reminder format
+function parseContent(content: string) {
+  try {
+    const obj = JSON.parse(content)
+    if (obj.text) return obj.text
+  } catch { /* plain text */ }
+  return content
+}
+
 function SentTaskCard({ task }: { task: Task }) {
   const badge = statusBadge(task.task_status)
+  const recipientName = task.assigned_to_name ?? parseSourceRoom(task.source_room).name ?? 'Alguien'
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
       <div className="flex items-center gap-1.5 mb-2">
         <span className="text-base">{task.assigned_by_emoji ?? '👤'}</span>
-        <span className="text-xs text-gray-400">Para <span className="font-medium text-gray-600">{task.assigned_to_name ?? 'Alguien'}</span></span>
+        <span className="text-xs text-gray-400">Para <span className="font-medium text-gray-600">{recipientName}</span></span>
         {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
       </div>
-      <p className="text-sm text-gray-800 leading-snug">{task.content}</p>
+      <p className="text-sm text-gray-800 leading-snug">{parseContent(task.content)}</p>
       {task.due_date && (
         <p className="text-xs text-gray-400 mt-1">Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}</p>
       )}
