@@ -416,21 +416,117 @@ export default function LandingV4() {
 
       {/* ── PRICING ── */}
       <section id="precios" className="py-24 px-6 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-white border border-slate-200 shadow-sm mb-8">
-            <svg className="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-            </svg>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-3">Planes</p>
+            <h2 className="text-4xl font-extrabold text-slate-900 mb-4">
+              Comienza gratis,<br />más opciones próximamente
+            </h2>
+            <p className="text-slate-500 text-lg max-w-md mx-auto">Sin contratos. Sin sorpresas. Por ahora, todo gratis.</p>
           </div>
-          <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-3">Planes</p>
-          <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Próximamente</h2>
-          <p className="text-slate-500 text-lg max-w-md mx-auto">
-            Estamos trabajando en los planes de pago. Por ahora, disfruta DO Chat completamente gratis.
-          </p>
-          <Link href="/login?start=phone"
-            className="inline-flex items-center gap-2 mt-8 px-8 py-3.5 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
-            Crear cuenta gratis
-          </Link>
+
+          <div className="grid md:grid-cols-3 gap-5 items-start">
+
+            {/* ── Free ── */}
+            <div className="rounded-3xl p-7 flex flex-col bg-white border border-slate-200">
+              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">Gratis</p>
+              <div className="mb-7">
+                <p className="text-5xl font-extrabold text-slate-900">$0</p>
+                <p className="text-sm mt-1.5 text-slate-400">Para siempre · Sin tarjeta</p>
+              </div>
+              <ul className="space-y-3 flex-1 mb-7">
+                {['Mensajes y llamadas ilimitados', 'Cifrado E2E', 'do AI · 15 consultas/día', '500 MB de almacenamiento'].map(f => (
+                  <li key={f} className="flex items-start gap-3">
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    <span className="text-sm text-slate-600">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/login?start=phone"
+                className="w-full py-3.5 rounded-2xl font-bold text-sm text-center bg-slate-900 text-white hover:bg-slate-800 transition-all active:scale-[0.98]">
+                Crear cuenta gratis
+              </Link>
+            </div>
+
+            {/* ── Pro ── */}
+            <div className="rounded-3xl p-7 flex flex-col relative bg-blue-600 shadow-2xl shadow-blue-200 scale-[1.02]">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-lg">Más popular</span>
+              </div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-blue-200">Pro</p>
+
+              {/* Price — blurred */}
+              <div className="relative mb-7 select-none">
+                <div className="blur-sm pointer-events-none">
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-5xl font-extrabold text-white">$XX</p>
+                    <p className="text-sm text-blue-200">/mes</p>
+                  </div>
+                  <p className="text-sm mt-1.5 text-blue-200">Para equipos que producen más</p>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-semibold tracking-wide">
+                    Próximamente
+                  </span>
+                </div>
+              </div>
+
+              <ul className="space-y-3 flex-1 mb-7">
+                {['Todo en Gratis', 'do AI · más consultas/día', 'Mayor almacenamiento', 'Llamadas grupales de video', 'Soporte prioritario'].map(f => (
+                  <li key={f} className="flex items-start gap-3">
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    <span className="text-sm text-white">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <button disabled
+                className="w-full py-3.5 rounded-2xl font-bold text-sm bg-white/20 text-white/50 cursor-not-allowed">
+                Próximamente
+              </button>
+            </div>
+
+            {/* ── MAX ── */}
+            <div className="rounded-3xl p-7 flex flex-col bg-white border border-slate-200">
+              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">MAX</p>
+
+              {/* Price — blurred */}
+              <div className="relative mb-7 select-none">
+                <div className="blur-sm pointer-events-none">
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-5xl font-extrabold text-slate-900">$XX</p>
+                    <p className="text-sm text-slate-400">/mes</p>
+                  </div>
+                  <p className="text-sm mt-1.5 text-slate-400">Para empresas a escala</p>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold tracking-wide">
+                    Próximamente
+                  </span>
+                </div>
+              </div>
+
+              <ul className="space-y-3 flex-1 mb-7">
+                {['Todo en Pro', 'do AI · máximas consultas/día', 'Almacenamiento extendido', 'SLA garantizado', 'Soporte 24/7'].map(f => (
+                  <li key={f} className="flex items-start gap-3">
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    <span className="text-sm text-slate-600">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <button disabled
+                className="w-full py-3.5 rounded-2xl font-bold text-sm bg-slate-100 text-slate-400 cursor-not-allowed">
+                Próximamente
+              </button>
+            </div>
+
+          </div>
+          <p className="text-center text-sm text-slate-400 mt-8">Todos los planes incluyen cifrado E2E y actualizaciones automáticas.</p>
         </div>
       </section>
 
