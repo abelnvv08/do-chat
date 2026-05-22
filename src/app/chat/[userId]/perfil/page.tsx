@@ -180,16 +180,13 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
                   : <div className={`w-full h-full ${me.bg} flex items-center justify-center text-3xl`}>{me.emoji}</div>
                 }
               </div>
-              <div className={`absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-gradient-to-r ${plan.gradient} shadow-sm`}>
-                {plan.label}
-              </div>
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-white truncate">{me.name}</h1>
               {me.phone && <p className="text-sm text-blue-100 mt-0.5">{me.phone}</p>}
-              <p className="text-xs text-blue-200/80 mt-1">DO Chat · {plan.price}</p>
+              <p className="text-xs text-blue-200/80 mt-1">DO Chat</p>
             </div>
           </div>
 
@@ -197,7 +194,7 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
           <div className="relative mt-5 grid grid-cols-3 gap-2">
             {[
               { label: 'Exportar', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>, action: handleExport, loading: exporting },
-              { label: 'Plan', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>, href: '/pricing' },
+              { label: 'Planes', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>, href: '/pricing' },
               { label: 'Soporte', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>, href: 'mailto:hola@getdochat.com' },
             ].map((btn, i) => (
               btn.href
@@ -288,23 +285,17 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
         )}
 
         {/* ── Plan ── */}
-        <Link href="/pricing"
-          className={`block rounded-3xl bg-gradient-to-br ${plan.gradient} p-px active:scale-[0.98] transition-all`}>
-          <div className="rounded-[calc(1.5rem-1px)] bg-white px-5 py-4 flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center shrink-0 shadow-lg`}>
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-slate-900">Plan {plan.label}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{planKey === 'free' ? 'Actualiza para más funciones' : `Activo · ${plan.price}`}</p>
-            </div>
-            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        <div className="rounded-3xl bg-slate-50 border border-slate-100 px-5 py-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
             </svg>
           </div>
-        </Link>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-slate-700">Planes</p>
+            <p className="text-xs text-slate-400 mt-0.5">Próximamente</p>
+          </div>
+        </div>
 
         {/* ── Cuenta ── */}
         <div className="rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden">

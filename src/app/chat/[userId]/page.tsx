@@ -1456,12 +1456,6 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       </svg>
                     )}
                   </div>
-                  {(() => {
-                    const plan = profile?.plan ?? 'free'
-                    const gradient = plan === 'pro' ? 'from-blue-500 to-blue-700' : plan === 'business' ? 'from-violet-500 to-violet-700' : 'from-slate-600 to-slate-700'
-                    const label = plan === 'pro' ? 'Pro' : plan === 'business' ? 'Business' : 'Free'
-                    return <div className={`absolute -bottom-1.5 -right-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-gradient-to-r ${gradient} shadow-sm`}>{label}</div>
-                  })()}
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -1538,29 +1532,15 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
             {/* Plan row */}
             <div className="mx-4 mt-3">
-              {/* Plan */}
-              {(() => {
-                const plan = profile?.plan ?? 'free'
-                const isPaid = plan === 'pro' || plan === 'business'
-                const planLabel = plan === 'pro' ? 'Pro' : plan === 'business' ? 'Business' : a.profile.free
-                const planGradient = plan === 'pro' ? 'from-blue-500 to-blue-700' : plan === 'business' ? 'from-violet-500 to-violet-700' : 'from-slate-600 to-slate-700'
-                return (
-                  <button onClick={async () => {
-                    if (isPaid) { const res = await fetch('/api/payments/portal'); const d = await res.json(); if (d.url) window.location.href = d.url }
-                    else router.push('/pricing')
-                  }}
-                    className="rounded-3xl bg-slate-50 border border-slate-200 p-4 flex flex-col gap-2 active:scale-[0.97] transition-all text-left">
-                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${planGradient} flex items-center justify-center`}>
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-500 font-medium">{a.profile.yourPlan}</p>
-                      <p className="text-sm font-bold text-slate-800">{planLabel}</p>
-                    </div>
-                    <p className="text-[10px] text-blue-600 font-medium">{isPaid ? a.profile.manageSub : a.profile.upgrade} →</p>
-                  </button>
-                )
-              })()}
+              <div className="rounded-3xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-slate-700">Planes</p>
+                  <p className="text-[11px] text-slate-400">Próximamente</p>
+                </div>
+              </div>
             </div>
 
             {/* Cerrar sesión */}
