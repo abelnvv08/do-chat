@@ -80,11 +80,6 @@ function PinScreen({ userId, mode, onSuccess, onCancel }: {
   )
 }
 
-const PLAN_META = {
-  pro:      { label: 'Pro',      gradient: 'from-blue-500 to-indigo-600',    text: 'text-blue-600',   price: '$12.99/mes' },
-  business: { label: 'Business', gradient: 'from-violet-500 to-purple-700',  text: 'text-violet-600', price: '$29.99/mes' },
-  free:     { label: 'Free',     gradient: 'from-slate-400 to-slate-600',    text: 'text-slate-500',  price: 'Gratis' },
-}
 
 export default function PerfilPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
@@ -113,8 +108,6 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
     </div>
   )
 
-  const planKey = (me.plan ?? 'free') as keyof typeof PLAN_META
-  const plan = PLAN_META[planKey] ?? PLAN_META.free
   const hasPin = typeof window !== 'undefined' && !!localStorage.getItem(`pin_${userId}`)
 
   function saveIcal() {

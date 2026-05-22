@@ -82,7 +82,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   // Core
   const [activeTab, setActiveTab] = useState<Tab>('mensajes')
   const [profile, setProfile] = useState<{ name: string; username?: string; emoji: string; bg: string; plan?: string } | null>(null)
-  const [upgradeToast, setUpgradeToast] = useState<string | null>(null)
+
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [autoCallRoomId, setAutoCallRoomId] = useState<string | null>(null)
   const [callHistory, setCallHistory] = useState<CallLogEntry[]>(() => {
@@ -202,24 +202,6 @@ const [darkMode, setDarkMode] = useState(() => {
         if (upgraded) {
           // Remove param from URL without reload
           window.history.replaceState({}, '', `/chat/${userId}`)
-
-          // If webhook hasn't fired yet, poll until plan updates (max ~10s)
-          if (d.profile.plan !== upgraded) {
-            let attempts = 0
-            const poll = setInterval(async () => {
-              attempts++
-              const res = await fetch('/api/auth/profile')
-              const data = await res.json()
-              if (data.profile?.plan === upgraded || attempts >= 5) {
-                clearInterval(poll)
-                if (data.profile) setProfile(data.profile)
-              }
-            }, 2000)
-          }
-
-          const label = upgraded === 'pro' ? 'Pro' : 'Business'
-          setUpgradeToast(label)
-          setTimeout(() => setUpgradeToast(null), 5000)
         }
       } else {
         router.push('/login')
@@ -714,19 +696,6 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   const doneTasks = tasks.filter(t => t.done)
   return (
     <div className="bg-[#f0f4ff] flex flex-col" style={{ minHeight: '100dvh' }}>
-      {/* Upgrade success toast */}
-      {upgradeToast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm">
-          <div className="bg-emerald-600 text-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
-            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-            <p className="text-sm font-semibold">Plan {upgradeToast} activated! 🎉</p>
-            <button onClick={() => setUpgradeToast(null)} className="text-slate-600 hover:text-slate-900 ml-auto shrink-0">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Reminder toast */}
       {dueReminder && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm transition-all duration-300 ${reminderVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
