@@ -5,7 +5,7 @@ export type Lang = 'en' | 'es'
 
 const en = {
   appName: 'DO Chat',
-  langToggle: 'ES',
+  langToggle: 'EN',
 
   landing: {
     nav: { features: 'Features', pricing: 'Pricing', signIn: 'Sign in', getStarted: 'Get started free' },
@@ -206,7 +206,7 @@ const en = {
 
 const es: typeof en = {
   appName: 'DO Chat',
-  langToggle: 'EN',
+  langToggle: 'ES',
 
   landing: {
     nav: { features: 'Funciones', pricing: 'Precios', signIn: 'Iniciar sesión', getStarted: 'Empezar gratis' },
@@ -436,16 +436,18 @@ export function useLanguage() {
 }
 
 export function LangToggle({ className = '' }: { className?: string }) {
-  const { lang, setLang, t } = useLanguage()
+  const { lang, setLang } = useLanguage()
   return (
     <button
       onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-      className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${className}`}
+      className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all ${className}`}
     >
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <svg className="w-3.5 h-3.5 mr-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
       </svg>
-      {t.langToggle}
+      <span className={lang === 'es' ? 'opacity-100' : 'opacity-40'}>ES</span>
+      <span className="opacity-30">/</span>
+      <span className={lang === 'en' ? 'opacity-100' : 'opacity-40'}>EN</span>
     </button>
   )
 }

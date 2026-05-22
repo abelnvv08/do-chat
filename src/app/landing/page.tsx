@@ -140,7 +140,7 @@ const copy = {
         'Search the internet without leaving the chat',
       ],
       cardTitle: 'Summary ready',
-      cardBody: 'I detected 3 commitments: price proposal (Carlos, Friday), validate design (María, today), confirm supplier (pending).',
+      cardBody: 'I detected 3 commitments: price proposal (Jake, Friday), design review (Sarah, today), confirm supplier (pending).',
       cardFooter: 'Message sent to 5 contacts · 3 tasks created',
       stats: [
         { label: 'Tasks', n: '3' },
@@ -164,7 +164,7 @@ const copy = {
       tasks: [
         { text: 'Send Q3 proposal to management', due: 'Due today', status: 'urgent', done: false },
         { text: 'Review contract with client', due: 'Completed ✓', status: 'done', done: true },
-        { text: 'Confirm meeting with supplier', due: 'Assigned by María', status: 'assigned', done: false },
+        { text: 'Confirm meeting with supplier', due: 'Assigned by Sarah', status: 'assigned', done: false },
       ],
     },
     featureSecurity: {
@@ -284,7 +284,6 @@ export default function LandingV4() {
             <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">{c.nav.features}</a>
             <a href="#seguridad" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">{c.nav.security}</a>
             <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">{c.nav.signIn}</Link>
-            <LangToggle className="text-slate-600 border-slate-200 hover:bg-slate-50" />
             <Link href="/login?start=phone" className="block w-full text-center py-3 rounded-full bg-blue-600 text-white text-sm font-semibold">
               {c.nav.start}
             </Link>
