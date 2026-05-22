@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /chat/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /onboarding/
+Disallow: /register/
+Disallow: /verify/
+
+Sitemap: https://getdochat.com/sitemap.xml
