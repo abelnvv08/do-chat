@@ -1962,6 +1962,24 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             )
           }
 
+          if (msg.type === 'ai_limit') {
+            return (
+              <div key={msg.id} className="flex items-start gap-2.5 py-1 max-w-[85%]">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center shrink-0 mt-0.5 shadow-sm opacity-60">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                  </svg>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at)}</p>
+                  <div className="rounded-2xl rounded-tl-sm bg-slate-900 border border-slate-800 px-4 py-3 shadow-sm">
+                    <p className="text-sm text-slate-300 leading-relaxed">{msg.content}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           if (isAI) {
             return (
               <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-start gap-2.5 py-1 max-w-[85%] ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>

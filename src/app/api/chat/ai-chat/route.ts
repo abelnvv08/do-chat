@@ -432,7 +432,7 @@ export async function POST(req: NextRequest) {
     .eq('user_id', user_id).eq('type', 'ai').gte('created_at', todayStart.toISOString())
   if ((count ?? 0) >= planConfig.limit) {
     const msg = buildLimitMessage(plan, planConfig.limit, geoCountry)
-    await supabase.from('demo_messages').insert({ user_id, content: msg, type: 'ai', room_id: aiRoomId })
+    await supabase.from('demo_messages').insert({ user_id, content: msg, type: 'ai_limit', room_id: aiRoomId })
     return NextResponse.json({ reply: msg, actions: [] })
   }
 

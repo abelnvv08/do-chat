@@ -2,110 +2,98 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — DO Chat',
-  description: 'DO Chat Privacy Policy. Learn how we collect, use, and protect your personal information.',
+  title: 'Política de Privacidad — DO Chat',
+  description: 'Política de privacidad de DO Chat. Conoce cómo recopilamos, usamos y protegemos tu información personal.',
 }
 
 const sections = [
   {
-    title: '1. Who We Are',
-    body: 'DO Chat ("we," "our," or "us") is a company incorporated in the United States. We operate a professional messaging platform available at getdochat.com and through our mobile applications. For privacy-related inquiries, contact us at privacy@getdochat.com.',
+    title: '1. Quiénes somos',
+    body: 'DO Chat ("nosotros", "nuestro" o "nos") es una plataforma de mensajería profesional disponible en getdochat.com y en nuestras aplicaciones móviles. Para consultas sobre privacidad, escríbenos a privacy@getdochat.com.',
   },
   {
-    title: '2. Information We Collect',
-    body: `We collect only what is necessary to provide the Service:
+    title: '2. Información que recopilamos',
+    body: `Recopilamos únicamente lo necesario para brindarte el servicio:
 
-Phone number — used for account creation and SMS verification (via Twilio).
-Profile name and photo — optional, to personalize your experience.
-Messages and files — encrypted end-to-end using AES-256-GCM and ECDH P-256. We cannot read your message content.
-Push notification tokens — to deliver real-time alerts for messages, calls, and tasks.
-Payment information — processed directly by Stripe. We never store card numbers or full payment details.
-Usage data — aggregate analytics for product improvement (e.g., feature usage, error reports via Sentry).
-Device and browser information — for debugging and compatibility purposes.`,
+• Número de teléfono — para crear tu cuenta y verificar tu identidad por SMS.
+• Nombre y foto de perfil — opcional, para personalizar tu experiencia.
+• Mensajes y archivos — cifrados de extremo a extremo con AES-256-GCM. No podemos leer el contenido de tus conversaciones.
+• Tokens de notificaciones push — para enviarte alertas de mensajes, llamadas y tareas en tiempo real.
+• Datos de uso — estadísticas agregadas para mejorar el producto (p. ej., uso de funciones, reportes de errores vía Sentry).
+• Información del dispositivo — para diagnóstico de compatibilidad y errores.`,
   },
   {
-    title: '3. How We Use Your Information',
-    body: `We use your data solely to operate and improve the Service:
+    title: '3. Cómo usamos tu información',
+    body: `Usamos tus datos únicamente para operar y mejorar el servicio:
 
-• Create and manage your account
-• Enable messaging, file sharing, voice and video calls, and AI features
-• Process subscription payments and issue receipts
-• Send service notifications (new messages, missed calls, task assignments)
-• Detect and prevent fraud, abuse, or unauthorized access
-• Improve platform performance and fix bugs
-• Comply with applicable U.S. laws and legal obligations
+• Crear y gestionar tu cuenta
+• Habilitar mensajería, archivos, llamadas de voz y video, y funciones de IA
+• Enviar notificaciones del servicio (mensajes nuevos, llamadas perdidas, asignaciones de tareas)
+• Detectar y prevenir fraude, abuso o acceso no autorizado
+• Mejorar el rendimiento de la plataforma y corregir errores
 
-We do not sell, rent, or share your personal data with third parties for advertising or marketing purposes — ever.`,
+No vendemos, alquilamos ni compartimos tus datos personales con terceros para publicidad o marketing — nunca.`,
   },
   {
-    title: '4. End-to-End Encryption',
-    body: `DO Chat is built with privacy at its core:
+    title: '4. Cifrado de extremo a extremo',
+    body: `DO Chat está construido con privacidad por diseño:
 
-• All direct messages and group messages are encrypted at rest using AES-256-GCM.
-• Encryption keys are derived per-session using ECDH P-256 and are never stored on our servers.
-• Voice and video calls use WebRTC with DTLS-SRTP encryption.
-• DO Chat staff cannot read your private conversations.
-• Messages sent to DO AI (our AI assistant) are processed by Anthropic's API and are not end-to-end encrypted — use discretion when sharing sensitive information with AI features.`,
+• Todos los mensajes directos y grupales están cifrados en reposo con AES-256-GCM.
+• Las llamadas de voz y video usan WebRTC con cifrado DTLS-SRTP.
+• El personal de DO Chat no puede leer tus conversaciones privadas.
+• Los mensajes enviados a @do AI son procesados por la API de Anthropic y no están cifrados de extremo a extremo — usa tu criterio al compartir información sensible con funciones de IA.`,
   },
   {
-    title: '5. Third-Party Service Providers',
-    body: `We share data only with the following service providers, each bound by data processing agreements:
+    title: '5. Proveedores de servicios',
+    body: `Compartimos datos solo con los siguientes proveedores, cada uno sujeto a acuerdos de procesamiento de datos:
 
-• Supabase — database, authentication, and file storage (USA)
-• Stripe — payment processing and subscription management (USA)
-• Vercel — application hosting and global CDN (USA)
-• Anthropic — AI message processing for DO AI features (USA)
-• Twilio — SMS verification for account login (USA)
-• Sentry — error monitoring and crash reporting (USA)
-
-We do not use your data for cross-app tracking or advertising networks.`,
+• Supabase — base de datos, autenticación y almacenamiento de archivos (EE. UU.)
+• Vercel — hospedaje de la aplicación y CDN global (EE. UU.)
+• Anthropic — procesamiento de mensajes de IA para @do (EE. UU.)
+• Twilio — verificación por SMS para inicio de sesión (EE. UU.)
+• Sentry — monitoreo de errores y reportes de fallos (EE. UU.)`,
   },
   {
-    title: '6. Your Rights Under U.S. Law (CCPA)',
-    body: `If you are a California resident, the California Consumer Privacy Act (CCPA) grants you the following rights:
+    title: '6. Retención de datos',
+    body: `Conservamos tus datos mientras tu cuenta esté activa:
 
-Right to Know — You can request a copy of the personal information we hold about you.
-Right to Delete — You can request that we delete your personal information.
-Right to Opt Out — We do not sell personal data. There is nothing to opt out of.
-Right to Non-Discrimination — We will not discriminate against you for exercising any of these rights.
-
-To exercise your rights, use the "Delete Account" option in your Profile settings, or email privacy@getdochat.com. We respond to all CCPA requests within 45 days.`,
+• Mensajes: almacenados hasta que los elimines o cierres tu cuenta.
+• Registros de llamadas: 90 días.
+• Datos de uso agregados: hasta 2 años.
+• Al eliminar tu cuenta, borramos tus datos personales en un plazo de 30 días, salvo que la ley exija conservarlos.`,
   },
   {
-    title: '7. Data Retention',
-    body: `We retain your data as long as your account is active.
+    title: '7. Tus derechos',
+    body: `Dependiendo de tu ubicación, puedes tener los siguientes derechos:
 
-When you delete your account:
-• Messages and files are permanently deleted within 30 days.
-• Profile information is removed immediately.
-• Billing records are retained for 7 years as required by U.S. tax law.
+• Acceso: solicitar una copia de tus datos personales.
+• Rectificación: corregir datos inexactos.
+• Eliminación: solicitar que borremos tu información.
+• Portabilidad: recibir tus datos en un formato legible por máquina.
+• Oposición: objetar ciertos tipos de procesamiento.
 
-You may export your data at any time from your Profile settings before deleting your account.`,
+Para ejercer cualquiera de estos derechos, escríbenos a privacy@getdochat.com. Respondemos en un plazo de 30 días hábiles.`,
   },
   {
-    title: '8. Cookies and Local Storage',
-    body: 'DO Chat uses strictly necessary session cookies to maintain your authenticated session. We do not use advertising cookies, cross-site tracking cookies, or third-party analytics cookies. Local storage (localStorage) is used solely for interface preferences such as dark mode and language settings.',
+    title: '8. Seguridad',
+    body: 'Implementamos medidas técnicas y organizativas para proteger tu información: cifrado en tránsito (TLS 1.3) y en reposo (AES-256-GCM), acceso restringido a datos de producción, monitoreo de seguridad y revisiones periódicas. Ningún sistema es 100% seguro; si detectas una vulnerabilidad, repórtala a security@getdochat.com.',
   },
   {
-    title: `9. Children's Privacy`,
-    body: `DO Chat is not directed to children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe a child has created an account or provided us with personal information, please contact us immediately at privacy@getdochat.com and we will promptly delete that information.`,
+    title: '9. Menores de edad',
+    body: 'DO Chat no está dirigido a menores de 13 años. No recopilamos conscientemente información de niños menores de 13 años. Si crees que un menor nos ha proporcionado datos, contáctanos para eliminarlos de inmediato.',
   },
   {
-    title: '10. Security',
-    body: 'We implement industry-standard security measures including HTTPS everywhere, encrypted data storage, access controls on all production systems, and regular security reviews. In the event of a data breach that affects your personal information, we will notify you in accordance with applicable U.S. state breach notification laws.',
+    title: '10. Cambios a esta política',
+    body: 'Podemos actualizar esta política periódicamente. Te notificaremos de cambios significativos mediante un aviso en la app o por correo electrónico con al menos 15 días de anticipación. El uso continuado del servicio tras la notificación implica tu aceptación de los cambios.',
   },
   {
-    title: '11. Changes to This Policy',
-    body: 'We may update this Privacy Policy from time to time. We will notify you of material changes via in-app notification at least 30 days before they take effect. The "Last updated" date at the top of this page will always reflect when the policy was last revised. Continued use of the Service after changes take effect constitutes acceptance of the updated policy.',
-  },
-  {
-    title: '12. Contact Us',
-    body: `For privacy questions, data requests, or concerns:
+    title: '11. Contacto',
+    body: `Para preguntas, solicitudes de datos o inquietudes sobre privacidad:
 
-Email: privacy@getdochat.com
-Response time: within 5 business days for general inquiries, 45 days for CCPA requests.
+Correo: privacy@getdochat.com
+Tiempo de respuesta: hasta 30 días hábiles.
 
-We are committed to resolving any privacy concern you may have promptly and transparently.`,
+Nos comprometemos a resolver cualquier inquietud de privacidad de forma rápida y transparente.`,
   },
 ]
 
@@ -116,15 +104,15 @@ export default function PrivacyPage() {
       <div className="bg-[#0f172a] text-white">
         <div className="max-w-3xl mx-auto px-6 py-12">
           <Link href="/landing" className="text-blue-400 text-sm hover:text-blue-300 transition-colors mb-6 inline-flex items-center gap-1.5">
-            ← Back to DO Chat
+            ← Volver a DO Chat
           </Link>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-lg shrink-0">🔒</div>
-            <h1 className="text-3xl font-bold">Privacy Policy</h1>
+            <h1 className="text-3xl font-bold">Política de Privacidad</h1>
           </div>
-          <p className="text-gray-400 text-sm">Last updated: May 18, 2026 · Effective immediately</p>
+          <p className="text-gray-400 text-sm">Última actualización: 21 de mayo de 2026 · Vigente de inmediato</p>
           <p className="text-gray-300 text-sm mt-3 max-w-xl leading-relaxed">
-            Your privacy matters. DO Chat is built with end-to-end encryption by default — we cannot read your messages. This policy explains exactly what data we collect, why, and your rights.
+            Tu privacidad es importante. DO Chat está construido con cifrado de extremo a extremo por defecto — no podemos leer tus mensajes. Esta política explica exactamente qué datos recopilamos, por qué y cuáles son tus derechos.
           </p>
         </div>
       </div>
@@ -132,7 +120,7 @@ export default function PrivacyPage() {
       {/* Table of contents */}
       <div className="bg-gray-50 border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-6 py-5">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Contents</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Contenido</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {sections.map(s => (
               <a key={s.title} href={`#${s.title.replace(/\s+/g, '-').toLowerCase()}`}
@@ -148,18 +136,14 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-10">
         {sections.map(s => (
           <section key={s.title} id={s.title.replace(/\s+/g, '-').toLowerCase()}>
-            <h2 className="text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-100">{s.title}</h2>
-            <p className="text-gray-600 text-sm leading-7 whitespace-pre-line">{s.body}</p>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{s.title}</h2>
+            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{s.body}</p>
           </section>
         ))}
+      </div>
 
-        <div className="pt-8 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-400">
-          <div className="flex gap-4">
-            <Link href="/terms" className="hover:text-gray-700 transition-colors">Terms of Service</Link>
-            <Link href="/landing" className="hover:text-gray-700 transition-colors">Home</Link>
-          </div>
-          <span>© 2026 DO Chat Inc. All rights reserved.</span>
-        </div>
+      <div className="border-t border-gray-100 py-8 px-6 text-center">
+        <p className="text-gray-400 text-xs">© 2025 DO Chat · <Link href="/terms" className="hover:text-gray-600 transition-colors">Términos de Servicio</Link></p>
       </div>
     </div>
   )
