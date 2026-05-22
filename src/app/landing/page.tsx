@@ -2,42 +2,16 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function LandingV4() {
-  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [annual, setAnnual] = useState(true)
-  const [pricingLoading, setPricingLoading] = useState<string | null>(null)
-  const [pricingError, setPricingError] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  async function handlePlan(plan: string) {
-    if (plan === 'free') { router.push('/login'); return }
-    setPricingLoading(plan)
-    setPricingError(null)
-    try {
-      const res = await fetch('/api/payments/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      })
-      const data = await res.json()
-      if (res.status === 401) { router.push('/login?next=/pricing'); return }
-      if (data.url) { window.location.href = data.url; return }
-      setPricingError(data.error ?? 'Algo salió mal. Intenta de nuevo.')
-    } catch {
-      setPricingError('Error de conexión. Intenta de nuevo.')
-    } finally {
-      setPricingLoading(null)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans antialiased">
@@ -55,7 +29,6 @@ export default function LandingV4() {
           <div className="hidden sm:flex items-center gap-8">
             <a href="#funciones" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Funciones</a>
             <a href="#seguridad" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Seguridad</a>
-            <a href="#precios" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Precios</a>
             <Link href="/login" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Iniciar sesión</Link>
             <Link href="/login?start=phone"
               className="px-5 py-2.5 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
@@ -76,7 +49,6 @@ export default function LandingV4() {
           <div className="sm:hidden bg-white border-t border-slate-100 px-6 py-5 space-y-4">
             <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Funciones</a>
             <a href="#seguridad" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Seguridad</a>
-            <a href="#precios" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Precios</a>
             <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Iniciar sesión</Link>
             <Link href="/login?start=phone" className="block w-full text-center py-3 rounded-full bg-blue-600 text-white text-sm font-semibold">
               Empezar gratis
@@ -444,139 +416,21 @@ export default function LandingV4() {
 
       {/* ── PRICING ── */}
       <section id="precios" className="py-24 px-6 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-extrabold text-slate-900 mb-4">
-              Comienza gratis,<br />crece cuando lo necesites
-            </h2>
-            <p className="text-slate-500 text-lg max-w-md mx-auto">Sin contratos. Sin sorpresas. Cancela cuando quieras.</p>
-            <div className="flex items-center justify-center gap-3 mt-8">
-              <span className={`text-sm font-medium ${!annual ? 'text-slate-900' : 'text-slate-400'}`}>Mensual</span>
-              <button onClick={() => setAnnual(!annual)}
-                className={`w-12 h-6 rounded-full transition-all relative ${annual ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${annual ? 'left-7' : 'left-1'}`} />
-              </button>
-              <span className={`text-sm font-medium ${annual ? 'text-slate-900' : 'text-slate-400'}`}>
-                Anual
-                <span className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">−20%</span>
-              </span>
-            </div>
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-white border border-slate-200 shadow-sm mb-8">
+            <svg className="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+            </svg>
           </div>
-
-          {pricingError && (
-            <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-8">
-              <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.344 4.876c.866 1.5-.217 3.374-1.948 3.374H2.604c-1.73 0-2.813-1.874-1.948-3.374l7.396-12.748c.866-1.5 3.032-1.5 3.898 0l7.394 12.748zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-              <p className="text-red-700 text-sm flex-1">{pricingError}</p>
-              <button onClick={() => setPricingError(null)} className="text-red-400 hover:text-red-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          )}
-
-          <div className="grid md:grid-cols-3 gap-5">
-            {([
-              {
-                key: 'free',
-                name: 'Free',
-                monthlyPrice: 0,
-                annualPrice: 0,
-                tagline: 'Para empezar sin compromisos',
-                features: ['Mensajes y llamadas ilimitados', 'Cifrado E2E', 'do AI — 5 consultas/día', '2 GB de almacenamiento'],
-                cta: 'Crear cuenta gratis',
-                highlight: false,
-              },
-              {
-                key: 'pro',
-                name: 'Pro',
-                monthlyPrice: 12.99,
-                annualPrice: 10,
-                tagline: 'Para equipos que producen más',
-                features: ['Todo en Free', 'do AI — 50 consultas/día', '100 GB de almacenamiento', 'Llamadas grupales de video', 'Soporte prioritario'],
-                cta: 'Probar gratis 14 días',
-                highlight: true,
-              },
-              {
-                key: 'business',
-                name: 'MAX',
-                monthlyPrice: 99,
-                annualPrice: 79,
-                tagline: 'Para empresas a escala',
-                features: ['Todo en Pro', 'do AI — 250 consultas/día', '500 GB de almacenamiento', 'SLA garantizado', 'Soporte 24/7 + factura'],
-                cta: 'Hablar con ventas',
-                highlight: false,
-              },
-            ] as const).map(plan => {
-              const price = annual ? plan.annualPrice : plan.monthlyPrice
-              const totalAnual = plan.annualPrice * 12
-              const savingsAnual = (plan.monthlyPrice - plan.annualPrice) * 12
-              return (
-                <div key={plan.name}
-                  className={`rounded-3xl p-7 flex flex-col relative ${plan.highlight ? 'bg-blue-600 shadow-2xl shadow-blue-200 scale-[1.02]' : 'bg-white border border-slate-200'}`}>
-                  {plan.highlight && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow">Más popular</span>
-                    </div>
-                  )}
-                  <div className="mb-7">
-                    <p className={`text-xs font-bold tracking-widest uppercase mb-5 ${plan.highlight ? 'text-blue-200' : 'text-slate-400'}`}>{plan.name}</p>
-                    {price === 0 ? (
-                      <>
-                        <p className={`text-5xl font-extrabold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>Gratis</p>
-                        <p className={`text-sm mt-1.5 ${plan.highlight ? 'text-blue-200' : 'text-slate-400'}`}>Para siempre · Sin tarjeta</p>
-                      </>
-                    ) : annual ? (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <p className={`text-5xl font-extrabold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>${totalAnual}</p>
-                          <p className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-slate-400'}`}>/año</p>
-                        </div>
-                        <p className={`text-sm mt-1.5 ${plan.highlight ? 'text-blue-200' : 'text-slate-400'}`}>
-                          ${price}/mes · <span className="text-emerald-400 font-semibold">ahorras ${savingsAnual.toFixed(0)}</span>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <p className={`text-5xl font-extrabold ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>${price}</p>
-                          <p className={`text-sm ${plan.highlight ? 'text-blue-200' : 'text-slate-400'}`}>/mes</p>
-                        </div>
-                        <p className={`text-sm mt-1.5 ${plan.highlight ? 'text-blue-200' : 'text-slate-400'}`}>{plan.tagline}</p>
-                      </>
-                    )}
-                    {price !== 0 && <p className={`text-sm mt-3 ${plan.highlight ? 'text-blue-100' : 'text-slate-500'}`}>{plan.tagline}</p>}
-                  </div>
-
-                  <ul className="space-y-3 flex-1 mb-7">
-                    {plan.features.map(f => (
-                      <li key={f} className="flex items-start gap-3">
-                        <svg className={`w-4 h-4 mt-0.5 shrink-0 ${plan.highlight ? 'text-blue-200' : 'text-emerald-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                        <span className={`text-sm ${plan.highlight ? 'text-white' : 'text-slate-600'}`}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={() => handlePlan(plan.key)}
-                    disabled={pricingLoading === plan.key}
-                    className={`w-full py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-60 ${
-                      plan.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-slate-900 text-white hover:bg-slate-800'
-                    }`}>
-                    {pricingLoading === plan.key ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${plan.highlight ? 'border-blue-600' : 'border-white'}`} />
-                        Redirigiendo...
-                      </span>
-                    ) : plan.cta}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-          <p className="text-center text-sm text-slate-400 mt-8">Todos los planes incluyen cifrado E2E y actualizaciones automáticas.</p>
+          <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-3">Planes</p>
+          <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Próximamente</h2>
+          <p className="text-slate-500 text-lg max-w-md mx-auto">
+            Estamos trabajando en los planes de pago. Por ahora, disfruta DO Chat completamente gratis.
+          </p>
+          <Link href="/login?start=phone"
+            className="inline-flex items-center gap-2 mt-8 px-8 py-3.5 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+            Crear cuenta gratis
+          </Link>
         </div>
       </section>
 
@@ -594,12 +448,8 @@ export default function LandingV4() {
               className="px-10 py-4 rounded-full bg-blue-600 text-white font-bold text-base hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 hover:-translate-y-0.5 active:scale-[0.98]">
               Crear cuenta gratis
             </Link>
-            <a href="#precios"
-              className="px-8 py-4 rounded-full border border-slate-200 text-slate-700 font-semibold text-base hover:bg-slate-50 transition-all">
-              Ver precios →
-            </a>
           </div>
-          <p className="text-slate-400 text-sm mt-6">Sin tarjeta · Sin instalación · Cancela cuando quieras</p>
+          <p className="text-slate-400 text-sm mt-6">Sin tarjeta · Sin instalación · Completamente gratis</p>
         </div>
       </section>
 
@@ -622,7 +472,6 @@ export default function LandingV4() {
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Producto</p>
               <div className="space-y-3">
                 <a href="#funciones" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Funciones</a>
-                <a href="#precios" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Precios</a>
                 <a href="#seguridad" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Seguridad</a>
               </div>
             </div>
