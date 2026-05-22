@@ -451,78 +451,70 @@ export default function LandingV4() {
             </div>
 
             {/* ── Pro ── */}
-            <div className="rounded-3xl p-7 flex flex-col relative bg-blue-600 shadow-2xl shadow-blue-200 scale-[1.02]">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+            <div className="rounded-3xl overflow-hidden relative bg-blue-600 shadow-2xl shadow-blue-200 scale-[1.02]">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
                 <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-lg">Más popular</span>
               </div>
-              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-blue-200">Pro</p>
-
-              {/* Price — blurred */}
-              <div className="relative mb-7 select-none">
-                <div className="blur-sm pointer-events-none">
+              {/* Content — blurred */}
+              <div className="p-7 blur-sm pointer-events-none select-none">
+                <p className="text-xs font-bold tracking-widest uppercase mb-5 text-blue-200">Pro</p>
+                <div className="mb-7">
                   <div className="flex items-baseline gap-1">
                     <p className="text-5xl font-extrabold text-white">$XX</p>
                     <p className="text-sm text-blue-200">/mes</p>
                   </div>
                   <p className="text-sm mt-1.5 text-blue-200">Para equipos que producen más</p>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white text-xs font-semibold tracking-wide">
-                    Próximamente
-                  </span>
-                </div>
+                <ul className="space-y-3 mb-7">
+                  {['Todo en Gratis', 'do AI · más consultas/día', 'Mayor almacenamiento', 'Llamadas grupales de video', 'Soporte prioritario'].map(f => (
+                    <li key={f} className="flex items-start gap-3">
+                      <svg className="w-4 h-4 mt-0.5 shrink-0 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span className="text-sm text-white">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="w-full py-3.5 rounded-2xl font-bold text-sm bg-white text-blue-600 text-center">Suscribirse</div>
               </div>
-
-              <ul className="space-y-3 flex-1 mb-7">
-                {['Todo en Gratis', 'do AI · más consultas/día', 'Mayor almacenamiento', 'Llamadas grupales de video', 'Soporte prioritario'].map(f => (
-                  <li key={f} className="flex items-start gap-3">
-                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    <span className="text-sm text-white">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <button disabled
-                className="w-full py-3.5 rounded-2xl font-bold text-sm bg-white/20 text-white/50 cursor-not-allowed">
-                Próximamente
-              </button>
+              {/* Overlay */}
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-blue-700/40 backdrop-blur-[2px]">
+                <span className="px-5 py-2.5 rounded-full bg-white/15 border border-white/30 text-white text-sm font-semibold tracking-wide backdrop-blur-sm">
+                  Próximamente
+                </span>
+              </div>
             </div>
 
             {/* ── MAX ── */}
-            <div className="rounded-3xl p-7 flex flex-col bg-white border border-slate-200">
-              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">MAX</p>
-
-              {/* Price — blurred */}
-              <div className="relative mb-7 select-none">
-                <div className="blur-sm pointer-events-none">
+            <div className="rounded-3xl overflow-hidden relative bg-white border border-slate-200">
+              {/* Content — blurred */}
+              <div className="p-7 blur-sm pointer-events-none select-none">
+                <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">MAX</p>
+                <div className="mb-7">
                   <div className="flex items-baseline gap-1">
                     <p className="text-5xl font-extrabold text-slate-900">$XX</p>
                     <p className="text-sm text-slate-400">/mes</p>
                   </div>
                   <p className="text-sm mt-1.5 text-slate-400">Para empresas a escala</p>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold tracking-wide">
-                    Próximamente
-                  </span>
-                </div>
+                <ul className="space-y-3 mb-7">
+                  {['Todo en Pro', 'do AI · máximas consultas/día', 'Almacenamiento extendido', 'SLA garantizado', 'Soporte 24/7'].map(f => (
+                    <li key={f} className="flex items-start gap-3">
+                      <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span className="text-sm text-slate-600">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="w-full py-3.5 rounded-2xl font-bold text-sm bg-slate-900 text-white text-center">Suscribirse</div>
               </div>
-
-              <ul className="space-y-3 flex-1 mb-7">
-                {['Todo en Pro', 'do AI · máximas consultas/día', 'Almacenamiento extendido', 'SLA garantizado', 'Soporte 24/7'].map(f => (
-                  <li key={f} className="flex items-start gap-3">
-                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    <span className="text-sm text-slate-600">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <button disabled
-                className="w-full py-3.5 rounded-2xl font-bold text-sm bg-slate-100 text-slate-400 cursor-not-allowed">
-                Próximamente
-              </button>
+              {/* Overlay */}
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/50 backdrop-blur-[2px]">
+                <span className="px-5 py-2.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-sm font-semibold tracking-wide">
+                  Próximamente
+                </span>
+              </div>
             </div>
 
           </div>
