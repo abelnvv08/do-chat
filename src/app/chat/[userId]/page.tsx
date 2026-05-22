@@ -917,8 +917,47 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 </div>
               )}
               {!loading && normalRooms.length === 0 && pinnedRooms.length === 0 && !aiRoom && (
-                <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
-                  <p className="text-slate-500 text-sm">{a.chats.empty}</p>
+                <div className="flex flex-col items-center justify-center gap-6 py-14 px-8 text-center">
+                  {/* Logo */}
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-xl shadow-blue-500/25">
+                    <Image src="/icon-192.png" alt="DO Chat" width={48} height={48} className="rounded-2xl" />
+                  </div>
+                  {/* Welcome */}
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800 mb-1.5">
+                      {a.chats.welcomeTitle.replace('{name}', profile.name.split(' ')[0])}
+                    </h2>
+                    <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">{a.chats.welcomeSubtitle}</p>
+                  </div>
+                  {/* CTAs */}
+                  <div className="w-full max-w-xs flex flex-col gap-3">
+                    {/* Talk to AI */}
+                    <button onClick={() => setActiveRoomId(`ai-${userId}`)}
+                      className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl bg-slate-900 text-white shadow-lg active:scale-[0.98] transition-all border border-white/5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-700 to-indigo-800 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+                        </svg>
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-semibold">{a.chats.welcomeCTAAI}</p>
+                        <p className="text-xs text-slate-400">{a.chats.welcomeCTAAIHint}</p>
+                      </div>
+                      <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                    {/* Add contact */}
+                    <button onClick={() => setActiveTab('contactos')}
+                      className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all">
+                      <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-semibold">{a.chats.welcomeCTAContact}</p>
+                        <p className="text-xs text-blue-200">{a.chats.welcomeCTAContactHint}</p>
+                      </div>
+                      <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
