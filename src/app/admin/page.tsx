@@ -10,7 +10,8 @@ import {
 import {
   Users, MessageSquare, Sparkles, TrendingUp, DollarSign,
   HardDrive, UserPlus, ShieldCheck, Settings, LogOut,
-  Trash2, Search, ChevronLeft, ChevronRight, Crown, Zap
+  Trash2, Search, ChevronLeft, ChevronRight, Crown, Zap,
+  Pencil, Megaphone, Send, CheckCircle, X
 } from 'lucide-react'
 
 type Stats = {
@@ -92,6 +93,16 @@ export default function AdminPage() {
   const [cronResult, setCronResult] = useState<string | null>(null)
   const [deleteModal, setDeleteModal] = useState<User | null>(null)
 
+  // Plan change
+  const [changingPlanId, setChangingPlanId] = useState<string | null>(null)
+  const [planSaving, setPlanSaving] = useState(false)
+
+  // Broadcast
+  const [broadcastMsg, setBroadcastMsg] = useState('')
+  const [broadcasting, setBroadcasting] = useState(false)
+  const [broadcastResult, setBroadcastResult] = useState<{ ok: boolean; text: string } | null>(null)
+  const [broadcastConfirm, setBroadcastConfirm] = useState(false)
+
   const fetchStats = useCallback(async () => {
     const res = await fetch('/api/admin/stats')
     if (res.status === 403) { setForbidden(true); return }
@@ -121,13 +132,53 @@ export default function AdminPage() {
     fetchStats()
   }
 
-  async function triggerCron(path: string, label: string) {
+  async function changePlan(userId: string, plan: string) {
+    setPlanSaving(true)
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, plan }),
+    })
+    setPlanSaving(false)
+    setChangingPlanId(null)
+    fetchUsers(usersPage, search)
+  }
+
+  async function triggerCron(cronPath: string, label: string) {
     setCronRunning(label); setCronResult(null)
     try {
-      const res = await fetch(path)
+      const res = await fetch('/api/admin/run-cron', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: cronPath }),
+      })
       setCronResult(JSON.stringify(await res.json(), null, 2))
     } catch (e: any) { setCronResult('Error: ' + e.message) }
     setCronRunning(null)
+  }
+
+  async function sendBroadcast() {
+    if (!broadcastMsg.trim()) return
+    setBroadcasting(true)
+    setBroadcastResult(null)
+    setBroadcastConfirm(false)
+    try {
+      const res = await fetch('/api/admin/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: broadcastMsg }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setBroadcastResult({ ok: true, text: `✓ Enviado a ${data.sent} usuarios` })
+        setBroadcastMsg('')
+      } else {
+        setBroadcastResult({ ok: false, text: `Error: ${data.error}` })
+      }
+    } catch (e: any) {
+      setBroadcastResult({ ok: false, text: `Error: ${e.message}` })
+    }
+    setBroadcasting(false)
   }
 
   if (forbidden) return (
@@ -367,7 +418,31 @@ export default function AdminPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4"><PlanBadge plan={u.plan} /></td>
+                        <td className="px-4 py-4">
+                          {changingPlanId === u.id ? (
+                            <select
+                              autoFocus
+                              defaultValue={u.plan}
+                              disabled={planSaving}
+                              onBlur={() => { if (!planSaving) setChangingPlanId(null) }}
+                              onChange={e => changePlan(u.id, e.target.value)}
+                              className="text-xs border border-blue-300 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500 bg-white shadow-sm"
+                            >
+                              <option value="free">Free</option>
+                              <option value="pro">Pro</option>
+                              <option value="business">MAX</option>
+                            </select>
+                          ) : (
+                            <button
+                              onClick={() => setChangingPlanId(u.id)}
+                              className="group flex items-center gap-1.5"
+                              title="Cambiar plan"
+                            >
+                              <PlanBadge plan={u.plan} />
+                              <Pencil className="w-3 h-3 text-gray-300 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          )}
+                        </td>
                         <td className="px-4 py-4 text-gray-500 text-sm hidden lg:table-cell">{u.phone ?? '—'}</td>
                         <td className="px-4 py-4 text-gray-400 text-xs hidden md:table-cell">
                           {new Date(u.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' })}
@@ -409,6 +484,58 @@ export default function AdminPage() {
           {/* ─── Sistema ─── */}
           {tab === 'sistema' && (
             <div className="space-y-4 max-w-2xl">
+
+              {/* Broadcast */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                  <Megaphone className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="font-semibold text-gray-900">Broadcast</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Envía un mensaje de @do a todos los usuarios</p>
+                  </div>
+                </div>
+                <div className="px-6 py-4 space-y-3">
+                  <textarea
+                    value={broadcastMsg}
+                    onChange={e => setBroadcastMsg(e.target.value)}
+                    placeholder="Escribe el mensaje que recibirán todos los usuarios en su chat con @do…"
+                    rows={3}
+                    className="w-full text-sm border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 resize-none"
+                  />
+                  {broadcastResult && (
+                    <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-2.5 ${broadcastResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                      {broadcastResult.ok ? <CheckCircle className="w-4 h-4 shrink-0" /> : <X className="w-4 h-4 shrink-0" />}
+                      {broadcastResult.text}
+                    </div>
+                  )}
+                  {!broadcastConfirm ? (
+                    <button
+                      onClick={() => { if (broadcastMsg.trim()) setBroadcastConfirm(true) }}
+                      disabled={!broadcastMsg.trim() || broadcasting}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-blue-600 text-white rounded-xl disabled:opacity-40 hover:bg-blue-700 transition-colors"
+                    >
+                      <Send className="w-4 h-4" />
+                      Enviar a todos
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm text-amber-700 bg-amber-50 rounded-xl px-4 py-2.5 flex-1">
+                        ¿Confirmas? Se enviará a <strong>{stats?.totalUsers ?? '?'} usuarios</strong>.
+                      </p>
+                      <button onClick={sendBroadcast} disabled={broadcasting}
+                        className="px-4 py-2.5 text-sm font-semibold bg-amber-500 text-white rounded-xl hover:bg-amber-600 disabled:opacity-40 transition-colors shrink-0">
+                        {broadcasting ? 'Enviando…' : 'Confirmar'}
+                      </button>
+                      <button onClick={() => setBroadcastConfirm(false)}
+                        className="px-4 py-2.5 text-sm font-medium border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors shrink-0">
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Cron Jobs */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100">
                   <p className="font-semibold text-gray-900">Cron Jobs</p>
@@ -438,6 +565,7 @@ export default function AdminPage() {
                 )}
               </div>
 
+              {/* Privacidad */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100">
                   <p className="font-semibold text-gray-900">Privacidad & Seguridad</p>
@@ -446,6 +574,8 @@ export default function AdminPage() {
                   {[
                     { ok: true, text: 'Mensajes cifrados en reposo (AES-256-GCM)' },
                     { ok: true, text: 'E2EE para DMs y grupos (ECDH P-256)' },
+                    { ok: true, text: 'Panel admin protegido a nivel middleware' },
+                    { ok: true, text: 'Cron jobs solo ejecutables con CRON_SECRET' },
                     { ok: true, text: 'Archivos eliminados del storage al borrar conversación' },
                     { ok: true, text: 'Datos eliminados solo a petición del usuario' },
                     { ok: false, text: 'Mensajes al agente IA pasan por API de Anthropic' },
@@ -458,6 +588,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* Entorno */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100">
                   <p className="font-semibold text-gray-900">Entorno</p>
@@ -468,7 +599,7 @@ export default function AdminPage() {
                     ['Auth', 'Supabase Auth + OTP SMS'],
                     ['Storage', 'Supabase Storage'],
                     ['IA', 'Anthropic Claude (Haiku / Sonnet)'],
-                    ['Pagos', 'Stripe'],
+                    ['Pagos', 'Próximamente'],
                     ['Push', 'Web Push API (VAPID)'],
                     ['Deploy', 'Vercel'],
                   ].map(([k, v]) => (
@@ -485,7 +616,7 @@ export default function AdminPage() {
         </div>
       </main>
 
-      {/* Delete modal */}
+      {/* ── Delete modal ── */}
       {deleteModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">

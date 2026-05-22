@@ -40,6 +40,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
+  // Admin guard — block any authenticated non-admin from loading /admin
+  if (pathname.startsWith('/admin')) {
+    if (!user) return NextResponse.redirect(new URL('/login', req.url))
+    const adminIds = (process.env.ADMIN_USER_IDS ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+    if (!adminIds.includes(user.id)) {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+  }
+
   // Root page handles its own redirect client-side (splash screen)
 
   return res

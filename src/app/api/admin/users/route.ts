@@ -1,29 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
+import { requireAdmin, adminSupabase } from '@/lib/admin-auth'
 
-function admin() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-}
-
-async function requireAdmin(req: NextRequest): Promise<string | null> {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const allowed = (process.env.ADMIN_USER_IDS ?? '').split(',').map(s => s.trim()).filter(Boolean)
-  if (!allowed.includes(user.id)) return null
-  return user.id
-}
+const VALID_PLANS = ['free', 'pro', 'business'] as const
+type Plan = typeof VALID_PLANS[number]
 
 export async function GET(req: NextRequest) {
   const adminId = await requireAdmin(req)
   if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const db = admin()
+  const db = adminSupabase()
   const search = req.nextUrl.searchParams.get('search') ?? ''
   const page = parseInt(req.nextUrl.searchParams.get('page') ?? '1')
   const limit = 20
@@ -42,19 +27,17 @@ export async function GET(req: NextRequest) {
 
   // Get last active + message count for each user
   const userIds = (users ?? []).map((u: any) => u.id)
-  const [lastActiveRes, msgCountRes] = await Promise.all([
-    userIds.length ? db.from('demo_messages').select('user_id, created_at').in('user_id', userIds).eq('type', 'text').order('created_at', { ascending: false }) : { data: [] },
-    userIds.length ? db.from('demo_messages').select('user_id', { count: 'exact' }).in('user_id', userIds).eq('type', 'text') : { data: [] },
+  const [lastActiveRes] = await Promise.all([
+    userIds.length
+      ? db.from('demo_messages').select('user_id, created_at').in('user_id', userIds).eq('type', 'text').order('created_at', { ascending: false })
+      : { data: [] },
   ])
 
   const lastActiveMap: Record<string, string> = {}
+  const msgCountMap: Record<string, number> = {}
   for (const m of lastActiveRes.data ?? []) {
     if (!lastActiveMap[m.user_id]) lastActiveMap[m.user_id] = m.created_at
-  }
-
-  const msgCountMap: Record<string, number> = {}
-  for (const u of users ?? []) {
-    msgCountMap[u.id] = (lastActiveRes.data ?? []).filter((m: any) => m.user_id === u.id).length
+    msgCountMap[m.user_id] = (msgCountMap[m.user_id] ?? 0) + 1
   }
 
   const enriched = (users ?? []).map((u: any) => ({
@@ -66,6 +49,21 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ users: enriched, total: count ?? 0, page, limit })
 }
 
+export async function PATCH(req: NextRequest) {
+  const adminId = await requireAdmin(req)
+  if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { user_id, plan } = await req.json()
+  if (!user_id || !plan) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (!VALID_PLANS.includes(plan as Plan)) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+
+  const db = adminSupabase()
+  const { error } = await db.from('demo_profiles').update({ plan }).eq('id', user_id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: NextRequest) {
   const adminId = await requireAdmin(req)
   if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -74,7 +72,7 @@ export async function DELETE(req: NextRequest) {
   if (!user_id) return NextResponse.json({ error: 'Missing user_id' }, { status: 400 })
   if (user_id === adminId) return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 })
 
-  const db = admin()
+  const db = adminSupabase()
 
   await Promise.all([
     db.from('demo_messages').delete().eq('user_id', user_id),

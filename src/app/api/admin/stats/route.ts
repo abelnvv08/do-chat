@@ -1,29 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
-
-function admin() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-}
-
-async function requireAdmin(req: NextRequest): Promise<string | null> {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const allowed = (process.env.ADMIN_USER_IDS ?? '').split(',').map(s => s.trim()).filter(Boolean)
-  if (!allowed.includes(user.id)) return null
-  return user.id
-}
+import { requireAdmin, adminSupabase } from '@/lib/admin-auth'
 
 export async function GET(req: NextRequest) {
   const adminId = await requireAdmin(req)
   if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const db = admin()
+  const db = adminSupabase()
   const now = new Date()
   const today = new Date(now); today.setHours(0, 0, 0, 0)
   const week = new Date(now.getTime() - 7 * 24 * 3600 * 1000)
