@@ -372,6 +372,36 @@ ${base}`,
   return prompts[agentType]
 }
 
+// ── Language detection by country code ───────────────────────────────────────
+const SPANISH_COUNTRIES = new Set([
+  'MX','CO','AR','CL','PE','VE','EC','GT','CU','BO','DO','HN','PY','SV','NI','CR','PA','UY','ES','PR','GQ',
+])
+const PORTUGUESE_COUNTRIES = new Set(['BR','PT','AO','MZ','CV','ST','GW','TL'])
+
+function detectLang(countryCode: string | null): 'es' | 'pt' | 'en' {
+  if (!countryCode) return 'es' // mayoría de usuarios son LATAM
+  if (SPANISH_COUNTRIES.has(countryCode)) return 'es'
+  if (PORTUGUESE_COUNTRIES.has(countryCode)) return 'pt'
+  return 'en'
+}
+
+function buildLimitMessage(plan: string, limit: number, countryCode: string | null): string {
+  const lang = detectLang(countryCode)
+  const isFree = plan === 'free'
+
+  if (lang === 'es') {
+    const tip = isFree ? ' Pasa a Pro para 80 consultas diarias. 👉 getdochat.com/pricing' : ''
+    return `Alcanzaste el límite de ${limit} consultas diarias del plan ${plan === 'free' ? 'gratuito' : plan}.${tip} El límite se renueva a medianoche. 🌙`
+  }
+  if (lang === 'pt') {
+    const tip = isFree ? ' Mude para o Pro e tenha 80 consultas diárias. 👉 getdochat.com/pricing' : ''
+    return `Você atingiu o limite de ${limit} consultas diárias do plano ${plan === 'free' ? 'gratuito' : plan}.${tip} O limite é renovado à meia-noite. 🌙`
+  }
+  // English
+  const tip = isFree ? ' Upgrade to Pro for 80 queries/day. 👉 getdochat.com/pricing' : ''
+  return `You've reached your ${limit} daily query limit on the ${plan} plan.${tip} Limit resets at midnight. 🌙`
+}
+
 // ── Plan config ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG: Record<string, { model: string; limit: number }> = {
   free:     { model: 'claude-haiku-4-5-20251001', limit: 15 },
@@ -401,8 +431,7 @@ export async function POST(req: NextRequest) {
   const { count } = await supabase.from('demo_messages').select('id', { count: 'exact', head: true })
     .eq('user_id', user_id).eq('type', 'ai').gte('created_at', todayStart.toISOString())
   if ((count ?? 0) >= planConfig.limit) {
-    const upgradeTip = plan === 'free' ? ' Upgrade to Pro for 80 queries/day. 👉 getdochat.com/pricing' : ''
-    const msg = `You've reached your ${planConfig.limit} daily query limit on the ${plan} plan.${upgradeTip} Limit resets at midnight. 🌙`
+    const msg = buildLimitMessage(plan, planConfig.limit, geoCountry)
     await supabase.from('demo_messages').insert({ user_id, content: msg, type: 'ai', room_id: aiRoomId })
     return NextResponse.json({ reply: msg, actions: [] })
   }
