@@ -435,7 +435,7 @@ export default function LandingV4() {
                 <p className="text-sm mt-1.5 text-slate-400">Para siempre · Sin tarjeta</p>
               </div>
               <ul className="space-y-3 flex-1 mb-7">
-                {['Mensajes y llamadas ilimitados', 'Cifrado E2E', 'do AI incluido', 'Almacenamiento de archivos'].map(f => (
+                {['Mensajes y llamadas ilimitados', 'Cifrado E2E', 'do AI · límite diario de consultas', 'Almacenamiento de archivos'].map(f => (
                   <li key={f} className="flex items-start gap-3">
                     <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
