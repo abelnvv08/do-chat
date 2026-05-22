@@ -207,9 +207,9 @@ const copy = {
       msg3end: 'Friday 10am — "Q3 Proposal Review". Invitation sent to the team. 🗓️',
       chats: [
         { name: 'do AI ✦', msg: 'Task created: Q3 proposal → Friday', time: 'now', badge: 1, ai: true, color: 'bg-blue-50', dot: 'bg-blue-500' },
-        { name: 'María González', msg: "ok I'll review it right now", time: '2m', badge: 2, ai: false, color: 'bg-violet-50', dot: 'bg-violet-400' },
-        { name: 'Sales Team', msg: 'Carlos: confirmed for tomorrow', time: '1h', badge: 0, ai: false, color: 'bg-emerald-50', dot: 'bg-emerald-400' },
-        { name: 'Carlos Rivera', msg: 'Did you see the contract I sent?', time: 'Yesterday', badge: 0, ai: false, color: 'bg-amber-50', dot: 'bg-amber-400' },
+        { name: 'Sarah Mitchell', msg: "ok I'll take a look right now", time: '2m', badge: 2, ai: false, color: 'bg-violet-50', dot: 'bg-violet-400' },
+        { name: 'Sales Team', msg: 'Jake: confirmed for tomorrow', time: '1h', badge: 0, ai: false, color: 'bg-emerald-50', dot: 'bg-emerald-400' },
+        { name: 'Mike Thompson', msg: 'Did you see the contract I sent?', time: 'Yesterday', badge: 0, ai: false, color: 'bg-amber-50', dot: 'bg-amber-400' },
         { name: 'App Project', msg: 'File uploaded: design_v3.pdf', time: 'Yesterday', badge: 0, ai: false, color: 'bg-rose-50', dot: 'bg-rose-400' },
       ],
     },
