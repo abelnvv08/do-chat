@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { LangToggle } from '@/lib/i18n'
 
 function PinScreen({ userId, mode, onSuccess, onCancel }: {
   userId: string; mode: 'set' | 'change' | 'remove'; onSuccess: () => void; onCancel: () => void
@@ -314,12 +315,14 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
         </div>
 
         {/* ── Legal ── */}
-        <div className="flex gap-4 justify-center py-2">
+        <div className="flex flex-wrap gap-4 justify-center items-center py-2">
           <Link href="/privacy" className="text-xs text-slate-400 hover:text-blue-600 transition-colors">Privacidad</Link>
           <span className="text-slate-300">·</span>
           <Link href="/terms" className="text-xs text-slate-400 hover:text-blue-600 transition-colors">Términos</Link>
           <span className="text-slate-300">·</span>
           <span className="text-xs text-slate-400">v1.0.0</span>
+          <span className="text-slate-300">·</span>
+          <LangToggle className="text-slate-400 border-slate-200 hover:bg-slate-50" />
         </div>
       </div>
 

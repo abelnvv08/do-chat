@@ -2,10 +2,206 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { useLanguage, LangToggle } from '@/lib/i18n'
+
+const copy = {
+  es: {
+    nav: { features: 'Funciones', security: 'Seguridad', signIn: 'Iniciar sesión', start: 'Empezar gratis' },
+    hero: {
+      title1: 'Chatea con tu equipo.',
+      title2: 'La IA se encarga del resto.',
+      subtitle: 'DO Chat es la app de mensajería profesional con IA que actúa dentro de tus conversaciones — crea tareas, resume reuniones, analiza documentos y notifica a tu equipo.',
+      cta1: 'Empieza gratis',
+      cta2: 'Ver funciones',
+      disclaimer: 'Sin tarjeta de crédito · Disponible en iOS, Android y web',
+    },
+    featureAI: {
+      tag: 'do AI',
+      h2a: 'Una IA que actúa,',
+      h2b: 'no solo responde.',
+      p: 'do AI no vive en una ventana aparte. Está dentro de cada chat. Le dices qué necesitas y lo hace: crea la tarea, redacta el mensaje, analiza el archivo, agenda la reunión.',
+      items: [
+        'Crea y asigna tareas directamente desde el chat',
+        'Analiza PDFs, Excel y Word en segundos',
+        'Redacta emails, propuestas y actas',
+        'Resume conversaciones y extrae compromisos',
+        'Busca información en internet sin salir del chat',
+      ],
+      cardTitle: 'Resumen listo',
+      cardBody: 'Detecté 3 compromisos: propuesta de precio (Carlos, viernes), validar diseño (María, hoy), confirmar proveedor (pendiente).',
+      cardFooter: 'Mensaje enviado a 5 contactos · 3 tareas creadas',
+      stats: [
+        { label: 'Tareas', n: '3' },
+        { label: 'Notificados', n: '5' },
+        { label: 'Docs', n: '1' },
+      ],
+    },
+    featureTasks: {
+      tag: 'Tareas',
+      h2a: 'Asigna, sigue y',
+      h2b: 'recibe evidencia.',
+      p: 'Convierte cualquier mensaje en tarea. Asígnala a un compañero, establece una fecha límite y recibe notificación cuando esté lista — con foto o documento como evidencia.',
+      items: [
+        'Crea tareas desde el chat con un toque',
+        'Asígnalas a cualquier contacto',
+        'El receptor acepta, trabaja y sube evidencia',
+        'Tú ves el estado en tiempo real',
+        'Recordatorios automáticos si vence el plazo',
+      ],
+      cardTitle: 'Pendientes',
+      tasks: [
+        { text: 'Enviar propuesta Q3 a dirección', due: 'Vence hoy', status: 'urgent', done: false },
+        { text: 'Revisar contrato con el cliente', due: 'Completada ✓', status: 'done', done: true },
+        { text: 'Confirmar reunión con proveedor', due: 'Asignada por María', status: 'assigned', done: false },
+      ],
+    },
+    featureSecurity: {
+      tag: 'Seguridad',
+      h2a: 'Lo que dices en el chat',
+      h2b: 'se queda en el chat.',
+      p: 'Cada mensaje se cifra antes de salir de tu dispositivo. Ni DO Chat puede leer tus conversaciones. Sin anuncios, sin venta de datos, sin acceso de terceros.',
+      items: [
+        'Cifrado AES-256-GCM en mensajes, archivos y llamadas',
+        'Las claves nunca salen de tu dispositivo',
+        'Sin contraseñas — autenticación por SMS',
+        'Sin anuncios ni rastreo de actividad',
+      ],
+      cardTitle: 'Privacidad real',
+      cardSub: 'Tus mensajes están protegidos en todo momento.',
+      rows: [
+        { label: 'Cifrado', value: 'AES-256-GCM' },
+        { label: 'Datos vendidos', value: 'Ninguno' },
+        { label: 'Acceso externo', value: 'Ninguno' },
+        { label: 'Anuncios', value: 'Nunca' },
+      ],
+    },
+    pricing: {
+      label: 'Planes',
+      title: 'Comienza gratis, más opciones próximamente',
+      subtitle: 'Sin contratos. Sin sorpresas. Por ahora, todo gratis.',
+      freePlan: { label: 'Gratis', period: 'Para siempre · Sin tarjeta', features: ['Mensajes y llamadas ilimitados', 'Cifrado E2E', 'do AI · límite diario de consultas', 'Almacenamiento de archivos'], cta: 'Crear cuenta gratis' },
+      proPlan: { label: 'Pro', popular: 'Más popular', period: '/mes', sub: 'Para equipos que producen más', features: ['Todo en Gratis', 'do AI · más consultas/día', 'Mayor almacenamiento', 'Llamadas grupales de video', 'Soporte prioritario'], subscribe: 'Suscribirse', soon: 'Próximamente' },
+      maxPlan: { label: 'MAX', period: '/mes', sub: 'Para empresas a escala', features: ['Todo en Pro', 'do AI · máximas consultas/día', 'Almacenamiento extendido', 'SLA garantizado', 'Soporte 24/7'], subscribe: 'Suscribirse', soon: 'Próximamente' },
+      disclaimer: 'Todos los planes incluyen cifrado E2E y actualizaciones automáticas.',
+    },
+    cta: {
+      title1: 'Tu equipo ya lo estaba',
+      title2: 'esperando.',
+      subtitle: 'Empieza gratis hoy. Sin instalación, sin tarjeta, listo en menos de un minuto.',
+      button: 'Crear cuenta gratis',
+      disclaimer: 'Sin tarjeta · Sin instalación · Completamente gratis',
+    },
+    footer: {
+      tagline: 'Mensajería profesional con IA. Para equipos que producen.',
+      product: 'Producto', legal: 'Legal', contact: 'Contacto',
+      features: 'Funciones', security: 'Seguridad', privacy: 'Privacidad', terms: 'Términos',
+      signIn: 'Iniciar sesión', createAccount: 'Crear cuenta',
+      copyright: '© 2025 DO Chat. Todos los derechos reservados.',
+      systems: 'Todos los sistemas operativos',
+    },
+  },
+  en: {
+    nav: { features: 'Features', security: 'Security', signIn: 'Sign in', start: 'Get started free' },
+    hero: {
+      title1: 'Chat with your team.',
+      title2: 'AI handles the rest.',
+      subtitle: 'DO Chat is the professional messaging app with AI that acts inside your conversations — creates tasks, summarizes meetings, analyzes documents and notifies your team.',
+      cta1: 'Get started free',
+      cta2: 'See features',
+      disclaimer: 'No credit card · Available on iOS, Android and web',
+    },
+    featureAI: {
+      tag: 'do AI',
+      h2a: 'AI that acts,',
+      h2b: 'not just answers.',
+      p: "do AI doesn't live in a separate window. It's inside every chat. Tell it what you need and it does it: creates the task, drafts the message, analyzes the file, schedules the meeting.",
+      items: [
+        'Create and assign tasks directly from chat',
+        'Analyze PDFs, Excel and Word in seconds',
+        'Draft emails, proposals and meeting notes',
+        'Summarize conversations and extract commitments',
+        'Search the internet without leaving the chat',
+      ],
+      cardTitle: 'Summary ready',
+      cardBody: 'I detected 3 commitments: price proposal (Carlos, Friday), validate design (María, today), confirm supplier (pending).',
+      cardFooter: 'Message sent to 5 contacts · 3 tasks created',
+      stats: [
+        { label: 'Tasks', n: '3' },
+        { label: 'Notified', n: '5' },
+        { label: 'Docs', n: '1' },
+      ],
+    },
+    featureTasks: {
+      tag: 'Tasks',
+      h2a: 'Assign, track and',
+      h2b: 'receive proof.',
+      p: "Turn any message into a task. Assign it to a teammate, set a deadline and get notified when it's done — with a photo or document as proof.",
+      items: [
+        'Create tasks from chat with a tap',
+        'Assign them to any contact',
+        'The recipient accepts, works and uploads proof',
+        'You see the status in real time',
+        'Automatic reminders when the deadline arrives',
+      ],
+      cardTitle: 'Pending',
+      tasks: [
+        { text: 'Send Q3 proposal to management', due: 'Due today', status: 'urgent', done: false },
+        { text: 'Review contract with client', due: 'Completed ✓', status: 'done', done: true },
+        { text: 'Confirm meeting with supplier', due: 'Assigned by María', status: 'assigned', done: false },
+      ],
+    },
+    featureSecurity: {
+      tag: 'Security',
+      h2a: 'What you say in chat',
+      h2b: 'stays in chat.',
+      p: 'Every message is encrypted before leaving your device. Not even DO Chat can read your conversations. No ads, no data sales, no third-party access.',
+      items: [
+        'AES-256-GCM encryption on messages, files and calls',
+        'Keys never leave your device',
+        'No passwords — SMS authentication',
+        'No ads or activity tracking',
+      ],
+      cardTitle: 'Real privacy',
+      cardSub: 'Your messages are protected at all times.',
+      rows: [
+        { label: 'Encryption', value: 'AES-256-GCM' },
+        { label: 'Data sold', value: 'None' },
+        { label: 'External access', value: 'None' },
+        { label: 'Ads', value: 'Never' },
+      ],
+    },
+    pricing: {
+      label: 'Plans',
+      title: 'Start free, more options coming soon',
+      subtitle: 'No contracts. No surprises. For now, everything free.',
+      freePlan: { label: 'Free', period: 'Forever · No card needed', features: ['Unlimited messages and calls', 'E2E Encryption', 'do AI · daily query limit', 'File storage'], cta: 'Create free account' },
+      proPlan: { label: 'Pro', popular: 'Most popular', period: '/mo', sub: 'For teams that produce more', features: ['Everything in Free', 'do AI · more queries/day', 'More storage', 'Group video calls', 'Priority support'], subscribe: 'Subscribe', soon: 'Coming soon' },
+      maxPlan: { label: 'MAX', period: '/mo', sub: 'For enterprises at scale', features: ['Everything in Pro', 'do AI · max queries/day', 'Extended storage', 'Guaranteed SLA', '24/7 support'], subscribe: 'Subscribe', soon: 'Coming soon' },
+      disclaimer: 'All plans include E2E encryption and automatic updates.',
+    },
+    cta: {
+      title1: 'Your team was already',
+      title2: 'waiting for this.',
+      subtitle: 'Start free today. No installation, no card, ready in under a minute.',
+      button: 'Create free account',
+      disclaimer: 'No card · No installation · Completely free',
+    },
+    footer: {
+      tagline: 'Professional messaging with AI. For teams that produce.',
+      product: 'Product', legal: 'Legal', contact: 'Contact',
+      features: 'Features', security: 'Security', privacy: 'Privacy', terms: 'Terms',
+      signIn: 'Sign in', createAccount: 'Create account',
+      copyright: '© 2025 DO Chat. All rights reserved.',
+      systems: 'All systems operational',
+    },
+  },
+}
 
 export default function LandingV4() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { lang } = useLanguage()
+  const c = copy[lang]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -27,12 +223,13 @@ export default function LandingV4() {
           </Link>
 
           <div className="hidden sm:flex items-center gap-8">
-            <a href="#funciones" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Funciones</a>
-            <a href="#seguridad" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Seguridad</a>
-            <Link href="/login" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">Iniciar sesión</Link>
+            <a href="#funciones" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.nav.features}</a>
+            <a href="#seguridad" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.nav.security}</a>
+            <LangToggle className="text-slate-500 border-slate-200 hover:bg-slate-50" />
+            <Link href="/login" className="text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.nav.signIn}</Link>
             <Link href="/login?start=phone"
               className="px-5 py-2.5 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors">
-              Empezar gratis
+              {c.nav.start}
             </Link>
           </div>
 
@@ -47,11 +244,12 @@ export default function LandingV4() {
 
         {menuOpen && (
           <div className="sm:hidden bg-white border-t border-slate-100 px-6 py-5 space-y-4">
-            <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Funciones</a>
-            <a href="#seguridad" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Seguridad</a>
-            <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">Iniciar sesión</Link>
+            <a href="#funciones" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">{c.nav.features}</a>
+            <a href="#seguridad" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">{c.nav.security}</a>
+            <Link href="/login" onClick={() => setMenuOpen(false)} className="block text-sm text-slate-600 font-medium">{c.nav.signIn}</Link>
+            <LangToggle className="text-slate-600 border-slate-200 hover:bg-slate-50" />
             <Link href="/login?start=phone" className="block w-full text-center py-3 rounded-full bg-blue-600 text-white text-sm font-semibold">
-              Empezar gratis
+              {c.nav.start}
             </Link>
           </div>
         )}
@@ -62,25 +260,25 @@ export default function LandingV4() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col items-center text-center mb-14">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.06] tracking-tight text-slate-900 mb-6 max-w-3xl">
-              Chatea con tu equipo.<br />
-              <span className="text-blue-600">La IA se encarga del resto.</span>
+              {c.hero.title1}<br />
+              <span className="text-blue-600">{c.hero.title2}</span>
             </h1>
 
             <p className="text-xl text-slate-500 max-w-xl leading-relaxed mb-10">
-              DO Chat es la app de mensajería profesional con IA que actúa dentro de tus conversaciones — crea tareas, resume reuniones, analiza documentos y notifica a tu equipo.
+              {c.hero.subtitle}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <Link href="/login?start=phone"
                 className="px-8 py-4 rounded-full bg-blue-600 text-white font-bold text-base hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:scale-[0.98] shadow-lg shadow-blue-100">
-                Empieza gratis
+                {c.hero.cta1}
               </Link>
               <a href="#funciones"
                 className="px-8 py-4 rounded-full border border-slate-200 text-slate-700 font-semibold text-base hover:bg-slate-50 transition-all">
-                Ver funciones
+                {c.hero.cta2}
               </a>
             </div>
-            <p className="text-slate-400 text-sm">Sin tarjeta de crédito · Disponible en iOS, Android y web</p>
+            <p className="text-slate-400 text-sm">{c.hero.disclaimer}</p>
           </div>
 
           {/* Phone mockup */}
@@ -139,22 +337,22 @@ export default function LandingV4() {
                         { name: 'Equipo Ventas', msg: 'Carlos: confirmado para mañana', time: '1h', badge: 0, ai: false, color: 'bg-emerald-50', dot: 'bg-emerald-400' },
                         { name: 'Carlos Rivera', msg: '¿Viste el contrato que mandé?', time: 'Ayer', badge: 0, ai: false, color: 'bg-amber-50', dot: 'bg-amber-400' },
                         { name: 'Proyecto App', msg: 'Archivo subido: diseño_v3.pdf', time: 'Ayer', badge: 0, ai: false, color: 'bg-rose-50', dot: 'bg-rose-400' },
-                      ].map((c, i) => (
-                        <div key={c.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer ${i === 0 ? 'bg-blue-50/80 border border-blue-100' : 'hover:bg-slate-50'}`}>
-                          <div className={`w-9 h-9 rounded-full ${c.color} flex items-center justify-center shrink-0 text-sm font-bold relative`}>
-                            {c.ai ? '✦' : c.name[0]}
-                            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${c.dot}`} />
+                      ].map((ch, i) => (
+                        <div key={ch.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer ${i === 0 ? 'bg-blue-50/80 border border-blue-100' : 'hover:bg-slate-50'}`}>
+                          <div className={`w-9 h-9 rounded-full ${ch.color} flex items-center justify-center shrink-0 text-sm font-bold relative`}>
+                            {ch.ai ? '✦' : ch.name[0]}
+                            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${ch.dot}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-0.5">
-                              <span className={`text-xs font-semibold truncate ${c.ai ? 'text-blue-600' : 'text-slate-900'}`}>{c.name}</span>
-                              <span className="text-[10px] text-slate-400 ml-2 shrink-0">{c.time}</span>
+                              <span className={`text-xs font-semibold truncate ${ch.ai ? 'text-blue-600' : 'text-slate-900'}`}>{ch.name}</span>
+                              <span className="text-[10px] text-slate-400 ml-2 shrink-0">{ch.time}</span>
                             </div>
-                            <p className="text-[11px] text-slate-400 truncate">{c.msg}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{ch.msg}</p>
                           </div>
-                          {c.badge > 0 && (
+                          {ch.badge > 0 && (
                             <div className="w-4.5 h-4.5 min-w-[18px] h-[18px] rounded-full bg-blue-600 flex items-center justify-center">
-                              <span className="text-[9px] text-white font-bold">{c.badge}</span>
+                              <span className="text-[9px] text-white font-bold">{ch.badge}</span>
                             </div>
                           )}
                         </div>
@@ -191,9 +389,9 @@ export default function LandingV4() {
                       <div className="flex gap-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-content-center text-[10px] shrink-0 mt-1 flex items-center justify-center text-blue-600 font-bold">✦</div>
                         <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 shadow-sm border border-blue-100 max-w-[75%]">
-                          <p className="font-semibold text-blue-700 mb-1.5">✦ do AI — Resumen listo</p>
-                          <p className="mb-2">Detecté <span className="font-semibold text-slate-900">3 compromisos</span>: propuesta de precio (Carlos, viernes), validar diseño (María, hoy), confirmar proveedor (pendiente).</p>
-                          <p className="text-slate-400">Mensaje enviado a <span className="text-blue-600 font-medium">5 contactos</span> · <span className="text-emerald-600 font-medium">3 tareas creadas</span></p>
+                          <p className="font-semibold text-blue-700 mb-1.5">✦ do AI — {c.featureAI.cardTitle}</p>
+                          <p className="mb-2">{c.featureAI.cardBody}</p>
+                          <p className="text-slate-400">{c.featureAI.cardFooter}</p>
                         </div>
                       </div>
                       <div className="flex gap-2 justify-end">
@@ -204,7 +402,7 @@ export default function LandingV4() {
                       <div className="flex gap-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-600 font-bold shrink-0 mt-1">✦</div>
                         <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 shadow-sm border border-blue-100 max-w-[70%]">
-                          <span className="text-emerald-600 font-medium">Evento creado.</span> Viernes 10am — "Revisión propuesta Q3". Invitación enviada al equipo. 🗓️
+                          <span className="text-emerald-600 font-medium">Evento creado.</span> Viernes 10am — &ldquo;Revisión propuesta Q3&rdquo;. Invitación enviada al equipo. 🗓️
                         </div>
                       </div>
                     </div>
@@ -235,21 +433,14 @@ export default function LandingV4() {
           {/* Feature 1: IA */}
           <div className="flex flex-col lg:flex-row items-center gap-16 mb-28">
             <div className="flex-1">
-              <p className="text-xs font-bold text-blue-600 tracking-widest uppercase mb-4">do AI</p>
+              <p className="text-xs font-bold text-blue-600 tracking-widest uppercase mb-4">{c.featureAI.tag}</p>
               <h2 className="text-4xl font-extrabold text-slate-900 leading-tight mb-5">
-                Una IA que actúa,<br />no solo responde.
+                {c.featureAI.h2a}<br />
+                {c.featureAI.h2b}
               </h2>
-              <p className="text-slate-500 text-lg leading-relaxed mb-6">
-                do AI no vive en una ventana aparte. Está dentro de cada chat. Le dices qué necesitas y lo hace: crea la tarea, redacta el mensaje, analiza el archivo, agenda la reunión.
-              </p>
+              <p className="text-slate-500 text-lg leading-relaxed mb-6">{c.featureAI.p}</p>
               <div className="space-y-4">
-                {[
-                  'Crea y asigna tareas directamente desde el chat',
-                  'Analiza PDFs, Excel y Word en segundos',
-                  'Redacta emails, propuestas y actas',
-                  'Resume conversaciones y extrae compromisos',
-                  'Busca información en internet sin salir del chat',
-                ].map(f => (
+                {c.featureAI.items.map(f => (
                   <div key={f} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                       <svg className="w-3 h-3 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -269,26 +460,26 @@ export default function LandingV4() {
                     <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">✦</div>
                     <div>
                       <p className="font-bold text-slate-900 text-sm">do AI</p>
-                      <p className="text-emerald-500 text-xs font-medium">● En línea</p>
+                      <p className="text-emerald-500 text-xs font-medium">● {lang === 'es' ? 'En línea' : 'Online'}</p>
                     </div>
                   </div>
                   <p className="text-sm text-slate-600 bg-white rounded-xl px-4 py-3 shadow-sm border border-slate-100">
-                    &ldquo;Resume este chat y crea las tareas para el equipo&rdquo;
+                    &ldquo;{lang === 'es' ? 'Resume este chat y crea las tareas para el equipo' : 'Summarize this chat and create tasks for the team'}&rdquo;
                   </p>
                 </div>
                 <div className="p-4 space-y-3">
                   <div className="flex items-start gap-3 bg-blue-50 rounded-xl px-4 py-3">
                     <span className="text-blue-500 text-base mt-0.5">✦</span>
                     <div>
-                      <p className="text-sm text-slate-900 font-medium mb-1">Resumen listo</p>
-                      <p className="text-xs text-slate-500 leading-relaxed">3 compromisos detectados · 3 tareas creadas · Equipo notificado</p>
+                      <p className="text-sm text-slate-900 font-medium mb-1">{c.featureAI.cardTitle}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed">{c.featureAI.stats.map(s => `${s.n} ${s.label}`).join(' · ')}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {[
-                      { label: 'Tareas', n: '3', color: 'bg-violet-50 text-violet-700' },
-                      { label: 'Notificados', n: '5', color: 'bg-emerald-50 text-emerald-700' },
-                      { label: 'Docs', n: '1', color: 'bg-amber-50 text-amber-700' },
+                      { ...c.featureAI.stats[0], color: 'bg-violet-50 text-violet-700' },
+                      { ...c.featureAI.stats[1], color: 'bg-emerald-50 text-emerald-700' },
+                      { ...c.featureAI.stats[2], color: 'bg-amber-50 text-amber-700' },
                     ].map(s => (
                       <div key={s.label} className={`${s.color} rounded-xl px-3 py-2 text-center`}>
                         <p className="font-extrabold text-lg leading-none">{s.n}</p>
@@ -304,21 +495,14 @@ export default function LandingV4() {
           {/* Feature 2: Tasks */}
           <div className="flex flex-col lg:flex-row-reverse items-center gap-16 mb-28">
             <div className="flex-1">
-              <p className="text-xs font-bold text-violet-600 tracking-widest uppercase mb-4">Tareas</p>
+              <p className="text-xs font-bold text-violet-600 tracking-widest uppercase mb-4">{c.featureTasks.tag}</p>
               <h2 className="text-4xl font-extrabold text-slate-900 leading-tight mb-5">
-                Asigna, sigue y<br />recibe evidencia.
+                {c.featureTasks.h2a}<br />
+                {c.featureTasks.h2b}
               </h2>
-              <p className="text-slate-500 text-lg leading-relaxed mb-6">
-                Convierte cualquier mensaje en tarea. Asígnala a un compañero, establece una fecha límite y recibe notificación cuando esté lista — con foto o documento como evidencia.
-              </p>
+              <p className="text-slate-500 text-lg leading-relaxed mb-6">{c.featureTasks.p}</p>
               <div className="space-y-4">
-                {[
-                  'Crea tareas desde el chat con un toque',
-                  'Asígnalas a cualquier contacto',
-                  'El receptor acepta, trabaja y sube evidencia',
-                  'Tú ves el estado en tiempo real',
-                  'Recordatorios automáticos si vence el plazo',
-                ].map(f => (
+                {c.featureTasks.items.map(f => (
                   <div key={f} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
                       <svg className="w-3 h-3 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -333,14 +517,10 @@ export default function LandingV4() {
             <div className="flex-1 flex justify-center">
               <div className="w-full max-w-sm bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100">
-                  <p className="font-bold text-slate-900 text-sm">Pendientes</p>
+                  <p className="font-bold text-slate-900 text-sm">{c.featureTasks.cardTitle}</p>
                 </div>
                 <div className="p-4 space-y-3">
-                  {[
-                    { text: 'Enviar propuesta Q3 a dirección', due: 'Vence hoy', status: 'urgent', done: false },
-                    { text: 'Revisar contrato con el cliente', due: 'Completada ✓', status: 'done', done: true },
-                    { text: 'Confirmar reunión con proveedor', due: 'Asignada por María', status: 'assigned', done: false },
-                  ].map(task => (
+                  {c.featureTasks.tasks.map(task => (
                     <div key={task.text} className={`flex gap-3 items-start p-3.5 rounded-2xl border ${task.done ? 'bg-slate-50 border-slate-100' : task.status === 'urgent' ? 'bg-amber-50 border-amber-100' : 'bg-white border-slate-100'}`}>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${task.done ? 'bg-emerald-500 border-emerald-500' : task.status === 'urgent' ? 'border-amber-400' : 'border-violet-300'}`}>
                         {task.done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
@@ -359,20 +539,14 @@ export default function LandingV4() {
           {/* Feature 3: E2E */}
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1">
-              <p className="text-xs font-bold text-emerald-600 tracking-widest uppercase mb-4">Seguridad</p>
+              <p className="text-xs font-bold text-emerald-600 tracking-widest uppercase mb-4">{c.featureSecurity.tag}</p>
               <h2 className="text-4xl font-extrabold text-slate-900 leading-tight mb-5">
-                Lo que dices en el chat<br />se queda en el chat.
+                {c.featureSecurity.h2a}<br />
+                {c.featureSecurity.h2b}
               </h2>
-              <p className="text-slate-500 text-lg leading-relaxed mb-6">
-                Cada mensaje se cifra antes de salir de tu dispositivo. Ni DO Chat puede leer tus conversaciones. Sin anuncios, sin venta de datos, sin acceso de terceros.
-              </p>
+              <p className="text-slate-500 text-lg leading-relaxed mb-6">{c.featureSecurity.p}</p>
               <div className="space-y-4">
-                {[
-                  'Cifrado AES-256-GCM en mensajes, archivos y llamadas',
-                  'Las claves nunca salen de tu dispositivo',
-                  'Sin contraseñas — autenticación por SMS',
-                  'Sin anuncios ni rastreo de actividad',
-                ].map(f => (
+                {c.featureSecurity.items.map(f => (
                   <div key={f} className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                       <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -393,15 +567,10 @@ export default function LandingV4() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-center font-extrabold text-slate-900 text-lg mb-2">Privacidad real</h3>
-                <p className="text-center text-slate-500 text-sm mb-6">Tus mensajes están protegidos en todo momento.</p>
+                <h3 className="text-center font-extrabold text-slate-900 text-lg mb-2">{c.featureSecurity.cardTitle}</h3>
+                <p className="text-center text-slate-500 text-sm mb-6">{c.featureSecurity.cardSub}</p>
                 <div className="space-y-3">
-                  {[
-                    { label: 'Cifrado', value: 'AES-256-GCM' },
-                    { label: 'Datos vendidos', value: 'Ninguno' },
-                    { label: 'Acceso externo', value: 'Ninguno' },
-                    { label: 'Anuncios', value: 'Nunca' },
-                  ].map(r => (
+                  {c.featureSecurity.rows.map(r => (
                     <div key={r.label} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
                       <span className="text-sm text-slate-500">{r.label}</span>
                       <span className="text-sm font-semibold text-emerald-600">{r.value}</span>
@@ -418,24 +587,24 @@ export default function LandingV4() {
       <section id="precios" className="py-24 px-6 bg-slate-50 border-y border-slate-100">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-3">Planes</p>
+            <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-3">{c.pricing.label}</p>
             <h2 className="text-4xl font-extrabold text-slate-900 mb-4">
-              Comienza gratis,<br />más opciones próximamente
+              {c.pricing.title}
             </h2>
-            <p className="text-slate-500 text-lg max-w-md mx-auto">Sin contratos. Sin sorpresas. Por ahora, todo gratis.</p>
+            <p className="text-slate-500 text-lg max-w-md mx-auto">{c.pricing.subtitle}</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5 items-start">
 
             {/* ── Free ── */}
             <div className="rounded-3xl p-7 flex flex-col bg-white border border-slate-200">
-              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">Gratis</p>
+              <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">{c.pricing.freePlan.label}</p>
               <div className="mb-7">
                 <p className="text-5xl font-extrabold text-slate-900">$0</p>
-                <p className="text-sm mt-1.5 text-slate-400">Para siempre · Sin tarjeta</p>
+                <p className="text-sm mt-1.5 text-slate-400">{c.pricing.freePlan.period}</p>
               </div>
               <ul className="space-y-3 flex-1 mb-7">
-                {['Mensajes y llamadas ilimitados', 'Cifrado E2E', 'do AI · límite diario de consultas', 'Almacenamiento de archivos'].map(f => (
+                {c.pricing.freePlan.features.map(f => (
                   <li key={f} className="flex items-start gap-3">
                     <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -446,27 +615,27 @@ export default function LandingV4() {
               </ul>
               <Link href="/login?start=phone"
                 className="w-full py-3.5 rounded-2xl font-bold text-sm text-center bg-slate-900 text-white hover:bg-slate-800 transition-all active:scale-[0.98]">
-                Crear cuenta gratis
+                {c.pricing.freePlan.cta}
               </Link>
             </div>
 
             {/* ── Pro ── */}
             <div className="rounded-3xl overflow-hidden relative bg-blue-600 shadow-2xl shadow-blue-200 scale-[1.02]">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-lg">Más popular</span>
+                <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-lg">{c.pricing.proPlan.popular}</span>
               </div>
               {/* Content — blurred */}
               <div className="p-7 blur-sm pointer-events-none select-none">
-                <p className="text-xs font-bold tracking-widest uppercase mb-5 text-blue-200">Pro</p>
+                <p className="text-xs font-bold tracking-widest uppercase mb-5 text-blue-200">{c.pricing.proPlan.label}</p>
                 <div className="mb-7">
                   <div className="flex items-baseline gap-1">
                     <p className="text-5xl font-extrabold text-white">$XX</p>
-                    <p className="text-sm text-blue-200">/mes</p>
+                    <p className="text-sm text-blue-200">{c.pricing.proPlan.period}</p>
                   </div>
-                  <p className="text-sm mt-1.5 text-blue-200">Para equipos que producen más</p>
+                  <p className="text-sm mt-1.5 text-blue-200">{c.pricing.proPlan.sub}</p>
                 </div>
                 <ul className="space-y-3 mb-7">
-                  {['Todo en Gratis', 'do AI · más consultas/día', 'Mayor almacenamiento', 'Llamadas grupales de video', 'Soporte prioritario'].map(f => (
+                  {c.pricing.proPlan.features.map(f => (
                     <li key={f} className="flex items-start gap-3">
                       <svg className="w-4 h-4 mt-0.5 shrink-0 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -475,12 +644,12 @@ export default function LandingV4() {
                     </li>
                   ))}
                 </ul>
-                <div className="w-full py-3.5 rounded-2xl font-bold text-sm bg-white text-blue-600 text-center">Suscribirse</div>
+                <div className="w-full py-3.5 rounded-2xl font-bold text-sm bg-white text-blue-600 text-center">{c.pricing.proPlan.subscribe}</div>
               </div>
               {/* Overlay */}
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-blue-700/40 backdrop-blur-[2px]">
                 <span className="px-5 py-2.5 rounded-full bg-white/15 border border-white/30 text-white text-sm font-semibold tracking-wide backdrop-blur-sm">
-                  Próximamente
+                  {c.pricing.proPlan.soon}
                 </span>
               </div>
             </div>
@@ -489,16 +658,16 @@ export default function LandingV4() {
             <div className="rounded-3xl overflow-hidden relative bg-white border border-slate-200">
               {/* Content — blurred */}
               <div className="p-7 blur-sm pointer-events-none select-none">
-                <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">MAX</p>
+                <p className="text-xs font-bold tracking-widest uppercase mb-5 text-slate-400">{c.pricing.maxPlan.label}</p>
                 <div className="mb-7">
                   <div className="flex items-baseline gap-1">
                     <p className="text-5xl font-extrabold text-slate-900">$XX</p>
-                    <p className="text-sm text-slate-400">/mes</p>
+                    <p className="text-sm text-slate-400">{c.pricing.maxPlan.period}</p>
                   </div>
-                  <p className="text-sm mt-1.5 text-slate-400">Para empresas a escala</p>
+                  <p className="text-sm mt-1.5 text-slate-400">{c.pricing.maxPlan.sub}</p>
                 </div>
                 <ul className="space-y-3 mb-7">
-                  {['Todo en Pro', 'do AI · máximas consultas/día', 'Almacenamiento extendido', 'SLA garantizado', 'Soporte 24/7'].map(f => (
+                  {c.pricing.maxPlan.features.map(f => (
                     <li key={f} className="flex items-start gap-3">
                       <svg className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -507,18 +676,18 @@ export default function LandingV4() {
                     </li>
                   ))}
                 </ul>
-                <div className="w-full py-3.5 rounded-2xl font-bold text-sm bg-slate-900 text-white text-center">Suscribirse</div>
+                <div className="w-full py-3.5 rounded-2xl font-bold text-sm bg-slate-900 text-white text-center">{c.pricing.maxPlan.subscribe}</div>
               </div>
               {/* Overlay */}
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/50 backdrop-blur-[2px]">
                 <span className="px-5 py-2.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-sm font-semibold tracking-wide">
-                  Próximamente
+                  {c.pricing.maxPlan.soon}
                 </span>
               </div>
             </div>
 
           </div>
-          <p className="text-center text-sm text-slate-400 mt-8">Todos los planes incluyen cifrado E2E y actualizaciones automáticas.</p>
+          <p className="text-center text-sm text-slate-400 mt-8">{c.pricing.disclaimer}</p>
         </div>
       </section>
 
@@ -526,18 +695,19 @@ export default function LandingV4() {
       <section className="py-28 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-5xl font-extrabold text-slate-900 mb-5 leading-tight">
-            Tu equipo ya lo estaba<br />esperando.
+            {c.cta.title1}<br />
+            {c.cta.title2}
           </h2>
           <p className="text-slate-500 text-xl mb-10 max-w-lg mx-auto leading-relaxed">
-            Empieza gratis hoy. Sin instalación, sin tarjeta, listo en menos de un minuto.
+            {c.cta.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/login?start=phone"
               className="px-10 py-4 rounded-full bg-blue-600 text-white font-bold text-base hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 hover:-translate-y-0.5 active:scale-[0.98]">
-              Crear cuenta gratis
+              {c.cta.button}
             </Link>
           </div>
-          <p className="text-slate-400 text-sm mt-6">Sin tarjeta · Sin instalación · Completamente gratis</p>
+          <p className="text-slate-400 text-sm mt-6">{c.cta.disclaimer}</p>
         </div>
       </section>
 
@@ -553,37 +723,40 @@ export default function LandingV4() {
                 <span className="font-bold text-slate-900">DO Chat</span>
               </Link>
               <p className="text-slate-400 text-sm leading-relaxed">
-                Mensajería profesional con IA. Para equipos que producen.
+                {c.footer.tagline}
               </p>
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Producto</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">{c.footer.product}</p>
               <div className="space-y-3">
-                <a href="#funciones" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Funciones</a>
-                <a href="#seguridad" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Seguridad</a>
+                <a href="#funciones" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.footer.features}</a>
+                <a href="#seguridad" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.footer.security}</a>
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Legal</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">{c.footer.legal}</p>
               <div className="space-y-3">
-                <Link href="/privacy" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Privacidad</Link>
-                <Link href="/terms" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Términos</Link>
+                <Link href="/privacy" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.footer.privacy}</Link>
+                <Link href="/terms" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.footer.terms}</Link>
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Contacto</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">{c.footer.contact}</p>
               <div className="space-y-3">
-                <Link href="/login" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Iniciar sesión</Link>
-                <Link href="/login?start=phone" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">Crear cuenta</Link>
+                <Link href="/login" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.footer.signIn}</Link>
+                <Link href="/login?start=phone" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">{c.footer.createAccount}</Link>
                 <a href="mailto:hola@getdochat.com" className="block text-sm text-slate-500 hover:text-slate-900 transition-colors">hola@getdochat.com</a>
               </div>
             </div>
           </div>
           <div className="border-t border-slate-100 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-slate-400 text-xs">© 2025 DO Chat. Todos los derechos reservados.</p>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Todos los sistemas operativos
+            <p className="text-slate-400 text-xs">{c.footer.copyright}</p>
+            <div className="flex items-center gap-3">
+              <LangToggle className="text-slate-400 border-slate-200 hover:bg-slate-50" />
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {c.footer.systems}
+              </div>
             </div>
           </div>
         </div>
