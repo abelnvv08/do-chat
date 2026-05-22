@@ -387,19 +387,14 @@ function detectLang(countryCode: string | null): 'es' | 'pt' | 'en' {
 
 function buildLimitMessage(plan: string, limit: number, countryCode: string | null): string {
   const lang = detectLang(countryCode)
-  const isFree = plan === 'free'
 
   if (lang === 'es') {
-    const tip = isFree ? ' Pasa a Pro para 80 consultas diarias. 👉 getdochat.com/pricing' : ''
-    return `Alcanzaste el límite de ${limit} consultas diarias del plan ${plan === 'free' ? 'gratuito' : plan}.${tip} El límite se renueva a medianoche. 🌙`
+    return `Alcanzaste el límite de ${limit} consultas diarias. Los planes de pago estarán disponibles pronto. El límite se renueva a medianoche. 🌙`
   }
   if (lang === 'pt') {
-    const tip = isFree ? ' Mude para o Pro e tenha 80 consultas diárias. 👉 getdochat.com/pricing' : ''
-    return `Você atingiu o limite de ${limit} consultas diárias do plano ${plan === 'free' ? 'gratuito' : plan}.${tip} O limite é renovado à meia-noite. 🌙`
+    return `Você atingiu o limite de ${limit} consultas diárias. Planos pagos em breve. O limite é renovado à meia-noite. 🌙`
   }
-  // English
-  const tip = isFree ? ' Upgrade to Pro for 80 queries/day. 👉 getdochat.com/pricing' : ''
-  return `You've reached your ${limit} daily query limit on the ${plan} plan.${tip} Limit resets at midnight. 🌙`
+  return `You've reached your ${limit} daily query limit. Paid plans coming soon. Limit resets at midnight. 🌙`
 }
 
 // ── Plan config ──────────────────────────────────────────────────────────────
