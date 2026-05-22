@@ -127,7 +127,7 @@ function OnboardingContent() {
         {/* Icon */}
         <div className={`w-28 h-28 rounded-3xl bg-gradient-to-br ${current.bg} flex items-center justify-center shadow-2xl transition-all duration-500`}>
           {step === 0 ? (
-            <Image src="/dologo.png" alt="DO Chat" width={64} height={64} className="rounded-2xl" />
+            <Image src="/dochatlogo.svg" alt="DO Chat" width={64} height={64} className="rounded-2xl" />
           ) : current.isUsername ? (
             <span className="text-5xl font-black text-white">@</span>
           ) : (
