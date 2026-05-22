@@ -33,6 +33,7 @@ export async function middleware(req: NextRequest) {
     pathname === '/sw.js' ||
     pathname === '/robots.txt' ||
     pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/invite/') ||
     pathname.startsWith('/api/')
 
   if (!user && !isPublic) {

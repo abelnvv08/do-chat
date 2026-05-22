@@ -957,6 +957,21 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       </div>
                       <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                     </button>
+                    {/* Share invite link */}
+                    <button onClick={async () => {
+                      const handle = (profile as any).username
+                      const url = handle ? `https://getdochat.com/invite/${handle}` : 'https://getdochat.com'
+                      if (navigator.share) {
+                        navigator.share({ title: 'DO Chat', text: `${profile.name} te invita a DO Chat: ${url}`, url }).catch(() => {})
+                      } else {
+                        await navigator.clipboard.writeText(url)
+                        alert('¡Link copiado!')
+                      }
+                    }}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-slate-200 bg-white text-slate-600 text-sm font-medium active:scale-[0.98] transition-all">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
+                      Compartir enlace de invitación
+                    </button>
                   </div>
                 </div>
               )}
@@ -1567,6 +1582,33 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                 </button>
               )}
+            </div>
+
+            {/* Invite row */}
+            <div className="mx-4 mt-3">
+              <button onClick={async () => {
+                const handle = (profile as any).username
+                const url = handle ? `https://getdochat.com/invite/${handle}` : 'https://getdochat.com'
+                const text = handle
+                  ? `${profile.name} te invita a DO Chat: ${url}`
+                  : `Únete a DO Chat, el chat con IA integrada: ${url}`
+                if (navigator.share) {
+                  navigator.share({ title: 'DO Chat', text, url }).catch(() => {})
+                } else {
+                  await navigator.clipboard.writeText(url)
+                  alert('¡Link copiado!')
+                }
+              }}
+                className="w-full rounded-3xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3 active:scale-[0.98] transition-all text-left">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-slate-700">Invitar a DO Chat</p>
+                  <p className="text-[11px] text-slate-400">Comparte tu enlace personal</p>
+                </div>
+                <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+              </button>
             </div>
 
             {/* Plan row */}
