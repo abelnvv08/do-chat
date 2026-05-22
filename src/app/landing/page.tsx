@@ -84,6 +84,23 @@ const copy = {
       maxPlan: { label: 'MAX', period: '/mes', sub: 'Para empresas a escala', features: ['Todo en Pro', 'do AI · máximas consultas/día', 'Almacenamiento extendido', 'SLA garantizado', 'Soporte 24/7'], subscribe: 'Suscribirse', soon: 'Próximamente' },
       disclaimer: 'Todos los planes incluyen cifrado E2E y actualizaciones automáticas.',
     },
+    mockup: {
+      search: 'Buscar...',
+      activeNow: 'Activo ahora',
+      youLabel: 'Tú',
+      inputPlaceholder: 'Escribe o pregúntale algo a do AI...',
+      msg1: 'Resume los pendientes de este chat y avisa al equipo',
+      msg2: 'Perfecto, también crea el evento de calendario para el viernes',
+      msg3start: 'Evento creado.',
+      msg3end: 'Viernes 10am — "Revisión propuesta Q3". Invitación enviada al equipo. 🗓️',
+      chats: [
+        { name: 'do AI ✦', msg: 'Tarea creada: propuesta Q3 → viernes', time: 'ahora', badge: 1, ai: true, color: 'bg-blue-50', dot: 'bg-blue-500' },
+        { name: 'María González', msg: 'ok lo reviso ahora mismo', time: '2m', badge: 2, ai: false, color: 'bg-violet-50', dot: 'bg-violet-400' },
+        { name: 'Equipo Ventas', msg: 'Carlos: confirmado para mañana', time: '1h', badge: 0, ai: false, color: 'bg-emerald-50', dot: 'bg-emerald-400' },
+        { name: 'Carlos Rivera', msg: '¿Viste el contrato que mandé?', time: 'Ayer', badge: 0, ai: false, color: 'bg-amber-50', dot: 'bg-amber-400' },
+        { name: 'Proyecto App', msg: 'Archivo subido: diseño_v3.pdf', time: 'Ayer', badge: 0, ai: false, color: 'bg-rose-50', dot: 'bg-rose-400' },
+      ],
+    },
     cta: {
       title1: 'Tu equipo ya lo estaba',
       title2: 'esperando.',
@@ -178,6 +195,23 @@ const copy = {
       proPlan: { label: 'Pro', popular: 'Most popular', period: '/mo', sub: 'For teams that produce more', features: ['Everything in Free', 'do AI · more queries/day', 'More storage', 'Group video calls', 'Priority support'], subscribe: 'Subscribe', soon: 'Coming soon' },
       maxPlan: { label: 'MAX', period: '/mo', sub: 'For enterprises at scale', features: ['Everything in Pro', 'do AI · max queries/day', 'Extended storage', 'Guaranteed SLA', '24/7 support'], subscribe: 'Subscribe', soon: 'Coming soon' },
       disclaimer: 'All plans include E2E encryption and automatic updates.',
+    },
+    mockup: {
+      search: 'Search...',
+      activeNow: 'Active now',
+      youLabel: 'You',
+      inputPlaceholder: 'Type or ask do AI something...',
+      msg1: 'Summarize the pending items in this chat and notify the team',
+      msg2: 'Great, also create the calendar event for Friday',
+      msg3start: 'Event created.',
+      msg3end: 'Friday 10am — "Q3 Proposal Review". Invitation sent to the team. 🗓️',
+      chats: [
+        { name: 'do AI ✦', msg: 'Task created: Q3 proposal → Friday', time: 'now', badge: 1, ai: true, color: 'bg-blue-50', dot: 'bg-blue-500' },
+        { name: 'María González', msg: "ok I'll review it right now", time: '2m', badge: 2, ai: false, color: 'bg-violet-50', dot: 'bg-violet-400' },
+        { name: 'Sales Team', msg: 'Carlos: confirmed for tomorrow', time: '1h', badge: 0, ai: false, color: 'bg-emerald-50', dot: 'bg-emerald-400' },
+        { name: 'Carlos Rivera', msg: 'Did you see the contract I sent?', time: 'Yesterday', badge: 0, ai: false, color: 'bg-amber-50', dot: 'bg-amber-400' },
+        { name: 'App Project', msg: 'File uploaded: design_v3.pdf', time: 'Yesterday', badge: 0, ai: false, color: 'bg-rose-50', dot: 'bg-rose-400' },
+      ],
     },
     cta: {
       title1: 'Your team was already',
@@ -329,18 +363,12 @@ export default function LandingV4() {
                         <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 5.25 5.25a7.5 7.5 0 0 0 10.4 10.4z" />
                         </svg>
-                        <span className="text-xs text-slate-400">Buscar...</span>
+                        <span className="text-xs text-slate-400">{c.mockup.search}</span>
                       </div>
                     </div>
                     {/* Chat list */}
                     <div className="flex-1 overflow-hidden p-2 space-y-0.5">
-                      {[
-                        { name: 'do AI ✦', msg: 'Tarea creada: propuesta Q3 → viernes', time: 'ahora', badge: 1, ai: true, color: 'bg-blue-50', dot: 'bg-blue-500' },
-                        { name: 'María González', msg: 'ok lo reviso ahora mismo', time: '2m', badge: 2, ai: false, color: 'bg-violet-50', dot: 'bg-violet-400' },
-                        { name: 'Equipo Ventas', msg: 'Carlos: confirmado para mañana', time: '1h', badge: 0, ai: false, color: 'bg-emerald-50', dot: 'bg-emerald-400' },
-                        { name: 'Carlos Rivera', msg: '¿Viste el contrato que mandé?', time: 'Ayer', badge: 0, ai: false, color: 'bg-amber-50', dot: 'bg-amber-400' },
-                        { name: 'Proyecto App', msg: 'Archivo subido: diseño_v3.pdf', time: 'Ayer', badge: 0, ai: false, color: 'bg-rose-50', dot: 'bg-rose-400' },
-                      ].map((ch, i) => (
+                      {c.mockup.chats.map((ch, i) => (
                         <div key={ch.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer ${i === 0 ? 'bg-blue-50/80 border border-blue-100' : 'hover:bg-slate-50'}`}>
                           <div className={`w-9 h-9 rounded-full ${ch.color} flex items-center justify-center shrink-0 text-sm font-bold relative`}>
                             {ch.ai ? '✦' : ch.name[0]}
@@ -370,7 +398,7 @@ export default function LandingV4() {
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm">✦</div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-blue-600">do AI</p>
-                        <p className="text-[11px] text-emerald-500 font-medium">● Activo ahora</p>
+                        <p className="text-[11px] text-emerald-500 font-medium">● {c.mockup.activeNow}</p>
                       </div>
                       <div className="flex gap-2">
                         <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center">
@@ -384,9 +412,9 @@ export default function LandingV4() {
                     {/* Messages */}
                     <div className="flex-1 p-4 space-y-3 overflow-hidden bg-[#f8fafc]">
                       <div className="flex gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] shrink-0 mt-1">Tú</div>
+                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] shrink-0 mt-1">{c.mockup.youLabel}</div>
                         <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 shadow-sm border border-slate-100 max-w-[70%]">
-                          Resume los pendientes de este chat y avisa al equipo
+                          {c.mockup.msg1}
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -399,13 +427,13 @@ export default function LandingV4() {
                       </div>
                       <div className="flex gap-2 justify-end">
                         <div className="bg-blue-600 rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-xs text-white max-w-[60%]">
-                          Perfecto, también crea el evento de calendario para el viernes
+                          {c.mockup.msg2}
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-600 font-bold shrink-0 mt-1">✦</div>
                         <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 shadow-sm border border-blue-100 max-w-[70%]">
-                          <span className="text-emerald-600 font-medium">Evento creado.</span> Viernes 10am — &ldquo;Revisión propuesta Q3&rdquo;. Invitación enviada al equipo. 🗓️
+                          <span className="text-emerald-600 font-medium">{c.mockup.msg3start}</span> {c.mockup.msg3end}
                         </div>
                       </div>
                     </div>
@@ -413,7 +441,7 @@ export default function LandingV4() {
                     {/* Input */}
                     <div className="bg-white border-t border-slate-100 px-3 py-2.5 flex items-center gap-2">
                       <div className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-[11px] text-slate-400">
-                        Escribe o pregúntale algo a do AI...
+                        {c.mockup.inputPlaceholder}
                       </div>
                       <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                         <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -463,11 +491,11 @@ export default function LandingV4() {
                     <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">✦</div>
                     <div>
                       <p className="font-bold text-slate-900 text-sm">do AI</p>
-                      <p className="text-emerald-500 text-xs font-medium">● {lang === 'es' ? 'En línea' : 'Online'}</p>
+                      <p className="text-emerald-500 text-xs font-medium">● {c.mockup.activeNow}</p>
                     </div>
                   </div>
                   <p className="text-sm text-slate-600 bg-white rounded-xl px-4 py-3 shadow-sm border border-slate-100">
-                    &ldquo;{lang === 'es' ? 'Resume este chat y crea las tareas para el equipo' : 'Summarize this chat and create tasks for the team'}&rdquo;
+                    &ldquo;{c.mockup.msg1}&rdquo;
                   </p>
                 </div>
                 <div className="p-4 space-y-3">
