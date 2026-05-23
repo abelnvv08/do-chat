@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 async function getRooms(user_id: string) {
@@ -23,6 +34,9 @@ export async function GET(req: NextRequest) {
   const user_id = req.nextUrl.searchParams.get('user_id')
   const q = req.nextUrl.searchParams.get('q')?.trim()
   if (!user_id || !q || q.length < 2) return NextResponse.json({ results: [] })
+
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser || sessionUser.id !== user_id) return NextResponse.json({ results: [] }, { status: 401 })
 
   const rooms = await getRooms(user_id)
   const roomIds = rooms.map(r => r.id)

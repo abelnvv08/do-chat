@@ -87,12 +87,12 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, content: newTask.trim(), due_date: newDueDate || null }),
       })
-      if (!res.ok) { console.error('addTask failed', res.status); return }
+      if (!res.ok) { return }
       const { task } = await res.json()
       if (task) setTasks(prev => [task, ...prev])
       setNewTask('')
       setNewDueDate('')
-    } catch (e) { console.error('addTask error', e) } finally {
+    } catch { } finally {
       setAdding(false)
     }
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import type { Room } from '@/lib/demo'
 
 function admin() {
@@ -9,9 +10,22 @@ function admin() {
   )
 }
 
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
 export async function GET(req: NextRequest) {
   const user_id = req.nextUrl.searchParams.get('user_id')
   if (!user_id) return NextResponse.json({ rooms: [] })
+
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser || sessionUser.id !== user_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const db = admin()
 

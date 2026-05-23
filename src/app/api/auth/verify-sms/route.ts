@@ -67,18 +67,26 @@ export async function POST(req: NextRequest) {
   }
 
   // New user — create auth user now (OTP already consumed, can't verify again)
-  const { data: { user: foundUser } } = await db.auth.admin.getUserByEmail(fakeEmail)
-  let authUser = foundUser ?? null
+  let authUser = null
 
-  if (!authUser) {
-    const { data: created, error: createErr } = await db.auth.admin.createUser({
-      email: fakeEmail,
-      email_confirm: true,
-    })
-    if (createErr || !created?.user) {
+  const { data: created, error: createErr } = await db.auth.admin.createUser({
+    email: fakeEmail,
+    email_confirm: true,
+  })
+
+  if (createErr) {
+    // Auth user may already exist without a profile (edge case: failed profile creation)
+    const { data: listData } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    authUser = listData?.users?.find((u: any) => u.email === fakeEmail) ?? null
+    if (!authUser) {
       return NextResponse.json({ error: 'Error creando usuario' }, { status: 500 })
     }
-    authUser = created.user
+  } else {
+    authUser = created?.user ?? null
+  }
+
+  if (!authUser) {
+    return NextResponse.json({ error: 'Error creando usuario' }, { status: 500 })
   }
 
   // Return user_id so profile step can complete without re-verifying

@@ -1,7 +1,10 @@
+'use client'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function PricingPage() {
+  const router = useRouter()
   return (
     <div className="min-h-screen bg-[#080c14] text-white flex flex-col">
       {/* Nav */}
@@ -26,14 +29,14 @@ export default function PricingPage() {
         <p className="text-white/40 text-base max-w-sm">
           Estamos trabajando en los planes. Por ahora disfruta DO Chat sin límites.
         </p>
-        <Link href="javascript:history.back()"
+        <button onClick={() => router.back()}
           className="mt-10 px-6 py-3 rounded-xl bg-white/8 border border-white/10 text-sm font-medium text-white/70 hover:bg-white/12 transition-colors">
           Volver
-        </Link>
+        </button>
       </div>
 
       <div className="py-8 text-center">
-        <p className="text-white/20 text-xs">© 2025 DO Chat</p>
+        <p className="text-white/20 text-xs">© 2026 DO Chat</p>
       </div>
     </div>
   )

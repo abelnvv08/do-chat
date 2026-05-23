@@ -115,7 +115,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/stats')
       if (res.status === 403) { setForbidden(true); return }
       setStats(await res.json())
-    } catch (e) { console.error('fetchStats error', e) } finally {
+    } catch { } finally {
       setLoading(false)
     }
   }, [])
@@ -127,7 +127,7 @@ export default function AdminPage() {
       const data = await res.json()
       setUsers(data.users ?? [])
       setUsersTotal(data.total ?? 0)
-    } catch (e) { console.error('fetchUsers error', e) }
+    } catch { }
   }, [])
 
   useEffect(() => { fetchStats() }, [fetchStats])

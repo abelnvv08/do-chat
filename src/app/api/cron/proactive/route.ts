@@ -16,7 +16,7 @@ function admin() {
 function isAuthorized(req: NextRequest) {
   const auth = req.headers.get('authorization')
   const secret = process.env.CRON_SECRET
-  if (!secret) return true // dev mode
+  if (!secret) return false  // fail-closed: no secret = no access
   return auth === `Bearer ${secret}`
 }
 

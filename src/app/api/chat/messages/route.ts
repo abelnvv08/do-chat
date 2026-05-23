@@ -32,6 +32,9 @@ async function attachUsers(supabase: ReturnType<typeof admin>, messages: any[]) 
 }
 
 export async function GET(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const room = req.nextUrl.searchParams.get('room') || 'group'
   const supabase = admin()
 
@@ -90,6 +93,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { user_id, content, type = 'text', room_id = 'group', reply_to_id, reply_preview } = await req.json()
   if (!user_id || !content) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser || sessionUser.id !== user_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const encryptedContent = (type === 'text' || type === 'ai') ? await encrypt(content) : content
   const row: Record<string, unknown> = { user_id, content: encryptedContent, type, room_id }
@@ -172,6 +178,9 @@ export async function PATCH(req: NextRequest) {
   const { message_id, content, user_id } = await req.json()
   if (!message_id || !content || !user_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser || sessionUser.id !== user_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const db = admin()
   const { data: msg } = await db.from('demo_messages').select('user_id, room_id').eq('id', message_id).single()
   if (!msg || msg.user_id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -187,6 +196,8 @@ export async function DELETE(req: NextRequest) {
   const db = admin()
 
   if (message_id && user_id) {
+    const sessionUser = await getSessionUser(req)
+    if (!sessionUser || sessionUser.id !== user_id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { data: msg } = await db.from('demo_messages').select('user_id, room_id, type, content').eq('id', message_id).single()
     if (!msg || msg.user_id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

@@ -867,7 +867,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-sm font-semibold text-slate-800">{a.daily.title}</p>
-                    <p className="text-xs text-slate-500">{tasks.filter(t => !t.done).length > 0 ? `${tasks.filter(t => !t.done).length} pending` : a.daily.tasksReminders}</p>
+                    <p className="text-xs text-slate-500">{tasks.filter(t => !t.done).length > 0 ? `${tasks.filter(t => !t.done).length} pendientes` : a.daily.tasksReminders}</p>
                   </div>
                   <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                 </button>

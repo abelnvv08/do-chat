@@ -143,7 +143,7 @@ export default function PrivacyPage() {
       </div>
 
       <div className="border-t border-gray-100 py-8 px-6 text-center">
-        <p className="text-gray-400 text-xs">© 2025 DO Chat · <Link href="/terms" className="hover:text-gray-600 transition-colors">Términos de Servicio</Link></p>
+        <p className="text-gray-400 text-xs">© 2026 DO Chat · <Link href="/terms" className="hover:text-gray-600 transition-colors">Términos de Servicio</Link></p>
       </div>
     </div>
   )

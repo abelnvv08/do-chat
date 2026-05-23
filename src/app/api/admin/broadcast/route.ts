@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
   if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { message } = await req.json()
-  if (!message?.trim()) return NextResponse.json({ error: 'Missing message' }, { status: 400 })
+  if (!message?.trim()) return NextResponse.json({ error: 'Mensaje requerido' }, { status: 400 })
+  if (message.trim().length > 1000) return NextResponse.json({ error: 'Mensaje muy largo (máx 1000 caracteres)' }, { status: 400 })
 
   const db = adminSupabase()
 

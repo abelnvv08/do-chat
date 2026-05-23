@@ -20,7 +20,10 @@ export async function GET(req: NextRequest) {
     .range(offset, offset + limit - 1)
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`)
+    // Sanitize search: only allow alphanumeric, spaces, and basic punctuation
+    const safeSearch = search.replace(/[^a-zA-Z0-9\s\-_@.+]/g, '').slice(0, 100)
+    if (!safeSearch) return NextResponse.json({ users: [] })
+    query = query.or(`name.ilike.%${safeSearch}%,phone.ilike.%${safeSearch}%`)
   }
 
   const { data: users, count } = await query

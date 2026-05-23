@@ -4,8 +4,6 @@ import Stripe from 'stripe'
 import { Resend } from 'resend'
 import webpush from 'web-push'
 
-export const config = { api: { bodyParser: false } }
-
 function getStripe() { return new Stripe(process.env.STRIPE_SECRET_KEY!) }
 
 function admin() {
