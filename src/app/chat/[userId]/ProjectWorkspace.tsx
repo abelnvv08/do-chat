@@ -213,9 +213,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
         <div className="px-4 pb-4 space-y-3">
           {messages.length === 0 && !aiTyping && (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center shadow-md">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
-              </div>
+              <img src="/dochatlogo.png" className="w-12 h-12 rounded-2xl object-cover shadow-md" alt="do AI" />
               <p className="text-sm font-medium text-gray-600">do AI está listo para ayudarte</p>
               <p className="text-xs text-gray-400">Hazme una pregunta sobre tus archivos o pídeme una acción</p>
             </div>
@@ -225,9 +223,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
             return (
               <div key={msg.id} className={`flex gap-2.5 ${isAI ? '' : 'flex-row-reverse'}`}>
                 {isAI && (
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
-                  </div>
+                  <img src="/dochatlogo.png" className="w-8 h-8 rounded-xl object-cover shrink-0 mt-0.5 shadow-sm" alt="do AI" />
                 )}
                 <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${isAI ? 'bg-white border border-gray-100 rounded-tl-sm' : 'bg-blue-600 rounded-tr-sm'}`}>
                   <div className={isAI ? '' : 'text-white'}>
@@ -240,9 +236,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
           })}
           {aiTyping && (
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center shrink-0 shadow-sm">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
-              </div>
+              <img src="/dochatlogo.png" className="w-8 h-8 rounded-xl object-cover shrink-0 shadow-sm" alt="do AI" />
               <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
                 <div className="flex gap-1 items-center h-4">
                   {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i*150}ms` }} />)}
