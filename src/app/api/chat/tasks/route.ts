@@ -130,9 +130,24 @@ export async function PATCH(req: NextRequest) {
   if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id, done, due_date, action, evidence_url, evidence_name, user_id } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-  if (user_id && sessionUser.id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const db = admin()
+
+  // Fetch task to verify ownership before mutating
+  const { data: existingTask } = await db.from('demo_tasks').select('user_id, assigned_to').eq('id', id).single()
+  if (!existingTask) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (action === 'accept' || action === 'reject' || action === 'complete') {
+    // Only the person assigned to the task can accept/reject/complete it
+    if (existingTask.assigned_to !== sessionUser.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  } else {
+    // For done/due_date toggles: must be the task owner
+    if (user_id && sessionUser.id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (existingTask.user_id !== sessionUser.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const update: Record<string, unknown> = {}
 
   if (action === 'accept') {

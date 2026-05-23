@@ -99,7 +99,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
 
   async function handleAction(id: string, action: 'accept' | 'reject') {
     setReceived(prev => prev.map(t => t.id === id ? { ...t, task_status: action === 'accept' ? 'in_progress' : 'rejected' } : t))
-    await fetch('/api/chat/tasks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action }) })
+    await fetch('/api/chat/tasks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action, user_id: userId }) })
     fetchAll()
   }
 

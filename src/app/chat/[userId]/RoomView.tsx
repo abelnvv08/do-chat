@@ -1447,9 +1447,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     if (!taskContent.trim() || !room?.otherUserId) return
     setSendingTask(true)
     const content = taskContent.trim()
-    const myName = messages.find(m => m.user_id === userId)?.user?.name ?? 'Tú'
-    const myEmoji = messages.find(m => m.user_id === userId)?.user?.emoji ?? '👤'
-    await fetch('/api/chat/tasks', {
+    const myName = me?.name ?? messages.find(m => m.user_id === userId)?.user?.name ?? 'Yo'
+    const myEmoji = me?.emoji ?? messages.find(m => m.user_id === userId)?.user?.emoji ?? '👤'
+    const taskRes = await fetch('/api/chat/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1463,6 +1463,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         assigned_to_name: room.name,
       }),
     })
+    if (!taskRes.ok) {
+      setSendingTask(false)
+      return
+    }
     // Post a visible task card message in the chat
     const taskMsg = taskDueDate
       ? `📋 Tarea asignada a ${room.name}: ${content}\n📅 Vence: ${new Date(taskDueDate + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}`
