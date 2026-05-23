@@ -660,9 +660,6 @@ export default function LandingV4() {
 
             {/* ── Pro ── */}
             <div className="rounded-3xl overflow-hidden relative bg-blue-600 shadow-2xl shadow-blue-200 scale-[1.02]">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-lg">{c.pricing.proPlan.popular}</span>
-              </div>
               {/* Content — blurred */}
               <div className="p-7 blur-sm pointer-events-none select-none">
                 <p className="text-xs font-bold tracking-widest uppercase mb-5 text-blue-200">{c.pricing.proPlan.label}</p>
