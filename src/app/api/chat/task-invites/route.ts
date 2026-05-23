@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 // Invites are stored in demo_tasks with source_room encoding:
@@ -26,8 +37,9 @@ function parseInviteSource(source: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get('user_id')
-  if (!userId) return NextResponse.json({ invites: [], sent: [] })
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = sessionUser.id
 
   const db = admin()
 
@@ -92,8 +104,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { from_user_id, to_user_id, content, invite_type, due_date, remind_at, from_name, from_emoji, to_name, to_emoji } = await req.json()
   if (!from_user_id || !to_user_id || !content) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (sessionUser.id !== from_user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const db = admin()
   const type = invite_type ?? 'task'
@@ -133,8 +148,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id, action, user_id } = await req.json()
   if (!id || !action || !user_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (sessionUser.id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const db = admin()
 
@@ -167,6 +185,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   await admin().from('demo_tasks').delete().eq('id', id)
