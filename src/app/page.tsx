@@ -26,7 +26,7 @@ export default function RootPage() {
     <div className="fixed inset-0 flex items-center justify-center bg-[#080c14]">
       <div className="flex flex-col items-center gap-4">
         <Image
-          src="/dochatlogo.svg"
+          src="/dochatlogo.png"
           alt="DO Chat"
           width={80}
           height={80}

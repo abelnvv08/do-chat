@@ -208,7 +208,7 @@ export default function AdminPage() {
         {/* Logo */}
         <div className="px-6 py-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <Image src="/dochatlogo.svg" alt="DO Chat" width={36} height={36} className="rounded-xl shrink-0" />
+            <Image src="/dochatlogo.png" alt="DO Chat" width={36} height={36} className="rounded-xl shrink-0" />
             <div>
               <p className="text-white font-bold text-sm leading-none">DO Chat</p>
               <p className="text-white/40 text-xs mt-0.5">Admin Panel</p>

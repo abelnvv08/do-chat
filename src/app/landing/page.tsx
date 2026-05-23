@@ -250,7 +250,7 @@ export default function LandingV4() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${scrolled ? 'bg-white/96 backdrop-blur border-b border-slate-100 shadow-sm' : 'bg-white'}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/dochatlogo.svg" alt="DO Chat" width={32} height={32} className="rounded-xl" />
+            <Image src="/dochatlogo.png" alt="DO Chat" width={32} height={32} className="rounded-xl" />
             <span className="text-base font-bold text-slate-900 tracking-tight">DO Chat</span>
           </Link>
 
@@ -745,7 +745,7 @@ export default function LandingV4() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 mb-10">
             <div className="col-span-2 sm:col-span-1">
               <Link href="/" className="flex items-center gap-2 mb-4">
-                <Image src="/dochatlogo.svg" alt="DO Chat" width={32} height={32} className="rounded-xl" />
+                <Image src="/dochatlogo.png" alt="DO Chat" width={32} height={32} className="rounded-xl" />
                 <span className="font-bold text-slate-900">DO Chat</span>
               </Link>
               <p className="text-slate-400 text-sm leading-relaxed">
