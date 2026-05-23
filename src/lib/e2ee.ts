@@ -52,27 +52,34 @@ export async function deriveSharedKey(myUserId: string, theirPublicKeyB64: strin
   )
 }
 
-// For group chats: derive a deterministic key from the room ID using the user's private key material
-export async function deriveRoomKey(myUserId: string, roomId: string): Promise<CryptoKey | null> {
-  const priv = await loadPrivateKey(myUserId)
-  if (!priv) return null
-  // Use HKDF-like approach: export raw bits from ECDH self-derivation isn't possible,
-  // so we derive from a fixed "room anchor" public key stored alongside the private key.
-  // Simpler: use PBKDF2 with room ID as password and private key export as salt.
-  const privJwk = localStorage.getItem(PRIV(myUserId))
-  if (!privJwk) return null
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(privJwk.slice(0, 32) + roomId),
-    'PBKDF2', false, ['deriveKey']
-  )
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: new TextEncoder().encode(roomId), iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  )
+// For group chats: derive a shared deterministic key from the room ID alone.
+// All members know the roomId, so they all derive the SAME key.
+// Note: this is shared-secret encryption (not true E2EE — the server knows roomId too),
+// but it's consistent and correct. DMs use ECDH (true E2EE) via deriveSharedKey.
+export async function deriveRoomKey(_myUserId: string, roomId: string): Promise<CryptoKey | null> {
+  try {
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(roomId),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    )
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: new TextEncoder().encode('dochat-group-v1'),
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    )
+  } catch {
+    return null
+  }
 }
 
 export async function encryptMsg(text: string, key: CryptoKey): Promise<string> {

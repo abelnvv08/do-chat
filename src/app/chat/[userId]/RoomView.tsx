@@ -502,6 +502,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
 
   // ── Scroll-to-bottom ────────────────────────────────────────────────────────
   const [isScrolledUp, setIsScrolledUp] = useState(false)
+  const isScrolledUpRef = useRef(false) // mirrors state for use in closures with [] deps
   const [unreadWhileUp, setUnreadWhileUp] = useState(0)
 
   // ── Presence ────────────────────────────────────────────────────────────────
@@ -737,7 +738,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     if (isFirstLoad || isNearBottom) {
       bottomRef.current?.scrollIntoView({ behavior: isFirstLoad ? 'instant' : 'smooth' })
       setUnreadWhileUp(0)
-      setIsScrolledUp(false)
+      setIsScrolledUp(false); isScrolledUpRef.current = false
     } else if (gotNewMessages) {
       setUnreadWhileUp(prev => prev + newCount)
     }
@@ -760,7 +761,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       setContainerHeight(`${vv!.height}px`)
       window.scrollTo(0, 0)
       // Only scroll to bottom on keyboard open if user was already at bottom
-      if (!isScrolledUp) {
+      // Use ref instead of state to avoid stale closure (effect has [] deps)
+      if (!isScrolledUpRef.current) {
         setTimeout(() => {
           bottomRef.current?.scrollIntoView({ behavior: 'instant' })
         }, 50)
@@ -1890,13 +1892,13 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           const el = e.currentTarget
           const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
           const scrolled = distFromBottom > 100
-          setIsScrolledUp(scrolled)
+          setIsScrolledUp(scrolled); isScrolledUpRef.current = scrolled
           if (!scrolled) setUnreadWhileUp(0)
         }}
       >
       {isScrolledUp && (
         <button
-          onClick={() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setUnreadWhileUp(0); setIsScrolledUp(false) }}
+          onClick={() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setUnreadWhileUp(0); setIsScrolledUp(false); isScrolledUpRef.current = false }}
           className="sticky bottom-20 left-0 right-0 mx-auto w-fit z-20 flex items-center gap-1.5 bg-white shadow-lg border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-700 font-medium active:scale-95 transition-transform"
         >
           {unreadWhileUp > 0 && (

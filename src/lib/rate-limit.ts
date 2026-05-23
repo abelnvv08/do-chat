@@ -1,30 +1,54 @@
-type Entry = { count: number; resetAt: number }
+import { createClient } from '@supabase/supabase-js'
 
-const store = new Map<string, Entry>()
-
-// Clean up expired entries every 5 minutes to avoid memory leaks
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now()
-    for (const [key, entry] of store) {
-      if (entry.resetAt < now) store.delete(key)
-    }
-  }, 5 * 60 * 1000)
+function db() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 }
 
-export function rateLimit(key: string, max: number, windowMs: number): { allowed: boolean; remaining: number; retryAfter: number } {
-  const now = Date.now()
-  const entry = store.get(key)
+export async function rateLimit(
+  key: string,
+  max: number,
+  windowMs: number
+): Promise<{ allowed: boolean; remaining: number; retryAfter: number }> {
+  try {
+    const supabase = db()
+    const now = Date.now()
+    const windowStart = new Date(now - windowMs).toISOString()
 
-  if (!entry || entry.resetAt < now) {
-    store.set(key, { count: 1, resetAt: now + windowMs })
-    return { allowed: true, remaining: max - 1, retryAfter: 0 }
+    // Get current entry for this key within the current window
+    const { data: existing } = await supabase
+      .from('rate_limits')
+      .select('count, window_start')
+      .eq('key', key)
+      .maybeSingle()
+
+    const inWindow = existing && new Date(existing.window_start).getTime() >= now - windowMs
+
+    if (!inWindow) {
+      // No entry or window expired — start fresh
+      await supabase
+        .from('rate_limits')
+        .upsert({ key, count: 1, window_start: new Date().toISOString() })
+      return { allowed: true, remaining: max - 1, retryAfter: 0 }
+    }
+
+    if (existing.count >= max) {
+      const windowEnd = new Date(existing.window_start).getTime() + windowMs
+      const retryAfter = Math.ceil((windowEnd - now) / 1000)
+      return { allowed: false, remaining: 0, retryAfter: Math.max(0, retryAfter) }
+    }
+
+    // Increment within the current window
+    await supabase
+      .from('rate_limits')
+      .update({ count: existing.count + 1 })
+      .eq('key', key)
+
+    return { allowed: true, remaining: max - (existing.count + 1), retryAfter: 0 }
+  } catch {
+    // Fail-open: if DB is unavailable, allow the request (Twilio still rate-limits SMS)
+    return { allowed: true, remaining: max, retryAfter: 0 }
   }
-
-  if (entry.count >= max) {
-    return { allowed: false, remaining: 0, retryAfter: Math.ceil((entry.resetAt - now) / 1000) }
-  }
-
-  entry.count++
-  return { allowed: true, remaining: max - entry.count, retryAfter: 0 }
 }

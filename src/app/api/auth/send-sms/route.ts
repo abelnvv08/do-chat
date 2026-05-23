@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
 
   // Max 5 SMS per phone per hour
-  const byPhone = rateLimit(`sms:phone:${phone}`, 5, 60 * 60 * 1000)
+  const byPhone = await rateLimit(`sms:phone:${phone}`, 5, 60 * 60 * 1000)
   if (!byPhone.allowed) {
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${byPhone.retryAfter}s.` },
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Max 10 SMS per IP per hour
-  const byIp = rateLimit(`sms:ip:${ip}`, 10, 60 * 60 * 1000)
+  const byIp = await rateLimit(`sms:ip:${ip}`, 10, 60 * 60 * 1000)
   if (!byIp.allowed) {
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${byIp.retryAfter}s.` },

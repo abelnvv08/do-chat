@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!phone || !code) return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
-  const rl = rateLimit(`verify:${ip}:${phone}`, 10, 60 * 60 * 1000)
+  const rl = await rateLimit(`verify:${ip}:${phone}`, 10, 60 * 60 * 1000)
   if (!rl.allowed) {
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${rl.retryAfter}s.` },
