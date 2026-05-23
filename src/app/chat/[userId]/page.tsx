@@ -22,14 +22,14 @@ function UserIcon({ className }: { className?: string }) {
 function Avatar({ size = 'md', avatarUrl }: { emoji?: string; bg?: string; size?: 'sm' | 'md' | 'lg'; avatarUrl?: string | null }) {
   const sizeClass = size === 'lg' ? 'w-12 h-12' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
   if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
-  return <img src="/default-avatar.png" alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
+  return <img src="/default-avatar-v2.png" alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
 }
 
 // Reusable person avatar for contacts (rounded-2xl, like app style)
 function ContactAvatar({ avatarUrl, size = 'md', className = '' }: { avatarUrl?: string | null; size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
   const sizeClass = size === 'xl' ? 'w-20 h-20' : size === 'lg' ? 'w-16 h-16' : size === 'md' ? 'w-11 h-11' : 'w-8 h-8'
   if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-2xl object-cover shrink-0 ${className}`} />
-  return <img src="/default-avatar.png" alt="" className={`${sizeClass} rounded-2xl object-cover shrink-0 ${className}`} />
+  return <img src="/default-avatar-v2.png" alt="" className={`${sizeClass} rounded-2xl object-cover shrink-0 ${className}`} />
 }
 
 type RoomWithMeta = Room & {
@@ -2219,7 +2219,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
           {room.otherAvatarUrl
             ? <img src={room.otherAvatarUrl} alt="" className="w-12 h-12 rounded-2xl object-cover shadow-sm" />
             : room.type === 'dm'
-              ? <img src="/default-avatar.png" alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0 shadow-sm" />
+              ? <img src="/default-avatar-v2.png" alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0 shadow-sm" />
               : <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${room.type === 'group' ? 'bg-gradient-to-br from-violet-500 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}>
                   {room.emoji ? <span className="text-xl">{room.emoji}</span> : <UserIcon className="w-6 h-6 text-white" />}
                 </div>
