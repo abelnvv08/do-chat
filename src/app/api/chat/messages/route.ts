@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { broadcastToRoom } from '@/lib/realtime-broadcast'
 import { encrypt, decrypt } from '@/lib/encryption'
 import webpush from 'web-push'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 async function attachUsers(supabase: ReturnType<typeof admin>, messages: any[]) {
@@ -194,6 +205,19 @@ export async function DELETE(req: NextRequest) {
   }
 
   if (!room_id) return NextResponse.json({ error: 'Missing room_id' }, { status: 400 })
+
+  // Bulk-room delete: require an authenticated session and room membership
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: membership } = await db
+    .from('demo_room_members')
+    .select('user_id')
+    .eq('room_id', room_id)
+    .eq('user_id', sessionUser.id)
+    .single()
+  if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   await db.from('demo_messages').delete().eq('room_id', room_id)
   return NextResponse.json({ ok: true })
 }
