@@ -3,9 +3,30 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import Anthropic from '@anthropic-ai/sdk'
 import { getAIRoom } from '@/lib/demo'
 import { broadcastToRoom } from '@/lib/realtime-broadcast'
+
+function isSafeUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (!['http:', 'https:'].includes(u.protocol)) return false
+    const host = u.hostname
+    if (/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1|localhost$)/i.test(host)) return false
+    return true
+  } catch { return false }
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -41,8 +62,13 @@ async function getTodayCalendarEvents(icalUrl: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { user_id, ical_url } = await req.json()
   if (!user_id) return NextResponse.json({ error: 'Missing user_id' }, { status: 400 })
+
+  if (ical_url && !isSafeUrl(ical_url)) return NextResponse.json({ error: 'Invalid calendar URL' }, { status: 400 })
 
   const supabase = admin()
   const today = new Date().toISOString().slice(0, 10)

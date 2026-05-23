@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 const BG_COLORS = ['bg-violet-600', 'bg-emerald-600', 'bg-amber-500', 'bg-blue-600', 'bg-rose-500', 'bg-cyan-600', 'bg-orange-500', 'bg-purple-600']
 
@@ -28,12 +29,13 @@ export async function POST(req: NextRequest) {
 
   const userId = authData.user.id
   const bg = BG_COLORS[Math.floor(Math.random() * BG_COLORS.length)]
+  const hashedPin = await bcrypt.hash(pin, 10)
 
   await db.from('demo_profiles').upsert({
     id: userId,
     name: name.trim(),
     username: clean,
-    pin,
+    pin: hashedPin,
     emoji: '',
     bg,
     text_color: 'text-white',

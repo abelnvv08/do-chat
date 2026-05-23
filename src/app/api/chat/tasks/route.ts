@@ -107,11 +107,12 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  // Send push notification to assignee
+  // Send push notification to assignee (forward session cookies so task-notify can authenticate)
   if (isAssignment && assigned_to && data) {
+    const cookieHeader = req.headers.get('cookie') ?? ''
     fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://getdochat.com'}/api/chat/task-notify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Cookie': cookieHeader },
       body: JSON.stringify({
         to_user_id: assigned_to,
         from_name: assigned_by_name ?? 'Alguien',

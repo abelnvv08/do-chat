@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import webpush from 'web-push'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ ok: false, reason: 'Unauthorized' }, { status: 401 })
   const { caller_id, callee_id, caller_name, room_id, has_video } = await req.json()
   if (!caller_id || !callee_id || !room_id) return NextResponse.json({ ok: false })
+  if (sessionUser.id !== caller_id) return NextResponse.json({ ok: false, reason: 'Forbidden' }, { status: 403 })
 
   const db = admin()
   const { data: sub } = await db

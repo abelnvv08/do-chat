@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 export async function GET(req: NextRequest) {
@@ -50,10 +61,18 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { room_id, name, add_member_ids, remove_user_id, promote_user_id, demote_user_id } = await req.json()
   if (!room_id) return NextResponse.json({ error: 'Missing room_id' }, { status: 400 })
 
-  const supabase = admin()
+  const adminClient = admin()
+  // Verify the requesting user is an admin of this room
+  const { data: membership } = await adminClient.from('demo_room_members')
+    .select('role').eq('room_id', room_id).eq('user_id', sessionUser.id).single()
+  if (membership?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const supabase = adminClient
 
   if (name) {
     await supabase.from('demo_rooms').update({ name }).eq('id', room_id)

@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (!['http:', 'https:'].includes(u.protocol)) return false
+    const host = u.hostname
+    if (/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1|localhost$)/i.test(host)) return false
+    return true
+  } catch { return false }
+}
+
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get('url')
   if (!url || !/^https?:\/\//.test(url)) {
     return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
   }
+
+  if (!isSafeUrl(url)) return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
 
   try {
     const res = await fetch(url, {
