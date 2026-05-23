@@ -107,7 +107,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [loading, setLoading] = useState(true)
   const [roomsError, setRoomsError] = useState(false)
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
-  const [doPreviewText, setDoPreviewText] = useState('Tu asistente · siempre activo')
+  const [doPreviewText, setDoPreviewText] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -861,7 +861,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     <img src="/dochatlogo.png" className="w-10 h-10 rounded-2xl object-cover shrink-0" alt="do AI" />
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-white font-bold text-sm">do AI</p>
-                      <p className="text-blue-100/80 text-xs truncate">{doPreviewText}</p>
+                      <p className="text-blue-100/80 text-xs truncate">{doPreviewText || a.chats.aiSubtitleDefault}</p>
                     </div>
                     {aiRoom.unread > 0 && <span className="min-w-[20px] h-5 rounded-full bg-white text-blue-600 text-[10px] font-bold flex items-center justify-center px-1.5">{aiRoom.unread}</span>}
                     <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
@@ -952,15 +952,15 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       const handle = (profile as any).username
                       const url = handle ? `https://getdochat.com/invite/${handle}` : 'https://getdochat.com'
                       if (navigator.share) {
-                        navigator.share({ title: 'DO Chat', text: 'Join me on DO Chat — the business messenger with built-in AI.', url }).catch(() => {})
+                        navigator.share({ title: 'DO Chat', text: a.chats.shareText, url }).catch(() => {})
                       } else {
                         await navigator.clipboard.writeText(url)
-                        alert('¡Link copiado!')
+                        alert(a.chats.copyLink)
                       }
                     }}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-slate-200 bg-white text-slate-600 text-sm font-medium active:scale-[0.98] transition-all">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
-                      Compartir enlace de invitación
+                      {a.chats.shareLink}
                     </button>
                   </div>
                 </div>
@@ -1204,10 +1204,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                     </div>
                     <p className="text-[17px] font-bold text-slate-900">
-                      {deleteConfirmIds.length === 1 ? '¿Eliminar este archivo?' : `¿Eliminar ${deleteConfirmIds.length} archivos?`}
+                      {deleteConfirmIds.length === 1 ? a.files.deleteOneFile : a.files.deleteManyFiles.replace('{n}', String(deleteConfirmIds.length))}
                     </p>
                     <p className="text-sm text-slate-500 text-center leading-relaxed">
-                      Se eliminará del chat y de esta lista.<br />Esta acción no se puede deshacer.
+                      {a.files.deleteDesc}<br />{a.files.deleteUndoable}
                     </p>
                   </div>
                   <div className="flex flex-col gap-3">
@@ -1217,15 +1217,15 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       className="w-full py-4 bg-red-500 text-white font-semibold text-[16px] rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {deleting
-                        ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Eliminando…</>
-                        : 'Eliminar'}
+                        ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> {a.files.deleting}</>
+                        : a.files.delete}
                     </button>
                     <button
                       disabled={deleting}
                       onClick={() => setDeleteConfirmIds(null)}
                       className="w-full py-4 bg-slate-100 text-slate-700 font-semibold text-[16px] rounded-2xl active:scale-[0.98] transition-all"
                     >
-                      Cancelar
+                      {a.files.cancel}
                     </button>
                   </div>
                 </div>
@@ -1377,7 +1377,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           await fetchContacts()
                         }} className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-red-500/10 transition-colors">
                           <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 10.374 21c-2.331 0-4.512-.645-6.374-1.766Z" /></svg>
-                          <span className="text-[15px] text-red-400 font-medium">Eliminar contacto</span>
+                          <span className="text-[15px] text-red-400 font-medium">{a.actions.deleteContact}</span>
                         </button>
                       </div>
                     </>
@@ -1393,15 +1393,15 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
       {activeTab === 'llamadas' && (
         <>
           <div className="bg-white/95 backdrop-blur-sm border-b border-slate-200 px-4 pb-3 sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top, 44px) + 12px)" }}>
-            <h1 className="text-xl font-bold text-slate-800">Llamadas</h1>
+            <h1 className="text-xl font-bold text-slate-800">{a.tabs.calls}</h1>
           </div>
           <div className="flex-1 overflow-y-auto pb-24">
             {callHistory.length > 0 && (
               <div>
                 <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Recientes</p>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{a.calls.recentSection}</p>
                   <button onClick={() => { setCallHistory([]); try { localStorage.removeItem(`call_history_${userId}`) } catch {} }}
-                    className="text-xs text-red-400 font-medium">Borrar</button>
+                    className="text-xs text-red-400 font-medium">{a.calls.clearHistory}</button>
                 </div>
                 <div className="divide-y divide-slate-100">
                   {callHistory.map((log, i) => {
@@ -1411,10 +1411,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     const fmtDur = (s: number) => s > 0 ? `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}` : ''
                     const relTime = (() => {
                       const diff = Date.now() - log.ts
-                      if (diff < 60000) return 'Ahora'
+                      if (diff < 60000) return a.calls.justNow
                       if (diff < 3600000) return `${Math.floor(diff/60000)}min`
                       if (diff < 86400000) return `${Math.floor(diff/3600000)}h`
-                      return new Date(log.ts).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+                      return new Date(log.ts).toLocaleDateString(lang === 'es' ? 'es' : 'en', { day: 'numeric', month: 'short' })
                     })()
                     return (
                       <div key={i} className="flex items-center gap-3 px-4 py-3">
@@ -1579,12 +1579,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               <button onClick={async () => {
                 const handle = (profile as any).username
                 const url = handle ? `https://getdochat.com/invite/${handle}` : 'https://getdochat.com'
-                const text = 'Join me on DO Chat — the business messenger with built-in AI.'
                 if (navigator.share) {
-                  navigator.share({ title: 'DO Chat', text, url }).catch(() => {})
+                  navigator.share({ title: 'DO Chat', text: a.chats.shareText, url }).catch(() => {})
                 } else {
                   await navigator.clipboard.writeText(url)
-                  alert('¡Link copiado!')
+                  alert(a.chats.copyLink)
                 }
               }}
                 className="w-full rounded-3xl bg-slate-50 border border-slate-200 p-4 flex items-center gap-3 active:scale-[0.98] transition-all text-left">
@@ -1592,8 +1591,8 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" /></svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-slate-700">Invitar a DO Chat</p>
-                  <p className="text-[11px] text-slate-400">Comparte tu enlace personal</p>
+                  <p className="text-[13px] font-semibold text-slate-700">{a.chats.inviteTitle}</p>
+                  <p className="text-[11px] text-slate-400">{a.chats.inviteSubtitle}</p>
                 </div>
                 <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
               </button>
@@ -1864,7 +1863,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 <div>
                   <p className="text-xs font-semibold text-gray-400 mb-1.5">{a.daily.description}</p>
                   <textarea value={inviteContent} onChange={e => setInviteContent(e.target.value)}
-                    placeholder={inviteType === 'task' ? 'Ej: Revisar el contrato antes del jueves' : 'Ej: Llamar al proveedor a las 10am'}
+                    placeholder={inviteType === 'task' ? a.daily.invitePlaceholderTask : a.daily.invitePlaceholderReminder}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 resize-none"
                     rows={2} />
                 </div>

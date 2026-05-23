@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLanguage } from '@/lib/i18n'
 import type { DoChip } from '@/app/api/chat/do-context/route'
 
 const CHIP_ICON: Record<DoChip['type'], string> = {
@@ -20,26 +21,6 @@ const CHIP_COLOR: Record<DoChip['type'], { border: string; title: string; bg: st
   generic:       { border: 'border-slate-200',  title: 'text-slate-500',  bg: 'bg-slate-50' },
 }
 
-function chipSendText(chip: DoChip): string {
-  if (chip.type === 'task_today')
-    return `Tengo ${chip.count} tarea${chip.count > 1 ? 's' : ''} que vence${chip.count > 1 ? 'n' : ''} hoy. Ayudame a organizarme.`
-  if (chip.type === 'task_tomorrow')
-    return `Tengo ${chip.count} tarea${chip.count > 1 ? 's' : ''} para mañana. ¿Cómo arrancamos?`
-  if (chip.type === 'active_chat')
-    return `Resumí el chat de ${chip.roomName} — tengo ${chip.unread} mensaje${chip.unread > 1 ? 's' : ''} sin leer.`
-  if (chip.type === 'awaiting_reply')
-    return `En el chat de ${chip.roomName} llevo ${chip.hours}h sin respuesta. Ayudame a redactar una respuesta.`
-  return chip.text
-}
-
-function chipSubtitle(chip: DoChip): string {
-  if (chip.type === 'task_today')     return 'Revisá tus tareas de hoy'
-  if (chip.type === 'task_tomorrow')  return 'Planificá el día de mañana'
-  if (chip.type === 'active_chat')    return chip.roomName
-  if (chip.type === 'awaiting_reply') return chip.roomName
-  return ''
-}
-
 export function DoWelcomeScreen({
   userId,
   userName,
@@ -49,6 +30,8 @@ export function DoWelcomeScreen({
   userName: string
   onSend: (text: string) => void
 }) {
+  const { lang, t } = useLanguage()
+  const ds = t.app.doScreen
   const [chips, setChips] = useState<DoChip[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -60,20 +43,61 @@ export function DoWelcomeScreen({
       .finally(() => setLoading(false))
   }, [userId])
 
-  const dayName = new Date().toLocaleDateString('es-MX', {
+  function chipSendText(chip: DoChip): string {
+    if (lang === 'es') {
+      if (chip.type === 'task_today') {
+        const n = chip.count
+        return `Tengo ${n} tarea${n !== 1 ? 's' : ''} que vence${n !== 1 ? 'n' : ''} hoy. Ayudame a organizarme.`
+      }
+      if (chip.type === 'task_tomorrow') {
+        const n = chip.count
+        return `Tengo ${n} tarea${n !== 1 ? 's' : ''} para mañana. ¿Cómo arrancamos?`
+      }
+      if (chip.type === 'active_chat')
+        return `Resumí el chat de ${chip.roomName} — tengo ${chip.unread} mensaje${chip.unread !== 1 ? 's' : ''} sin leer.`
+      if (chip.type === 'awaiting_reply')
+        return `En el chat de ${chip.roomName} llevo ${chip.hours}h sin respuesta. Ayudame a redactar una respuesta.`
+    } else {
+      if (chip.type === 'task_today') {
+        const n = chip.count
+        return `I have ${n} task${n !== 1 ? 's' : ''} due today. Help me organize.`
+      }
+      if (chip.type === 'task_tomorrow') {
+        const n = chip.count
+        return `I have ${n} task${n !== 1 ? 's' : ''} for tomorrow. How do we start?`
+      }
+      if (chip.type === 'active_chat')
+        return `Summarize the ${chip.roomName} chat — I have ${chip.unread} unread message${chip.unread !== 1 ? 's' : ''}.`
+      if (chip.type === 'awaiting_reply')
+        return `I've been waiting ${chip.hours}h for a reply in ${chip.roomName}. Help me draft a response.`
+    }
+    return chip.text
+  }
+
+  function chipSubtitle(chip: DoChip): string {
+    if (chip.type === 'task_today')     return ds.taskTodaySub
+    if (chip.type === 'task_tomorrow')  return ds.taskTomorrowSub
+    if (chip.type === 'active_chat')    return chip.roomName
+    if (chip.type === 'awaiting_reply') return chip.roomName
+    return ''
+  }
+
+  const locale = lang === 'es' ? 'es-MX' : 'en-US'
+  const dayName = new Date().toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   })
   const displayName = userName.split(' ')[0] || userName
+  const greeting = ds.greeting.replace('{name}', displayName)
 
   return (
     <div className="flex flex-col items-center px-4 pt-12 pb-4 gap-5 min-h-[300px]">
       {/* Icon + greeting */}
       <div className="flex flex-col items-center gap-2">
         <img src="/dochatlogo.png" className="w-14 h-14 rounded-2xl object-cover shadow-md" alt="do AI" />
-        <p className="text-lg font-bold text-slate-800">Hola, {displayName} 👋</p>
-        <p className="text-xs text-slate-400 text-center capitalize">{dayName} · ¿En qué trabajamos?</p>
+        <p className="text-lg font-bold text-slate-800">{greeting}</p>
+        <p className="text-xs text-slate-400 text-center capitalize">{dayName} · {ds.workingOn}</p>
       </div>
 
       {/* Chips */}
