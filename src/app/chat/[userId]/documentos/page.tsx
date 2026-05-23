@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { formatMessageTime } from '@/lib/utils'
 
 type FileEntry = {
@@ -28,7 +27,6 @@ function fileColor(name: string) {
 
 export default function DocumentosPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
-  const router = useRouter()
   const [files, setFiles] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'file' | 'image'>('all')

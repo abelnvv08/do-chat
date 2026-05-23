@@ -110,6 +110,7 @@ export default function BuscarPage({ params }: { params: Promise<{ userId: strin
             {query.length > 0 && (
               <button
                 onClick={() => { setQuery(''); setResults([]); setSearched(false) }}
+                aria-label="Limpiar búsqueda"
                 className="text-gray-400 hover:text-gray-600 p-0.5"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

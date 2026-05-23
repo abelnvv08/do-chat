@@ -368,7 +368,10 @@ export default function LandingV4() {
                       {c.mockup.chats.map((ch, i) => (
                         <div key={ch.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer ${i === 0 ? 'bg-blue-50/80 border border-blue-100' : 'hover:bg-slate-50'}`}>
                           <div className={`w-9 h-9 rounded-full ${ch.color} flex items-center justify-center shrink-0 text-sm font-bold relative`}>
-                            {ch.ai ? '✦' : ch.name[0]}
+                            {ch.ai
+                              ? <img src="/dochatlogo.png" className="w-5 h-5 rounded-md object-cover" alt="do AI" />
+                              : <span className="text-sm font-bold">{ch.name[0]}</span>
+                            }
                             <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${ch.dot}`} />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -379,7 +382,7 @@ export default function LandingV4() {
                             <p className="text-[11px] text-slate-400 truncate">{ch.msg}</p>
                           </div>
                           {ch.badge > 0 && (
-                            <div className="w-4.5 h-4.5 min-w-[18px] h-[18px] rounded-full bg-blue-600 flex items-center justify-center">
+                            <div className="w-[18px] h-[18px] min-w-[18px] rounded-full bg-blue-600 flex items-center justify-center">
                               <span className="text-[9px] text-white font-bold">{ch.badge}</span>
                             </div>
                           )}
@@ -392,7 +395,9 @@ export default function LandingV4() {
                   <div className="flex-1 flex flex-col">
                     {/* Chat header */}
                     <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm">✦</div>
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                        <img src="/dochatlogo.png" className="w-full h-full object-cover rounded-full" alt="do AI" />
+                      </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-blue-600">do AI</p>
                         <p className="text-[11px] text-emerald-500 font-medium">● {c.mockup.activeNow}</p>
@@ -415,7 +420,9 @@ export default function LandingV4() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-content-center text-[10px] shrink-0 mt-1 flex items-center justify-center text-blue-600 font-bold">✦</div>
+                        <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 mt-1">
+                          <img src="/dochatlogo.png" className="w-full h-full object-cover" alt="do AI" />
+                        </div>
                         <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 shadow-sm border border-blue-100 max-w-[75%]">
                           <p className="font-semibold text-blue-700 mb-1.5">✦ do AI — {c.featureAI.cardTitle}</p>
                           <p className="mb-2">{c.featureAI.cardBody}</p>
@@ -428,7 +435,9 @@ export default function LandingV4() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] text-blue-600 font-bold shrink-0 mt-1">✦</div>
+                        <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 mt-1">
+                          <img src="/dochatlogo.png" className="w-full h-full object-cover" alt="do AI" />
+                        </div>
                         <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-700 shadow-sm border border-blue-100 max-w-[70%]">
                           <span className="text-emerald-600 font-medium">{c.mockup.msg3start}</span> {c.mockup.msg3end}
                         </div>
@@ -485,7 +494,9 @@ export default function LandingV4() {
               <div className="w-full max-w-sm bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-b border-slate-100">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">✦</div>
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg shadow-blue-200">
+                      <img src="/dochatlogo.png" className="w-full h-full object-cover" alt="do AI" />
+                    </div>
                     <div>
                       <p className="font-bold text-slate-900 text-sm">do AI</p>
                       <p className="text-emerald-500 text-xs font-medium">● {c.mockup.activeNow}</p>
@@ -497,7 +508,7 @@ export default function LandingV4() {
                 </div>
                 <div className="p-4 space-y-3">
                   <div className="flex items-start gap-3 bg-blue-50 rounded-xl px-4 py-3">
-                    <span className="text-blue-500 text-base mt-0.5">✦</span>
+                    <img src="/dochatlogo.png" className="w-5 h-5 rounded-md object-cover mt-0.5 shrink-0" alt="do AI" />
                     <div>
                       <p className="text-sm text-slate-900 font-medium mb-1">{c.featureAI.cardTitle}</p>
                       <p className="text-xs text-slate-500 leading-relaxed">{c.featureAI.stats.map(s => `${s.n} ${s.label}`).join(' · ')}</p>

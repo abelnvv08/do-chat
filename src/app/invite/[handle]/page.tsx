@@ -44,7 +44,7 @@ export default async function InvitePage({ params }: Props) {
         {/* Logo */}
         <div className="flex justify-center mb-10">
           <Image
-            src="/icon-192.png"
+            src="/dochatlogo.png"
             alt="DO Chat"
             width={80}
             height={80}
@@ -78,13 +78,19 @@ export default async function InvitePage({ params }: Props) {
 
         {/* CTA */}
         <Link
-          href={`/login?ref=${clean}`}
+          href={`/login?start=phone&ref=${clean}`}
           className="block w-full py-4 rounded-2xl bg-blue-600 text-white text-center text-base font-bold shadow-xl shadow-blue-500/25 active:scale-[0.98] transition-all hover:bg-blue-500">
-          Join for free
+          Crear cuenta gratis
+        </Link>
+
+        <Link
+          href="/login"
+          className="block w-full py-3 rounded-2xl text-center text-sm font-medium text-white/40 hover:text-white/60 transition-colors mt-2">
+          Ya tengo cuenta → Iniciar sesión
         </Link>
 
         <p className="text-center text-xs text-white/20 mt-4">
-          No credit card required · Free forever
+          Sin tarjeta de crédito · Gratis para siempre
         </p>
 
       </div>

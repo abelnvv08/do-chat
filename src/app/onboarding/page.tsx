@@ -211,5 +211,13 @@ function OnboardingContent() {
 }
 
 export default function OnboardingPage() {
-  return <Suspense><OnboardingContent /></Suspense>
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-500">
+        <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
+  )
 }

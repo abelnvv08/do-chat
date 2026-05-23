@@ -2,11 +2,11 @@
   "name": "DO Chat",
   "short_name": "DO Chat",
   "description": "El chat donde la IA trabaja por ti",
-  "start_url": "/demo",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "theme_color": "#2563eb",
   "icons": [
     {
       "src": "/icon-192.png",

@@ -33,6 +33,10 @@ export default function RootPage() {
           className="rounded-2xl animate-pulse"
           priority
         />
+        <div className="text-center">
+          <p className="text-white font-bold text-lg tracking-tight">DO Chat</p>
+          <p className="text-white/40 text-sm mt-1">Cargando...</p>
+        </div>
       </div>
     </div>
   )

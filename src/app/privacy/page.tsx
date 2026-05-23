@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -100,6 +101,17 @@ Nos comprometemos a resolver cualquier inquietud de privacidad de forma rápida 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white">
+      {/* Top nav */}
+      <nav className="border-b border-slate-100 py-4 px-6">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <Link href="/landing" className="flex items-center gap-2">
+            <Image src="/dochatlogo.png" alt="DO Chat" width={28} height={28} className="rounded-lg" />
+            <span className="font-bold text-slate-900 text-sm">DO Chat</span>
+          </Link>
+          <Link href="/landing" className="text-sm text-slate-500 hover:text-slate-700">← Volver al inicio</Link>
+        </div>
+      </nav>
+
       {/* Header */}
       <div className="bg-[#0f172a] text-white">
         <div className="max-w-3xl mx-auto px-6 py-12">

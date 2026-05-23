@@ -105,6 +105,7 @@ export default function ChatListPage({ params }: { params: Promise<{ userId: str
   const [rooms, setRooms] = useState<RoomWithMeta[]>([])
   const [prefs, setPrefs] = useState<RoomPref[]>([])
   const [loading, setLoading] = useState(true)
+  const [roomsError, setRoomsError] = useState(false)
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
   const [doPreviewText, setDoPreviewText] = useState('Tu asistente · siempre activo')
   const [searchQuery, setSearchQuery] = useState('')
@@ -293,8 +294,12 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   async function fetchRooms() {
     try {
       const res = await fetch(`/api/chat/chat-list?user_id=${userId}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('fetch failed')
       const { rooms: r } = await res.json()
       setRooms(r ?? [])
+      setRoomsError(false)
+    } catch {
+      setRoomsError(true)
     } finally { setLoading(false) }
   }
   async function fetchContacts() {
@@ -731,7 +736,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
             <div className="flex items-center justify-between mb-3">
               <Image src="/icon-192.png" alt="DO Chat" width={36} height={36} className="rounded-xl" />
               <div className="relative">
-                <button onClick={() => setShowNewMenu(v => !v)} className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 active:scale-95 transition-all">
+                <button onClick={() => setShowNewMenu(v => !v)} aria-label="Nuevo chat" className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 active:scale-95 transition-all">
                   <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 </button>
                 {showNewMenu && (
@@ -840,6 +845,13 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {roomsError && !loading && (
+                <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex flex-col items-center gap-2 text-center">
+                  <p className="text-sm font-semibold text-red-600">No se pudieron cargar los chats</p>
+                  <button onClick={() => { setLoading(true); setRoomsError(false); fetchRooms() }}
+                    className="text-xs text-red-500 underline underline-offset-2">Intentar de nuevo</button>
                 </div>
               )}
               {aiRoom && (

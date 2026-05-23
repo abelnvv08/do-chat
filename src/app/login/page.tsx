@@ -116,7 +116,7 @@ function Layout({ header, children }: { header: React.ReactNode; children: React
         {/* Logo */}
         <div className="relative z-10 flex flex-col items-center">
           <div className="w-[72px] h-[72px] rounded-3xl bg-white flex items-center justify-center shadow-2xl shadow-blue-950/50 mb-4 ring-4 ring-white/20">
-            <Image src="/icon-192.png" alt="DO Chat" width={48} height={48} className="rounded-2xl" />
+            <Image src="/dochatlogo.png" alt="DO Chat" width={52} height={52} className="rounded-2xl" />
           </div>
           <span className="text-white font-extrabold text-xl tracking-tight mb-1">DO Chat</span>
           <span className="text-blue-200/80 text-sm font-medium">Tu equipo chatea. do AI trabaja.</span>
@@ -181,6 +181,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (otp.join('').length === 6) verifyOtp()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otp])
 
   async function sendSMS() {
@@ -353,9 +354,9 @@ export default function LoginPage() {
 
 
       <p className="text-slate-300 text-[11px] text-center leading-relaxed">
-        Al continuar aceptas nuestros{' '}
+        {l.phone.disclaimerPrefix}{' '}
         <Link href="/terms" className="text-slate-400 underline underline-offset-2 hover:text-slate-600">{l.phone.disclaimerTerms}</Link>
-        {' '}y{' '}
+        {' '}{l.phone.disclaimerAnd}{' '}
         <Link href="/privacy" className="text-slate-400 underline underline-offset-2 hover:text-slate-600">{l.phone.disclaimerPrivacy}</Link>
       </p>
 
@@ -364,7 +365,7 @@ export default function LoginPage() {
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
-          Volver al inicio
+          {l.phone.backHome}
         </Link>
         <LangToggle className="border-slate-200 text-slate-400 hover:border-slate-300" />
       </div>
@@ -418,7 +419,7 @@ export default function LoginPage() {
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
         </svg>
-        Volver
+        {l.otp.back}
       </button>
 
       <div className="mb-7">
@@ -428,7 +429,7 @@ export default function LoginPage() {
           <span className="text-sm font-bold text-blue-700">{fullPhone}</span>
           <span className="w-px h-3.5 bg-blue-200" />
           <button onClick={() => setStep('phone')} className="text-blue-600 text-xs font-bold hover:text-blue-800 transition-colors">
-            Cambiar
+            {l.otp.edit}
           </button>
         </div>
       </div>
@@ -447,7 +448,7 @@ export default function LoginPage() {
       <div className="text-center mt-7">
         {cooldown > 0 ? (
           <p className="text-sm text-slate-400">
-            Reenviar en <span className="font-extrabold text-slate-700 tabular-nums">{cooldown}s</span>
+            {l.otp.resendIn} <span className="font-extrabold text-slate-700 tabular-nums">{cooldown}s</span>
           </p>
         ) : (
           <button onClick={resendSMS} disabled={loading}
@@ -462,7 +463,7 @@ export default function LoginPage() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
         </svg>
         <p className="text-xs text-slate-400 leading-relaxed">
-          Revisa tu SMS. El código tiene 6 dígitos y expira en 10 minutos. También funciona pegando el código directamente.
+          {l.otp.smsHint}
         </p>
       </div>
     </Layout>
@@ -491,7 +492,7 @@ export default function LoginPage() {
           </div>
         </button>
         <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-        <p className="text-xs text-slate-400 font-medium">Foto de perfil <span className="text-slate-300">(opcional)</span></p>
+        <p className="text-xs text-slate-400 font-medium">{l.profile.photoLabel} <span className="text-slate-300">{l.profile.photoOptional}</span></p>
       </div>
 
       <div className="mb-5">
@@ -521,7 +522,7 @@ export default function LoginPage() {
         </Btn>
       </div>
 
-      <p className="text-center text-xs text-slate-400 mt-4">Ya casi listo — este es el último paso</p>
+      <p className="text-center text-xs text-slate-400 mt-4">{l.profile.almostDone}</p>
     </Layout>
   )
 }

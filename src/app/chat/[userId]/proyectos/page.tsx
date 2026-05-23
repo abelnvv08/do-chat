@@ -2,14 +2,12 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { formatMessageTime } from '@/lib/utils'
 
 type Project = { id: string; title: string; content: string; created_at: string }
 
 export default function ProyectosPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
-  const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
