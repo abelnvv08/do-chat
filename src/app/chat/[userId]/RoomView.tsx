@@ -1620,8 +1620,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           {/* Audio-only: show avatar */}
           {!isVideoCall && (
             <div className="flex flex-col items-center gap-5">
-              <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl">
-                {room?.emoji ?? '👤'}
+              <div className="w-24 h-24 rounded-full bg-[#707070] flex items-center justify-center overflow-hidden">
+                {room?.otherAvatarUrl
+                  ? <img src={room.otherAvatarUrl} alt="" className="w-24 h-24 object-cover" />
+                  : <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
               </div>
               <div className="text-center">
                 <p className="text-white text-xl font-semibold">{room?.name ?? 'Llamada'}</p>
@@ -1710,8 +1712,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           )}
           <div className="flex flex-col items-center gap-5 z-10">
             {!isVideoCall && (
-              <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-4xl animate-pulse">
-                {room?.emoji ?? '👤'}
+              <div className="w-24 h-24 rounded-full bg-[#707070] flex items-center justify-center overflow-hidden animate-pulse">
+                {room?.otherAvatarUrl
+                  ? <img src={room.otherAvatarUrl} alt="" className="w-24 h-24 object-cover" />
+                  : <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
               </div>
             )}
             <div className="text-center">
@@ -1797,14 +1801,15 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
 
-            <div className={`w-10 h-10 flex items-center justify-center shrink-0 ${
-              isAIRoom
-                ? 'rounded-2xl overflow-hidden shadow-md'
-                : 'rounded-2xl bg-white/25 text-white text-lg'
-            }`}>
+            <div className="w-10 h-10 rounded-2xl shrink-0 overflow-hidden flex items-center justify-center">
               {isAIRoom
                 ? <img src="/dochatlogo.png" className="w-10 h-10 object-cover" alt="do AI" />
-                : roomData.emoji}
+                : roomData.otherAvatarUrl
+                  ? <img src={roomData.otherAvatarUrl} alt="" className="w-10 h-10 object-cover" />
+                  : roomData.type === 'group'
+                    ? <div className="w-10 h-10 bg-[#707070] flex items-center justify-center w-full h-full"><svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                    : <div className="w-10 h-10 bg-[#707070] flex items-center justify-center w-full h-full"><svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+              }
             </div>
 
             <button
