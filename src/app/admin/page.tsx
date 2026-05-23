@@ -111,18 +111,23 @@ export default function AdminPage() {
   const [broadcastConfirm, setBroadcastConfirm] = useState(false)
 
   const fetchStats = useCallback(async () => {
-    const res = await fetch('/api/admin/stats')
-    if (res.status === 403) { setForbidden(true); return }
-    setStats(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch('/api/admin/stats')
+      if (res.status === 403) { setForbidden(true); return }
+      setStats(await res.json())
+    } catch (e) { console.error('fetchStats error', e) } finally {
+      setLoading(false)
+    }
   }, [])
 
   const fetchUsers = useCallback(async (page = 1, q = '') => {
-    const res = await fetch(`/api/admin/users?page=${page}&search=${encodeURIComponent(q)}`)
-    if (res.status === 403) { setForbidden(true); return }
-    const data = await res.json()
-    setUsers(data.users ?? [])
-    setUsersTotal(data.total ?? 0)
+    try {
+      const res = await fetch(`/api/admin/users?page=${page}&search=${encodeURIComponent(q)}`)
+      if (res.status === 403) { setForbidden(true); return }
+      const data = await res.json()
+      setUsers(data.users ?? [])
+      setUsersTotal(data.total ?? 0)
+    } catch (e) { console.error('fetchUsers error', e) }
   }, [])
 
   useEffect(() => { fetchStats() }, [fetchStats])
@@ -132,23 +137,31 @@ export default function AdminPage() {
 
   async function deleteUser(userId: string) {
     setDeletingId(userId)
-    await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) })
-    setDeletingId(null)
-    setDeleteModal(null)
-    fetchUsers(usersPage, search)
-    fetchStats()
+    try {
+      const res = await fetch('/api/admin/users', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) })
+      if (!res.ok) { alert('Error al eliminar el usuario. Inténtalo de nuevo.'); return }
+      setDeleteModal(null)
+      fetchUsers(usersPage, search)
+      fetchStats()
+    } catch { alert('Error al eliminar el usuario. Inténtalo de nuevo.') } finally {
+      setDeletingId(null)
+    }
   }
 
   async function changePlan(userId: string, plan: string) {
     setPlanSaving(true)
-    await fetch('/api/admin/users', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, plan }),
-    })
-    setPlanSaving(false)
-    setChangingPlanId(null)
-    fetchUsers(usersPage, search)
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, plan }),
+      })
+      if (!res.ok) { alert('Error al cambiar el plan. Inténtalo de nuevo.'); return }
+      setChangingPlanId(null)
+      fetchUsers(usersPage, search)
+    } catch { alert('Error al cambiar el plan. Inténtalo de nuevo.') } finally {
+      setPlanSaving(false)
+    }
   }
 
   async function triggerCron(cronPath: string, label: string) {

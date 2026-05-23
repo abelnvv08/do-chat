@@ -119,19 +119,28 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
 
   async function handleExport() {
     setExporting(true)
-    const res = await fetch(`/api/chat/export?user_id=${userId}`)
-    const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'dochat-export.json'; a.click()
-    URL.revokeObjectURL(url)
-    setExporting(false)
+    try {
+      const res = await fetch(`/api/chat/export?user_id=${userId}`)
+      if (!res.ok) { alert('Error al exportar datos'); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'dochat-export.json'; a.click()
+      URL.revokeObjectURL(url)
+    } catch { alert('Error al exportar datos') } finally {
+      setExporting(false)
+    }
   }
 
   async function handleDelete() {
     if (!confirm('¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.')) return
     setDeleting(true)
-    await fetch(`/api/chat/delete-account?user_id=${userId}`, { method: 'DELETE' })
-    router.push('/login')
+    try {
+      const res = await fetch(`/api/chat/delete-account?user_id=${userId}`, { method: 'DELETE' })
+      if (!res.ok) { alert('Error al eliminar la cuenta. Inténtalo de nuevo.'); return }
+      router.push('/login')
+    } catch { alert('Error al eliminar la cuenta. Inténtalo de nuevo.') } finally {
+      setDeleting(false)
+    }
   }
 
   if (pinMode) {
@@ -189,7 +198,7 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
           </div>
 
           {/* Acciones rápidas */}
-          <div className="relative mt-5 grid grid-cols-3 gap-2">
+          <div className="relative mt-5 grid grid-cols-2 gap-2">
             {[
               { label: 'Exportar', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>, action: handleExport, loading: exporting },
               { label: 'Soporte', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>, href: 'mailto:hola@getdochat.com' },

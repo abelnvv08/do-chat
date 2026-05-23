@@ -81,16 +81,20 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
   async function addTask() {
     if (!newTask.trim()) return
     setAdding(true)
-    const res = await fetch('/api/chat/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, content: newTask.trim(), due_date: newDueDate || null }),
-    })
-    const { task } = await res.json()
-    if (task) setTasks(prev => [task, ...prev])
-    setNewTask('')
-    setNewDueDate('')
-    setAdding(false)
+    try {
+      const res = await fetch('/api/chat/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, content: newTask.trim(), due_date: newDueDate || null }),
+      })
+      if (!res.ok) { console.error('addTask failed', res.status); return }
+      const { task } = await res.json()
+      if (task) setTasks(prev => [task, ...prev])
+      setNewTask('')
+      setNewDueDate('')
+    } catch (e) { console.error('addTask error', e) } finally {
+      setAdding(false)
+    }
   }
 
   async function handleAction(id: string, action: 'accept' | 'reject') {
@@ -548,7 +552,9 @@ function SentTaskCard({ task }: { task: Task }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
       <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-base">{task.assigned_by_emoji ?? '👤'}</span>
+        <div className="w-6 h-6 rounded-full bg-[#707070] flex items-center justify-center shrink-0">
+          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
         <span className="text-xs text-gray-400">Para <span className="font-medium text-gray-600">{recipientName}</span></span>
         {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
       </div>

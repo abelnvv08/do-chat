@@ -87,7 +87,7 @@ function OnboardingContent() {
       const res = await fetch('/api/auth/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, username: clean }),
+        body: JSON.stringify({ user_id: userId, username: clean, name: clean }),
       })
       const data = await res.json()
       if (!res.ok) { setUsernameError(data.error ?? 'Usuario no disponible'); return }

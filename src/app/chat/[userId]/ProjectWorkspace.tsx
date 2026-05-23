@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import { formatMessageTime } from '@/lib/utils'
-import { supabase } from '@/lib/supabase-client'
 
 type ProjectFile = { name: string; url: string; size: number; fileType: string }
 type Project = { id: string; title: string; instructions: string; project_files: ProjectFile[]; created_at: string }
@@ -71,13 +70,22 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
     setInput('')
     setMessages(prev => [...prev, { id: Date.now().toString(), content: q, type: 'text', created_at: new Date().toISOString() }])
     setAiTyping(true)
-    await fetch('/api/chat/project-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, project_id: project.id, query: q }),
-    })
-    await fetchMessages()
-    setAiTyping(false)
+    try {
+      const res = await fetch('/api/chat/project-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, project_id: project.id, query: q }),
+      })
+      if (!res.ok) {
+        setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Lo siento, hubo un error al procesar tu mensaje. Inténtalo de nuevo.', type: 'ai', created_at: new Date().toISOString() }])
+      } else {
+        await fetchMessages()
+      }
+    } catch {
+      setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Lo siento, hubo un error al procesar tu mensaje. Inténtalo de nuevo.', type: 'ai', created_at: new Date().toISOString() }])
+    } finally {
+      setAiTyping(false)
+    }
   }
 
   async function uploadFile(e: React.ChangeEvent<HTMLInputElement>) {

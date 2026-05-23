@@ -67,15 +67,15 @@ export async function POST(req: NextRequest) {
   }
 
   // New user — create auth user now (OTP already consumed, can't verify again)
-  const { data: { users: existing } } = await db.auth.admin.listUsers()
-  let authUser = existing.find(u => u.email === fakeEmail)
+  const { data: { user: foundUser } } = await db.auth.admin.getUserByEmail(fakeEmail)
+  let authUser = foundUser ?? null
 
   if (!authUser) {
     const { data: created, error: createErr } = await db.auth.admin.createUser({
       email: fakeEmail,
       email_confirm: true,
     })
-    if (createErr || !created.user) {
+    if (createErr || !created?.user) {
       return NextResponse.json({ error: 'Error creando usuario' }, { status: 500 })
     }
     authUser = created.user
