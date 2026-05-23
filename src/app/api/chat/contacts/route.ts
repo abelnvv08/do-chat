@@ -4,10 +4,21 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { getDMRoom } from '@/lib/demo'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 function displayName(row: { first_name?: string; last_name?: string }, phone: string | null, profileName: string) {
@@ -16,8 +27,9 @@ function displayName(row: { first_name?: string; last_name?: string }, phone: st
 }
 
 export async function GET(req: NextRequest) {
-  const user_id = req.nextUrl.searchParams.get('user_id')
-  if (!user_id) return NextResponse.json({ contacts: [] })
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user_id = sessionUser.id
 
   const supabase = admin()
   const { data } = await supabase
@@ -45,8 +57,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { user_id, contact_id, phone, first_name, last_name } = await req.json()
   if (!user_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (sessionUser.id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const supabase = admin()
   let profile: { id: string; name: string; emoji: string; bg: string; avatar_url?: string | null } | null = null
@@ -93,8 +108,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { user_id, contact_id } = await req.json()
   if (!user_id || !contact_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (sessionUser.id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const supabase = admin()
   await supabase.from('demo_contacts').delete().eq('user_id', user_id).eq('contact_id', contact_id)
   return NextResponse.json({ ok: true })
