@@ -1,19 +1,37 @@
+import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Metadata } from 'next'
+
+function admin() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
 
 interface Props {
   params: Promise<{ handle: string }>
 }
 
-export const metadata: Metadata = {
-  title: "You've been invited to DO Chat",
-  description: 'Business messaging with built-in AI. Messages, calls, tasks and more — all in one place.',
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { handle } = await params
+  const clean = handle.replace(/^@/, '').toLowerCase()
+  const { data } = await admin().from('demo_profiles').select('name').eq('username', clean).single()
+  const name = data?.name ?? 'Someone'
+  return {
+    title: `${name} invited you to DO Chat`,
+    description: 'Business messaging with built-in AI. Messages, calls, tasks and more — all in one place.',
+  }
 }
 
 export default async function InvitePage({ params }: Props) {
   const { handle } = await params
   const clean = handle.replace(/^@/, '').toLowerCase()
+  const { data: inviter } = await admin()
+    .from('demo_profiles')
+    .select('name')
+    .eq('username', clean)
+    .single()
+
+  const name = inviter?.name ?? 'Someone'
 
   return (
     <div className="min-h-screen bg-[#080c14] text-white flex flex-col items-center justify-center px-6">
@@ -26,7 +44,9 @@ export default async function InvitePage({ params }: Props) {
 
         {/* Heading */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold mb-3">You're invited to DO Chat</h1>
+          <h1 className="text-2xl font-bold mb-3">
+            {name} invited you to DO Chat
+          </h1>
           <p className="text-white/50 text-base leading-relaxed">
             The business messenger where AI works inside every conversation.
           </p>
