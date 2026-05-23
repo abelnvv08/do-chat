@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
 
 export async function POST(req: NextRequest) {
+  const user = await getSessionUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { audio_url } = await req.json()
   if (!audio_url) return NextResponse.json({ error: 'Missing audio_url' }, { status: 400 })
 

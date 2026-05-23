@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, BorderStyle } from 'docx'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 function stripMarkdown(text: string): string {
@@ -24,13 +35,30 @@ function formatDate(iso: string): string {
 }
 
 export async function GET(req: NextRequest) {
+  const user = await getSessionUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const room_id = req.nextUrl.searchParams.get('room_id')
-  const user_id = req.nextUrl.searchParams.get('user_id')
   const format = req.nextUrl.searchParams.get('format') ?? 'docx'
 
-  if (!room_id || !user_id) return NextResponse.json({ error: 'Missing params' }, { status: 400 })
+  if (!room_id) return NextResponse.json({ error: 'Missing params' }, { status: 400 })
 
   const db = admin()
+
+  // Verify the user is a member of the room (AI rooms are always personal)
+  if (!room_id.startsWith('ai-')) {
+    const { data: membership } = await db
+      .from('demo_room_members')
+      .select('room_id')
+      .eq('room_id', room_id)
+      .eq('user_id', user.id)
+      .single()
+    if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  } else {
+    // AI room: verify it belongs to the session user
+    const aiUserId = room_id.replace(/^ai-/, '')
+    if (aiUserId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   // Fetch messages
   const { data: rawMessages } = await db

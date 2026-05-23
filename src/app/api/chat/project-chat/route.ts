@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import Anthropic from '@anthropic-ai/sdk'
 import { parseFile } from '@/lib/file-parser'
 import { broadcastToRoom } from '@/lib/realtime-broadcast'
@@ -10,16 +11,31 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+async function getSessionUser(req: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => req.cookies.getAll(), setAll: () => {} } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
 export async function POST(req: NextRequest) {
-  const { user_id, project_id, query } = await req.json()
-  if (!user_id || !project_id || !query) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  const user = await getSessionUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { project_id, query } = await req.json()
+  if (!project_id || !query) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const db = admin()
+  const user_id = user.id
   const roomId = `project-${project_id}`
 
-  // Load project
+  // Load project and verify ownership
   const { data: project } = await db.from('demo_projects').select('*').eq('id', project_id).single()
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  if (project.user_id !== user_id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // Save user message
   await db.from('demo_messages').insert({ user_id, content: query, type: 'text', room_id: roomId })
