@@ -16,9 +16,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const clean = handle.replace(/^@/, '').toLowerCase()
   const { data } = await admin().from('demo_profiles').select('name').eq('username', clean).single()
   const name = data?.name ?? 'Someone'
+  const title = `${name} invited you to DO Chat`
+  const description = 'Join DO Chat — business messaging with built-in AI.'
   return {
-    title: `${name} invited you to DO Chat`,
-    description: 'Business messaging with built-in AI. Messages, calls, tasks and more — all in one place.',
+    title,
+    description,
+    openGraph: { title, description, images: [{ url: '/api/og', width: 1200, height: 630 }] },
+    twitter: { card: 'summary_large_image', title, description, images: ['/api/og'] },
   }
 }
 
@@ -39,7 +43,13 @@ export default async function InvitePage({ params }: Props) {
 
         {/* Logo */}
         <div className="flex justify-center mb-10">
-          <Image src="/dochatlogo.png" alt="DO Chat" width={72} height={72} className="rounded-2xl shadow-xl shadow-blue-500/20" />
+          <Image
+            src="/icon-192.png"
+            alt="DO Chat"
+            width={80}
+            height={80}
+            className="rounded-2xl shadow-xl shadow-blue-500/30"
+          />
         </div>
 
         {/* Heading */}
