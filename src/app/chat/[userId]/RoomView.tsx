@@ -2501,7 +2501,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           <div className="flex-1 overflow-y-auto bg-gray-50">
             {/* Group avatar + name */}
             <div className="flex flex-col items-center py-8 bg-white border-b border-gray-100">
-              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-4xl mb-3">👥</div>
+              <div className="w-20 h-20 rounded-2xl bg-[#707070] flex items-center justify-center shrink-0 mb-3">
+                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
               {editingGroupName ? (
                 <div className="flex items-center gap-2">
                   <input autoFocus value={newGroupName} onChange={e => setNewGroupName(e.target.value)}

@@ -19,6 +19,17 @@ function UserIcon({ className }: { className?: string }) {
   )
 }
 
+function GroupIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className ?? 'w-5 h-5'} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4" strokeWidth={1.5}/>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  )
+}
+
 function DefaultAvatar({ sizeClass, iconClass, rounded }: { sizeClass: string; iconClass: string; rounded: string }) {
   return (
     <div className={`${sizeClass} ${rounded} bg-[#707070] flex items-center justify-center shrink-0`}>
@@ -2232,8 +2243,8 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
               ? <div className="w-12 h-12 rounded-2xl bg-[#707070] flex items-center justify-center shrink-0 shadow-sm">
                   <UserIcon className="w-6 h-6 text-white" />
                 </div>
-              : <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${room.type === 'group' ? 'bg-gradient-to-br from-violet-500 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}>
-                  {room.emoji ? <span className="text-xl">{room.emoji}</span> : <UserIcon className="w-6 h-6 text-white" />}
+              : <div className="w-12 h-12 rounded-2xl bg-[#707070] flex items-center justify-center shrink-0 shadow-sm">
+                  <GroupIcon className="w-7 h-7 text-white" />
                 </div>
           }
           {hasUnread && (
