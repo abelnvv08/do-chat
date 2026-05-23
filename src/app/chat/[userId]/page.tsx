@@ -929,7 +929,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       const handle = (profile as any).username
                       const url = handle ? `https://getdochat.com/invite/${handle}` : 'https://getdochat.com'
                       if (navigator.share) {
-                        navigator.share({ title: 'DO Chat', text: `${profile.name} te invita a DO Chat: ${url}`, url }).catch(() => {})
+                        navigator.share({ title: 'DO Chat', text: `Join me on DO Chat — the business messenger with built-in AI: ${url}`, url }).catch(() => {})
                       } else {
                         await navigator.clipboard.writeText(url)
                         alert('¡Link copiado!')
@@ -1556,9 +1556,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               <button onClick={async () => {
                 const handle = (profile as any).username
                 const url = handle ? `https://getdochat.com/invite/${handle}` : 'https://getdochat.com'
-                const text = handle
-                  ? `${profile.name} te invita a DO Chat: ${url}`
-                  : `Únete a DO Chat, el chat con IA integrada: ${url}`
+                const text = `Join me on DO Chat — the business messenger with built-in AI: ${url}`
                 if (navigator.share) {
                   navigator.share({ title: 'DO Chat', text, url }).catch(() => {})
                 } else {
