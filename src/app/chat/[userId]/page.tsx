@@ -270,7 +270,7 @@ const [darkMode, setDarkMode] = useState(() => {
 setDarkMode(localStorage.getItem('dark_mode') === '1')
     }
     return () => { if (tasksIntervalRef.current) { clearInterval(tasksIntervalRef.current); tasksIntervalRef.current = null } }
-  }, [activeTab])
+  }, [activeTab, showDailyPanel])
 
   // Suscribir a canales de todos los rooms para actualizar la lista en tiempo real
   useEffect(() => {

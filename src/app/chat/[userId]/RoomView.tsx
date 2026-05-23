@@ -374,6 +374,53 @@ function formatLastSeen(iso: string | null): string {
 
 export type CallLogEntry = { roomId: string; roomName: string; roomEmoji: string; type: 'outgoing' | 'incoming'; status: 'completed' | 'missed' | 'declined'; duration: number; ts: number }
 
+function DecryptedText({ content, isOwn, encKey, encReady, roomId, userId, myName }: { content: string; isOwn: boolean; encKey: CryptoKey | null; encReady: boolean; roomId: string; userId: string; myName?: string }) {
+  const [text, setText] = useState<string | null>(null)
+  useEffect(() => {
+    // Wait until key initialization is complete before deciding anything
+    if (!encReady) return
+    if (!encKey) {
+      // Key derivation failed (other user has no key or localStorage cleared)
+      // Try one more time by re-deriving inline
+      const tryDecrypt = async () => {
+        const isDM = roomId.startsWith('dm-')
+        if (isDM) {
+          const withoutPrefix = roomId.slice(3)
+          const uuid1 = withoutPrefix.slice(0, 36)
+          const uuid2 = withoutPrefix.slice(37)
+          const otherUserId = uuid1 === userId ? uuid2 : uuid1
+          try {
+            const res = await fetch(`/api/chat/e2ee?user_id=${otherUserId}`)
+            const d = await res.json()
+            if (d.public_key) {
+              const { deriveSharedKey: dsk } = await import('@/lib/e2ee')
+              const key = await dsk(userId, d.public_key)
+              if (key) {
+                const plain = await decryptMsg(content, key)
+                setText(plain)
+                return
+              }
+            }
+          } catch { /* fall through */ }
+        }
+        setText('') // no key available
+      }
+      tryDecrypt()
+      return
+    }
+    decryptMsg(content, encKey).then(setText).catch(() => setText(''))
+  }, [content, encKey, encReady, roomId, userId])
+  if (text === null) return <span className="text-sm opacity-50 italic">…</span>
+  if (!text) return <span className="text-sm opacity-40 italic">Mensaje cifrado</span>
+  const urlMatch = text.match(/https?:\/\/[^\s]+/)
+  return (
+    <div>
+      <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(text, myName)}</span>
+      {urlMatch && <LinkPreview url={urlMatch[0]} isOwn={isOwn} />}
+    </div>
+  )
+}
+
 export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCallLog }: { userId: string; roomId: string; onBack: () => void; initialRoom?: { id: string; name: string; emoji: string; type: string; otherUserId?: string } | null; autoCall?: boolean; onCallLog?: (log: CallLogEntry) => void }) {
   const me = usersCache[userId]
   const isAIRoom = roomId === getAIRoom(userId)
@@ -773,10 +820,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           }
         }
         if (content) {
+          const contentToSend = encReady && encKey ? (await encryptMsg(content, encKey)) : content
           await fetch('/api/chat/messages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
+            body: JSON.stringify({ user_id: userId, content: contentToSend, room_id: roomId }),
           })
         }
         broadcast()
@@ -870,11 +918,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         if (!r.ok) { const d = await r.json(); setUploadError(d.error ?? 'Error al subir archivo'); break }
       }
       if (content) {
+        const contentToSend = encReady && encKey ? (await encryptMsg(content, encKey)) : content
         const optimisticId = `optimistic-${Date.now()}`
         setMessages(prev => [...prev, {
           id: optimisticId,
           user_id: userId,
-          content,
+          content: contentToSend,
           type: 'text',
           room_id: roomId,
           created_at: new Date().toISOString(),
@@ -888,7 +937,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: userId, content, room_id: roomId,
+            user_id: userId, content: contentToSend, room_id: roomId,
             reply_to_id: reply?.id ?? null,
             reply_preview: reply?.preview ?? null,
           }),
@@ -1075,7 +1124,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   async function saveEdit() {
     if (!editingMsg || !editInput.trim()) return
     const plainContent = editInput.trim()
-    const finalContent = plainContent
+    const finalContent = encReady && encKey ? (await encryptMsg(plainContent, encKey)) : plainContent
     setMessages(prev => prev.map(m => m.id === editingMsg.id ? { ...m, content: finalContent, edited: true } : m))
     setEditingMsg(null)
     await fetch('/api/chat/messages', {
@@ -1433,52 +1482,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
 
-  function DecryptedText({ content, isOwn }: { content: string; isOwn: boolean }) {
-    const [text, setText] = useState<string | null>(null)
-    useEffect(() => {
-      // Wait until key initialization is complete before deciding anything
-      if (!encReady) return
-      if (!encKey) {
-        // Key derivation failed (other user has no key or localStorage cleared)
-        // Try one more time by re-deriving inline
-        const tryDecrypt = async () => {
-          const isDM = roomId.startsWith('dm-')
-          if (isDM) {
-            const withoutPrefix = roomId.slice(3)
-            const uuid1 = withoutPrefix.slice(0, 36)
-            const uuid2 = withoutPrefix.slice(37)
-            const otherUserId = uuid1 === userId ? uuid2 : uuid1
-            try {
-              const res = await fetch(`/api/chat/e2ee?user_id=${otherUserId}`)
-              const d = await res.json()
-              if (d.public_key) {
-                const { deriveSharedKey: dsk } = await import('@/lib/e2ee')
-                const key = await dsk(userId, d.public_key)
-                if (key) {
-                  const plain = await decryptMsg(content, key)
-                  setText(plain)
-                  return
-                }
-              }
-            } catch { /* fall through */ }
-          }
-          setText('') // no key available
-        }
-        tryDecrypt()
-        return
-      }
-      decryptMsg(content, encKey).then(setText).catch(() => setText(''))
-    }, [content, encKey, encReady])
-    if (text === null) return <span className="text-sm opacity-50 italic">…</span>
-    if (!text) return <span className="text-sm opacity-40 italic">Mensaje cifrado</span>
-    const urlMatch = text.match(/https?:\/\/[^\s]+/)
-    return (
-      <div>
-        <span className="whitespace-pre-wrap leading-relaxed text-sm">{renderInline(text, me?.name)}</span>
-        {urlMatch && <LinkPreview url={urlMatch[0]} isOwn={isOwn} />}
-      </div>
-    )
-  }
+  // DecryptedText is defined outside RoomView (see below) to avoid re-mount on every render
 
   function renderContent(msg: DemoMessage, isOwn: boolean) {
     if (msg.type === 'audio') {
@@ -1548,7 +1552,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         return <span className="text-sm text-gray-600">archivo adjunto</span>
       }
     }
-    if (isEncrypted(msg.content)) return <DecryptedText content={msg.content} isOwn={isOwn} />
+    if (isEncrypted(msg.content)) return <DecryptedText content={msg.content} isOwn={isOwn} encKey={encKey} encReady={encReady} roomId={roomId} userId={userId} myName={me?.name} />
     const urlMatch = msg.content.match(/https?:\/\/[^\s]+/)
     return (
       <div>
@@ -2457,7 +2461,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
               return (
                 <div className="px-4 mb-6">
                   <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
-                    <button className="w-full flex items-center px-4 py-3.5 active:bg-gray-50 transition-colors">
+                    <button onClick={() => setShowContactInfo(false)} className="w-full flex items-center px-4 py-3.5 active:bg-gray-50 transition-colors">
                       <span className="flex-1 text-left text-[15px] text-gray-900">Archivos, enlaces y docs</span>
                       <span className="text-[15px] text-gray-400 mr-1">{total}</span>
                       <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
