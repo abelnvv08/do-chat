@@ -1799,11 +1799,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
 
             <div className={`w-10 h-10 flex items-center justify-center shrink-0 ${
               isAIRoom
-                ? 'rounded-2xl bg-gradient-to-br from-slate-800 to-indigo-900 shadow-md'
+                ? 'rounded-2xl overflow-hidden shadow-md'
                 : 'rounded-2xl bg-white/25 text-white text-lg'
             }`}>
               {isAIRoom
-                ? <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+                ? <img src="/dochatlogo.png" className="w-10 h-10 object-cover" alt="do AI" />
                 : roomData.emoji}
             </div>
 
@@ -1965,11 +1965,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           if (msg.type === 'ai_limit') {
             return (
               <div key={msg.id} className="flex items-start gap-2.5 py-1 max-w-[85%]">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center shrink-0 mt-0.5 shadow-sm opacity-60">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-                  </svg>
-                </div>
+                <img src="/dochatlogo.png" className="w-8 h-8 rounded-xl object-cover shrink-0 mt-0.5 shadow-sm opacity-60" alt="do AI" />
                 <div className="space-y-1">
                   <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at)}</p>
                   <div className="rounded-2xl rounded-tl-sm bg-slate-900 border border-slate-800 px-4 py-3 shadow-sm">
@@ -1983,9 +1979,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           if (isAI) {
             return (
               <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-start gap-2.5 py-1 max-w-[85%] ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-indigo-900 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
-                </div>
+                <img src="/dochatlogo.png" className="w-8 h-8 rounded-xl object-cover shrink-0 mt-0.5 shadow-sm" alt="do AI" />
                 <div className="space-y-1">
                   {showAvatar && <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at)}</p>}
                   <div className={`border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm ${isActiveMatch ? 'bg-yellow-50' : 'bg-white'}`}>
