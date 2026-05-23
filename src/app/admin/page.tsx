@@ -38,10 +38,17 @@ function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
 }
 
-function Avatar({ emoji, bg, avatarUrl, size = 8 }: { emoji: string; bg: string; avatarUrl?: string | null; size?: number }) {
+function Avatar({ avatarUrl, size = 8 }: { emoji?: string; bg?: string; avatarUrl?: string | null; size?: number }) {
   const s = `w-${size} h-${size}`
+  const iconSize = size >= 10 ? 'w-5 h-5' : size >= 8 ? 'w-4 h-4' : 'w-3.5 h-3.5'
   if (avatarUrl) return <img src={avatarUrl} alt="" className={`${s} rounded-full object-cover shrink-0`} />
-  return <div className={`${s} rounded-full flex items-center justify-center shrink-0 ${bg} text-white text-sm`}>{emoji}</div>
+  return (
+    <div className={`${s} rounded-full bg-[#707070] flex items-center justify-center shrink-0`}>
+      <svg className={`${iconSize} text-white`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+    </div>
+  )
 }
 
 function KpiCard({ icon: Icon, label, value, sub, trend, color }: {

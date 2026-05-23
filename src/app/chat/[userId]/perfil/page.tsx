@@ -171,7 +171,11 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
               <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-xl shadow-blue-900/30">
                 {me.avatar_url
                   ? <Image src={me.avatar_url} alt={me.name} width={80} height={80} className="w-full h-full object-cover" />
-                  : <div className={`w-full h-full ${me.bg} flex items-center justify-center text-3xl`}>{me.emoji}</div>
+                  : <div className="w-full h-full bg-[#707070] flex items-center justify-center">
+                      <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                    </div>
                 }
               </div>
             </div>

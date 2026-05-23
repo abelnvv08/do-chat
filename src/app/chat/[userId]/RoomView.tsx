@@ -1922,8 +1922,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-gray-100">
-                {roomData.emoji}
+              <div className="w-16 h-16 rounded-2xl bg-[#707070] flex items-center justify-center shrink-0">
+                {room?.type === 'group'
+                  ? <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  : <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
               </div>
               <p className="text-gray-500 text-sm font-medium">Sin mensajes aún</p>
             </div>

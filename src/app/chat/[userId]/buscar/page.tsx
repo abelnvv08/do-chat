@@ -169,12 +169,12 @@ export default function BuscarPage({ params }: { params: Promise<{ userId: strin
                 href={`/chat/${userId}/${result.room_id}`}
                 className="flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 border-b border-gray-50 active:bg-gray-100 transition-colors"
               >
-                <div className={`w-9 h-9 rounded-xl shrink-0 flex items-center justify-center mt-0.5 overflow-hidden ${
-                  result.type === 'ai' ? '' : 'bg-gray-100 text-gray-600 text-sm rounded-full'
+                <div className={`w-9 h-9 shrink-0 flex items-center justify-center mt-0.5 overflow-hidden ${
+                  result.type === 'ai' ? 'rounded-xl' : 'rounded-full bg-[#707070]'
                 }`}>
                   {result.type === 'ai'
                     ? <img src="/dochatlogo.png" className="w-9 h-9 object-cover" alt="do AI" />
-                    : result.sender_emoji}
+                    : <svg className="w-4.5 h-4.5 text-white" style={{width:'18px',height:'18px'}} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
                 </div>
 
                 <div className="flex-1 min-w-0">

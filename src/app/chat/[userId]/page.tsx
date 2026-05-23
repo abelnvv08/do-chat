@@ -791,10 +791,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   {msgs.map(result => (
                     <button key={result.id} onClick={() => { setSearchQuery(''); setActiveRoomId(result.room_id) }}
                       className="w-full flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 border-b border-slate-100 text-left">
-                      <div className={`w-9 h-9 shrink-0 flex items-center justify-center mt-0.5 ${result.type === 'ai' ? 'rounded-xl overflow-hidden' : 'rounded-full bg-slate-100 text-sm'}`}>
+                      <div className={`w-9 h-9 shrink-0 flex items-center justify-center mt-0.5 ${result.type === 'ai' ? 'rounded-xl overflow-hidden' : 'rounded-full bg-[#707070]'}`}>
                         {result.type === 'ai'
                           ? <img src="/dochatlogo.png" className="w-9 h-9 object-cover" alt="do AI" />
-                          : result.sender_emoji}
+                          : <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
@@ -1477,14 +1477,14 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
               <div className="relative flex items-center gap-4">
                 {/* Square avatar */}
                 <div className="relative shrink-0">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-blue-400/40 shadow-xl shadow-blue-900/40 bg-[#d9d0f0] flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-blue-400/40 shadow-xl shadow-blue-900/40 bg-[#707070] flex items-center justify-center">
                     {avatarUploading ? (
-                      <div className="w-7 h-7 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (profile as any).avatar_url ? (
                       <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
                     ) : (
-                      <svg className="w-12 h-12 text-[#6b5fbd]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12Zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8Z"/>
+                      <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                       </svg>
                     )}
                   </div>
@@ -1974,10 +1974,12 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30" onClick={() => setActionRoom(null)}>
           <div className="w-full bg-white rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center ${actionRoom.type === 'ai' ? '' : 'bg-gray-100 text-lg'}`}>
+              <div className={`w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 ${actionRoom.type === 'ai' ? '' : 'bg-[#707070]'}`}>
                 {actionRoom.type === 'ai'
                   ? <img src="/dochatlogo.png" className="w-10 h-10 object-cover" alt="do AI" />
-                  : actionRoom.emoji}
+                  : actionRoom.type === 'group'
+                    ? <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    : <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
               </div>
               <p className="font-semibold text-gray-900">{actionRoom.type === 'ai' ? 'do AI' : actionRoom.name}</p>
             </div>
@@ -2082,8 +2084,10 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           <div className="flex-1 overflow-y-auto">
             {/* Avatar placeholder */}
             <div className="flex flex-col items-center pt-8 pb-6">
-              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
-                <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+              <div className="w-20 h-20 rounded-full bg-[#707070] flex items-center justify-center shrink-0">
+                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
               </div>
             </div>
             {/* Name fields */}
@@ -2151,7 +2155,9 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           </div>
           <div className="flex-1 overflow-y-auto">
             <div className="bg-white border-b border-gray-100 px-5 py-4 flex items-center gap-3 mt-6">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl shrink-0">👥</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#707070] flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
               <input type="text" placeholder={a.newGroup.namePlaceholder} value={ngName} onChange={e => setNgName(e.target.value)}
                 className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none font-medium" autoFocus />
             </div>
