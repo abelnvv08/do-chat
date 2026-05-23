@@ -21,25 +21,15 @@ function UserIcon({ className }: { className?: string }) {
 
 function Avatar({ size = 'md', avatarUrl }: { emoji?: string; bg?: string; size?: 'sm' | 'md' | 'lg'; avatarUrl?: string | null }) {
   const sizeClass = size === 'lg' ? 'w-12 h-12' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
-  const iconClass = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
   if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
-  return (
-    <div className={`${sizeClass} rounded-full flex items-center justify-center shrink-0 bg-slate-100`}>
-      <UserIcon className={`${iconClass} text-slate-400`} />
-    </div>
-  )
+  return <img src="/default-avatar.png" alt="" className={`${sizeClass} rounded-full object-cover shrink-0`} />
 }
 
 // Reusable person avatar for contacts (rounded-2xl, like app style)
 function ContactAvatar({ avatarUrl, size = 'md', className = '' }: { avatarUrl?: string | null; size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }) {
   const sizeClass = size === 'xl' ? 'w-20 h-20' : size === 'lg' ? 'w-16 h-16' : size === 'md' ? 'w-11 h-11' : 'w-8 h-8'
-  const iconClass = size === 'xl' ? 'w-9 h-9' : size === 'lg' ? 'w-7 h-7' : size === 'md' ? 'w-5 h-5' : 'w-4 h-4'
   if (avatarUrl) return <img src={avatarUrl} alt="" className={`${sizeClass} rounded-2xl object-cover shrink-0 ${className}`} />
-  return (
-    <div className={`${sizeClass} rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 ${className}`}>
-      <UserIcon className={`${iconClass} text-slate-400`} />
-    </div>
-  )
+  return <img src="/default-avatar.png" alt="" className={`${sizeClass} rounded-2xl object-cover shrink-0 ${className}`} />
 }
 
 type RoomWithMeta = Room & {
@@ -2229,9 +2219,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
           {room.otherAvatarUrl
             ? <img src={room.otherAvatarUrl} alt="" className="w-12 h-12 rounded-2xl object-cover shadow-sm" />
             : room.type === 'dm'
-              ? <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 shadow-sm">
-                  <UserIcon className="w-6 h-6 text-slate-400" />
-                </div>
+              ? <img src="/default-avatar.png" alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0 shadow-sm" />
               : <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-sm ${room.type === 'group' ? 'bg-gradient-to-br from-violet-500 to-purple-700' : 'bg-gradient-to-br from-blue-500 to-blue-700'}`}>
                   {room.emoji ? <span className="text-xl">{room.emoji}</span> : <UserIcon className="w-6 h-6 text-white" />}
                 </div>

@@ -1998,9 +1998,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 {showAvatar && !isOwn && (
                   (msg.user?.avatar_url || sender?.avatar_url)
                     ? <img src={msg.user?.avatar_url ?? sender?.avatar_url ?? undefined} alt="" className="w-6 h-6 rounded-full object-cover" />
-                    : <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                      </div>
+                    : <img src="/default-avatar.png" alt="" className="w-6 h-6 rounded-full object-cover" />
                 )}
               </div>
               <div className={`max-w-[75%] sm:max-w-[60%] lg:max-w-[50%] space-y-0.5 ${isOwn ? 'items-end flex flex-col' : ''}`}>
@@ -2364,9 +2362,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             <div className="flex flex-col items-center pt-6 pb-8 px-4">
               {otherProfile?.avatar_url
                 ? <img src={otherProfile.avatar_url} alt="" className="w-[100px] h-[100px] rounded-full object-cover shadow mb-4" />
-                : <div className="w-[100px] h-[100px] rounded-full bg-slate-100 flex items-center justify-center mb-4 shadow">
-                    <svg className="w-12 h-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                  </div>
+                : <img src="/default-avatar.png" alt="" className="w-[100px] h-[100px] rounded-full object-cover shadow mb-4" />
               }
               {editingContact ? (
                 <div className="w-full max-w-xs space-y-2 mt-1">
@@ -2553,7 +2549,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                       return (
                         <button key={c.id} onClick={() => setSelectedToAdd(prev => sel ? prev.filter(id => id !== c.id) : [...prev, c.id])}
                           className="w-full flex items-center gap-3 py-2 text-left">
-                          {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" /> : <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0"><svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>}
+                          {c.avatar_url ? <img src={c.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" /> : <img src="/default-avatar.png" alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />}
                           <span className="flex-1 text-sm text-gray-800">{c.name}</span>
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${sel ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
                             {sel && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>}
@@ -2581,7 +2577,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                   const isMe = member.id === userId
                   return (
                     <div key={member.id} className="flex items-center gap-3 px-5 py-3">
-                      {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0"><svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>}
+                      {member.avatar_url ? <img src={member.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" /> : <img src="/default-avatar.png" alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900">{member.name}{isMe ? ' (Tú)' : ''}</p>
                         <p className={`text-xs font-medium ${member.role === 'admin' ? 'text-blue-500' : 'text-gray-400'}`}>
