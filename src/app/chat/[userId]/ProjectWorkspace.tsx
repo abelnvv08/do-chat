@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import { formatMessageTime } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 type ProjectFile = { name: string; url: string; size: number; fileType: string }
 type Project = { id: string; title: string; instructions: string; project_files: ProjectFile[]; created_at: string }
@@ -41,6 +42,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
   onClose: () => void
   onUpdate: (p: Project) => void
 }) {
+  const { lang } = useLanguage()
   const [project, setProject] = useState(initial)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -237,7 +239,7 @@ export function ProjectWorkspace({ userId, project: initial, onClose, onUpdate }
                   <div className={isAI ? '' : 'text-white'}>
                     {isAI ? renderContent(msg.content) : <p className="text-sm text-white">{msg.content}</p>}
                   </div>
-                  <p className={`text-[10px] mt-1.5 ${isAI ? 'text-gray-400' : 'text-blue-200'}`}>{formatMessageTime(msg.created_at)}</p>
+                  <p className={`text-[10px] mt-1.5 ${isAI ? 'text-gray-400' : 'text-blue-200'}`}>{formatMessageTime(msg.created_at, lang)}</p>
                 </div>
               </div>
             )

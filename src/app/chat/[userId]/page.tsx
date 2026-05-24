@@ -804,7 +804,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
                           <p className="text-sm font-semibold text-slate-800">{result.sender_name}</p>
-                          <p className="text-xs text-slate-500 shrink-0">{formatMessageTime(result.created_at)}</p>
+                          <p className="text-xs text-slate-500 shrink-0">{formatMessageTime(result.created_at, lang)}</p>
                         </div>
                         <p className="text-sm text-slate-400 line-clamp-2">{result.fileInfo ? `📎 ${result.fileInfo.name}` : result.preview.slice(0, 140)}</p>
                       </div>
@@ -1100,7 +1100,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-slate-800">{proj.title}</p>
-                            <p className="text-xs text-slate-500 mt-0.5">{formatMessageTime(proj.created_at)} · {proj.project_files?.length ? `${proj.project_files.length} archivo${proj.project_files.length !== 1 ? 's' : ''}` : 'do AI'}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{formatMessageTime(proj.created_at, lang)} · do AI</p>
                           </div>
                           {!selectionMode && <svg className="w-4 h-4 text-slate-600 mt-1 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
                         </button>
@@ -1719,7 +1719,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           <span className="text-lg">{inv.from_emoji}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-gray-700">{inv.from_name}</p>
-                            <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? a.daily.reminderBadge : a.daily.taskBadge} · {formatMessageTime(inv.created_at)}</p>
+                            <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? a.daily.reminderBadge : a.daily.taskBadge} · {formatMessageTime(inv.created_at, lang)}</p>
                           </div>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
                             {inv.invite_type === 'reminder' ? a.daily.reminderType : a.daily.taskType}
@@ -1759,7 +1759,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                           <span className="text-lg">{inv.to_emoji}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-gray-700">{a.daily.to} {inv.to_name}</p>
-                            <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? a.daily.reminderBadge : a.daily.taskBadge} · {formatMessageTime(inv.created_at)}</p>
+                            <p className="text-[10px] text-gray-400">{inv.invite_type === 'reminder' ? a.daily.reminderBadge : a.daily.taskBadge} · {formatMessageTime(inv.created_at, lang)}</p>
                           </div>
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${inv.invite_type === 'reminder' ? 'bg-purple-100 text-purple-600' : 'bg-amber-100 text-amber-700'}`}>
                             {inv.invite_type === 'reminder' ? '🔔' : '📋'} {a.daily.pending}
@@ -2220,7 +2220,7 @@ function dueDateLabel(due: string | null, done: boolean, d0: { overdueBy: string
 }
 
 function TaskCard({ task, onToggle, onDelete }: { task: { id: string; content: string; done: boolean; created_at: string; due_date: string | null }; onToggle: (id: string, done: boolean) => void; onDelete: (id: string) => void }) {
-  const { t } = useLanguage()
+  const { lang, t } = useLanguage()
   const badge = dueDateLabel(task.due_date, task.done, t.app.daily)
   return (
     <div className={`bg-white rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm transition-all ${task.done ? 'border-gray-100' : 'border-gray-200'}`}>
@@ -2232,7 +2232,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: { id: string; content: s
         <p className={`text-sm leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.content}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {badge && <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
-          <p className="text-xs text-gray-400">{formatMessageTime(task.created_at)}</p>
+          <p className="text-xs text-gray-400">{formatMessageTime(task.created_at, lang)}</p>
         </div>
       </div>
       <button onClick={() => onDelete(task.id)} className="text-gray-300 hover:text-red-400 transition-colors shrink-0 mt-0.5">
@@ -2243,7 +2243,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: { id: string; content: s
 }
 
 function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { room: RoomWithMeta; userId: string; pref: RoomPref; pinnedCount: number; onAction: () => void; onOpenRoom: (roomId: string) => void }) {
-  const { t } = useLanguage()
+  const { lang, t } = useLanguage()
   const muted = !!pref.muted_until && new Date(pref.muted_until) > new Date()
   const hasUnread = room.unread > 0 && !muted
   return (
@@ -2284,7 +2284,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
             </div>
             {room.lastMsg && (
               <span className={`text-[11px] shrink-0 tabular-nums ${hasUnread ? 'text-blue-600 font-semibold' : 'text-slate-500'}`}>
-                {formatChatListTime(room.lastMsg.created_at)}
+                {formatChatListTime(room.lastMsg.created_at, lang)}
               </span>
             )}
           </div>

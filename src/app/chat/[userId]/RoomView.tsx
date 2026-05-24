@@ -6,6 +6,7 @@ import { SendHorizonalIcon, ArrowLeftIcon, PaperclipIcon, FileIcon, XIcon, MicIc
 import { usersCache, getAIRoom, DemoMessage } from '@/lib/demo'
 import { deriveSharedKey, deriveRoomKey, encryptMsg, decryptMsg, isEncrypted } from '@/lib/e2ee'
 import { formatMessageTime } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase-client'
 import { DoWelcomeScreen } from './DoWelcomeScreen'
 
@@ -352,24 +353,25 @@ const STUN_ONLY: RTCConfiguration = {
   ],
 }
 
-function formatLastSeen(iso: string | null): string {
-  if (!iso) return 'última vez hace poco'
+function formatLastSeen(iso: string | null, lang: 'es' | 'en', strings: { lastSeenRecently: string; lastSeenTodayAt: string; lastSeenYesterdayAt: string; lastSeenOnAt: string; lastSeenOn: string; online: string }): string {
+  if (!iso) return strings.lastSeenRecently
   const then = new Date(iso)
   const now = new Date()
   const diffMs = now.getTime() - then.getTime()
-  if (diffMs < 90000) return 'en línea' // <90 s → treat as online
-  const timeStr = then.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true })
+  if (diffMs < 90000) return strings.online
+  const locale = lang === 'es' ? 'es-MX' : 'en-US'
+  const timeStr = then.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: lang !== 'es' })
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const yesterdayStart = new Date(todayStart.getTime() - 86400000)
   const weekStart = new Date(todayStart.getTime() - 6 * 86400000)
-  if (then >= todayStart) return `última vez hoy a las ${timeStr}`
-  if (then >= yesterdayStart) return `última vez ayer a las ${timeStr}`
+  if (then >= todayStart) return `${strings.lastSeenTodayAt} ${timeStr}`
+  if (then >= yesterdayStart) return `${strings.lastSeenYesterdayAt} ${timeStr}`
   if (then >= weekStart) {
-    const day = then.toLocaleDateString('es-MX', { weekday: 'long' })
-    return `última vez el ${day} a las ${timeStr}`
+    const day = then.toLocaleDateString(locale, { weekday: 'long' })
+    return strings.lastSeenOnAt.replace('{day}', day) + ` ${timeStr}`
   }
-  const date = then.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
-  return `última vez el ${date}`
+  const date = then.toLocaleDateString(locale, { day: 'numeric', month: 'long' })
+  return strings.lastSeenOn.replace('{date}', date)
 }
 
 export type CallLogEntry = { roomId: string; roomName: string; roomEmoji: string; type: 'outgoing' | 'incoming'; status: 'completed' | 'missed' | 'declined'; duration: number; ts: number }
@@ -422,6 +424,7 @@ function DecryptedText({ content, isOwn, encKey, encReady, roomId, userId, myNam
 }
 
 export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCallLog }: { userId: string; roomId: string; onBack: () => void; initialRoom?: { id: string; name: string; emoji: string; type: string; otherUserId?: string; otherAvatarUrl?: string | null } | null; autoCall?: boolean; onCallLog?: (log: CallLogEntry) => void }) {
+  const { lang, t } = useLanguage()
   const me = usersCache[userId]
   const isAIRoom = roomId === getAIRoom(userId)
   const [room, setRoom] = useState<{ id: string; name: string; emoji: string; type: string; otherUserId?: string; otherAvatarUrl?: string | null } | null>(
@@ -1468,9 +1471,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       return
     }
     // Post a visible task card message in the chat
+    const locale = lang === 'es' ? 'es' : 'en'
     const taskMsg = taskDueDate
-      ? `📋 Tarea asignada a ${room.name}: ${content}\n📅 Vence: ${new Date(taskDueDate + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}`
-      : `📋 Tarea asignada a ${room.name}: ${content}`
+      ? t.app.chat.taskAssignedMsg.replace('{name}', room.name).replace('{content}', content) + '\n' + t.app.chat.taskDue.replace('{date}', new Date(taskDueDate + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' }))
+      : t.app.chat.taskAssignedMsg.replace('{name}', room.name).replace('{content}', content)
     await fetch('/api/chat/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1831,7 +1835,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             >
               <h1 className="text-sm font-semibold text-white">{isAIRoom ? 'do AI' : roomData.name}</h1>
               <p className="text-xs text-white/60 flex items-center gap-1">
-                {isAIRoom ? 'Asistente inteligente' : roomData.type === 'group' ? `${groupMembers.length || '…'} participantes` : peerTyping ? `${peerTyping} está escribiendo…` : peerOnline ? 'en línea' : formatLastSeen(peerLastSeen)}
+                {isAIRoom ? t.app.chat.smartAssistant : roomData.type === 'group' ? t.app.chat.participants.replace('{n}', String(groupMembers.length || '…')) : peerTyping ? t.app.chat.isTyping.replace('{name}', peerTyping) : peerOnline ? t.app.chat.online : formatLastSeen(peerLastSeen, lang, t.app.chat)}
               </p>
             </button>
 
@@ -1988,7 +1992,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
               <div key={msg.id} className="flex items-start gap-2.5 py-1 max-w-[85%]">
                 <img src="/dochatlogo.png" className="w-8 h-8 rounded-xl object-cover shrink-0 mt-0.5 shadow-sm opacity-60" alt="do AI" />
                 <div className="space-y-1">
-                  <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at)}</p>
+                  <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at, lang)}</p>
                   <div className="rounded-2xl rounded-tl-sm bg-slate-900 border border-slate-800 px-4 py-3 shadow-sm">
                     <p className="text-sm text-slate-300 leading-relaxed">{msg.content}</p>
                   </div>
@@ -2002,7 +2006,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
               <div key={msg.id} ref={el => { matchRefs.current[i] = el }} className={`flex items-start gap-2.5 py-1 max-w-[85%] ${isSearchMatch && !isActiveMatch ? 'opacity-60' : ''}`}>
                 <img src="/dochatlogo.png" className="w-8 h-8 rounded-xl object-cover shrink-0 mt-0.5 shadow-sm" alt="do AI" />
                 <div className="space-y-1">
-                  {showAvatar && <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at)}</p>}
+                  {showAvatar && <p className="text-xs text-gray-400 px-1">do AI · {formatMessageTime(msg.created_at, lang)}</p>}
                   <div className={`border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm ${isActiveMatch ? 'bg-yellow-50' : 'bg-white'}`}>
                     <RenderAIContent content={msg.content} />
                   </div>
@@ -2046,7 +2050,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                       {renderContent(msg, isOwn)}
                       <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                         {msg.edited && <span className="text-[10px] text-gray-500 italic">Editado ·</span>}
-                        <span className="text-[10px] text-gray-500">{formatMessageTime(msg.created_at)}</span>
+                        <span className="text-[10px] text-gray-500">{formatMessageTime(msg.created_at, lang)}</span>
                         {isOwn && (anyReaderAfter(msg.created_at)
                           ? <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /><path strokeLinecap="round" strokeLinejoin="round" d="m1.5 12.75 6 6 9-13.5" opacity="0.5" /></svg>
                           : <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
@@ -2068,7 +2072,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                       {renderContent(msg, isOwn)}
                       <div className="flex items-center justify-end gap-1 mt-1 -mb-0.5">
                         {msg.edited && <span className={`text-[10px] italic ${isOwn ? 'text-white/60' : 'text-gray-400'}`}>Editado ·</span>}
-                        <span className={`text-[10px] ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>{formatMessageTime(msg.created_at)}</span>
+                        <span className={`text-[10px] ${isOwn ? 'text-white/70' : 'text-gray-400'}`}>{formatMessageTime(msg.created_at, lang)}</span>
                         {isOwn && (anyReaderAfter(msg.created_at)
                           ? <svg className="w-3.5 h-3.5 text-white/90 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /><path strokeLinecap="round" strokeLinejoin="round" d="m1.5 12.75 6 6 9-13.5" opacity="0.5" /></svg>
                           : <svg className="w-3.5 h-3.5 text-white/50 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>

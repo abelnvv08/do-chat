@@ -3,6 +3,7 @@
 import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { formatMessageTime } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 type Task = {
   id: string
@@ -26,6 +27,8 @@ type Reminder = { id: string; content: string; remind_at: string }
 
 export default function PendientesPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
+  const { lang, t } = useLanguage()
+  const d = t.app.daily
   const [tasks, setTasks] = useState<Task[]>([])
   const [received, setReceived] = useState<Task[]>([])
   const [sent, setSent] = useState<Task[]>([])
@@ -149,31 +152,33 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
 
   const totalBadge = pendingReceived.length + inProgressReceived.length
 
+  const locale = lang === 'es' ? 'es' : 'en-US'
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-0 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-bold text-gray-900">Tareas</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{d.tasksTitle}</h1>
           {totalBadge > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-600 font-semibold">
-              {totalBadge} pendiente{totalBadge > 1 ? 's' : ''}
+              {totalBadge} {lang === 'es' ? `pendiente${totalBadge > 1 ? 's' : ''}` : `pending`}
             </span>
           )}
         </div>
         {/* Tabs */}
         <div className="flex gap-0 border-b border-gray-100">
-          {(['personal', 'recibidas', 'enviadas'] as const).map(t => (
+          {(['personal', 'recibidas', 'enviadas'] as const).map(tabId => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors relative ${tab === t ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+              key={tabId}
+              onClick={() => setTab(tabId)}
+              className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors relative ${tab === tabId ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
             >
-              {t === 'personal' ? 'Mis tareas' : t === 'recibidas' ? 'Recibidas' : 'Enviadas'}
-              {t === 'recibidas' && totalBadge > 0 && (
+              {tabId === 'personal' ? d.myTasks : tabId === 'recibidas' ? d.received : d.sent}
+              {tabId === 'recibidas' && totalBadge > 0 && (
                 <span className="ml-1.5 text-[10px] bg-red-500 text-white rounded-full px-1.5 py-0.5">{totalBadge}</span>
               )}
-              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
+              {tab === tabId && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
             </button>
           ))}
         </div>
@@ -186,7 +191,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
           </div>
         )}
 
-        {/* ── MIS TAREAS ── */}
+        {/* ── MY TASKS ── */}
         {!loading && tab === 'personal' && (
           <>
             {/* Add task */}
@@ -196,24 +201,24 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
                   value={newTask}
                   onChange={e => setNewTask(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addTask()}
-                  placeholder="Agregar tarea…"
+                  placeholder={d.addTask}
                   className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-400 text-gray-800 placeholder:text-gray-400"
                 />
                 <button onClick={addTask} disabled={!newTask.trim() || adding}
                   className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors shrink-0">+</button>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 shrink-0">Fecha límite:</span>
+                <span className="text-xs text-gray-400 shrink-0">{d.deadline}</span>
                 <input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)}
                   className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-400 text-gray-600" />
-                {newDueDate && <button onClick={() => setNewDueDate('')} className="text-xs text-gray-400 hover:text-gray-600">Quitar</button>}
+                {newDueDate && <button onClick={() => setNewDueDate('')} className="text-xs text-gray-400 hover:text-gray-600">{d.remove}</button>}
               </div>
             </div>
 
             {/* Reminders */}
             {reminders.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Recordatorios</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{d.reminders}</p>
                 <div className="space-y-2">
                   {reminders.map(r => {
                     const dt = new Date(r.remind_at)
@@ -228,7 +233,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-800 leading-snug">{r.content}</p>
                           <p className={`text-xs mt-1 ${isPast ? 'text-blue-500 font-medium' : 'text-gray-400'}`}>
-                            {isPast ? 'Ahora · ' : ''}{dt.toLocaleDateString('es', { day: 'numeric', month: 'short' })} {dt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                            {isPast ? d.nowDot : ''}{dt.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} {dt.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                         <button onClick={() => dismissReminder(r.id)} className="text-gray-300 hover:text-red-400 shrink-0 mt-0.5">
@@ -244,27 +249,27 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
             {tasks.length === 0 && reminders.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
                 <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl">✓</div>
-                <p className="text-gray-600 font-medium">Sin pendientes por ahora</p>
-                <p className="text-sm text-gray-400">Pedile a @do que extraiga tareas de tus conversaciones</p>
+                <p className="text-gray-600 font-medium">{d.noPersonal}</p>
+                <p className="text-sm text-gray-400">{d.noPersonalHint}</p>
               </div>
             )}
 
             {pendingPersonal.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Por hacer</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{d.todo}</p>
                 <div className="space-y-2">
                   {pendingPersonal.map(task => (
-                    <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} />
+                    <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} lang={lang} d={d} />
                   ))}
                 </div>
               </div>
             )}
             {donePersonal.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Completadas</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{d.completed}</p>
                 <div className="space-y-2 opacity-60">
                   {donePersonal.map(task => (
-                    <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} />
+                    <TaskCard key={task.id} task={task} onToggle={toggleDone} onDelete={deleteTask} lang={lang} d={d} />
                   ))}
                 </div>
               </div>
@@ -272,20 +277,20 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
           </>
         )}
 
-        {/* ── RECIBIDAS ── */}
+        {/* ── RECEIVED ── */}
         {!loading && tab === 'recibidas' && (
           <>
             {received.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
                 <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center text-2xl">📋</div>
-                <p className="text-gray-600 font-medium">Sin tareas recibidas</p>
-                <p className="text-sm text-gray-400">Cuando alguien te asigne una tarea aparecerá aquí</p>
+                <p className="text-gray-600 font-medium">{d.noReceived}</p>
+                <p className="text-sm text-gray-400">{d.noReceivedHint}</p>
               </div>
             )}
 
             {pendingReceived.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Esperando tu respuesta</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{d.awaitingResponse}</p>
                 <div className="space-y-3">
                   {pendingReceived.map(task => (
                     <ReceivedTaskCard key={task.id} task={task}
@@ -299,6 +304,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
                       onCancelComplete={() => { setCompletingId(null); setEvidenceFile(null) }}
                       uploading={uploadingEvidence}
                       evidenceRef={evidenceRef}
+                      lang={lang} d={d}
                     />
                   ))}
                 </div>
@@ -307,7 +313,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
 
             {inProgressReceived.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">En proceso</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{d.statusInProgress}</p>
                 <div className="space-y-3">
                   {inProgressReceived.map(task => (
                     <ReceivedTaskCard key={task.id} task={task}
@@ -321,6 +327,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
                       onCancelComplete={() => { setCompletingId(null); setEvidenceFile(null) }}
                       uploading={uploadingEvidence}
                       evidenceRef={evidenceRef}
+                      lang={lang} d={d}
                     />
                   ))}
                 </div>
@@ -329,7 +336,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
 
             {completedReceived.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Historial</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{d.history}</p>
                 <div className="space-y-3 opacity-60">
                   {completedReceived.map(task => (
                     <ReceivedTaskCard key={task.id} task={task}
@@ -337,6 +344,7 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
                       completing={false} evidenceFile={null} onEvidenceChange={() => {}}
                       onConfirmComplete={() => {}} onCancelComplete={() => {}}
                       uploading={false} evidenceRef={evidenceRef}
+                      lang={lang} d={d}
                     />
                   ))}
                 </div>
@@ -345,20 +353,20 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
           </>
         )}
 
-        {/* ── ENVIADAS ── */}
+        {/* ── SENT ── */}
         {!loading && tab === 'enviadas' && (
           <>
             {sent.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center px-8">
                 <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center text-2xl">📤</div>
-                <p className="text-gray-600 font-medium">Sin tareas enviadas</p>
-                <p className="text-sm text-gray-400">Asigna tareas desde un chat para verlas aquí</p>
+                <p className="text-gray-600 font-medium">{d.noSent}</p>
+                <p className="text-sm text-gray-400">{d.noSentHint}</p>
               </div>
             )}
             {sent.length > 0 && (
               <div className="px-4 py-3 space-y-3">
                 {sent.map(task => (
-                  <SentTaskCard key={task.id} task={task} />
+                  <SentTaskCard key={task.id} task={task} lang={lang} d={d} />
                 ))}
               </div>
             )}
@@ -377,31 +385,40 @@ export default function PendientesPage({ params }: { params: Promise<{ userId: s
   )
 }
 
-function dueDateLabel(due: string | null, done: boolean) {
+type DailyStrings = ReturnType<typeof useLanguage>['t']['app']['daily']
+
+function dueDateLabel(due: string | null, done: boolean, lang: 'es' | 'en', d: DailyStrings) {
   if (!due || done) return null
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const d = new Date(due + 'T00:00:00')
-  const diff = Math.round((d.getTime() - today.getTime()) / 86400000)
-  if (diff < 0) return { label: `Vencida hace ${Math.abs(diff)}d`, className: 'text-red-500 bg-red-50 border-red-200' }
-  if (diff === 0) return { label: 'Vence hoy', className: 'text-orange-500 bg-orange-50 border-orange-200' }
-  if (diff === 1) return { label: 'Vence mañana', className: 'text-yellow-600 bg-yellow-50 border-yellow-200' }
-  if (diff <= 7) return { label: `${diff}d restantes`, className: 'text-blue-500 bg-blue-50 border-blue-200' }
-  return { label: d.toLocaleDateString('es', { day: 'numeric', month: 'short' }), className: 'text-gray-400 bg-gray-50 border-gray-200' }
+  const dt = new Date(due + 'T00:00:00')
+  const diff = Math.round((dt.getTime() - today.getTime()) / 86400000)
+  const locale = lang === 'es' ? 'es' : 'en-US'
+  if (diff < 0) return { label: `${d.overdueBy} ${Math.abs(diff)}d`, className: 'text-red-500 bg-red-50 border-red-200' }
+  if (diff === 0) return { label: d.dueToday, className: 'text-orange-500 bg-orange-50 border-orange-200' }
+  if (diff === 1) return { label: d.dueTomorrow, className: 'text-yellow-600 bg-yellow-50 border-yellow-200' }
+  if (diff <= 7) return { label: `${diff}${d.daysLeft}`, className: 'text-blue-500 bg-blue-50 border-blue-200' }
+  return { label: dt.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'text-gray-400 bg-gray-50 border-gray-200' }
 }
 
-function statusBadge(status: string | null) {
+function statusBadge(status: string | null, d: DailyStrings) {
   if (!status || status === 'personal') return null
   const map: Record<string, { label: string; className: string }> = {
-    pending:   { label: 'Esperando aceptación', className: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
-    in_progress: { label: 'En proceso', className: 'bg-blue-50 text-blue-600 border-blue-200' },
-    completed: { label: 'Completada ✓', className: 'bg-green-50 text-green-600 border-green-200' },
-    rejected:  { label: 'Rechazada', className: 'bg-red-50 text-red-500 border-red-200' },
+    pending:    { label: d.statusPending,    className: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
+    in_progress:{ label: d.statusInProgress, className: 'bg-blue-50 text-blue-600 border-blue-200' },
+    completed:  { label: d.statusCompleted,  className: 'bg-green-50 text-green-600 border-green-200' },
+    rejected:   { label: d.statusRejected,   className: 'bg-red-50 text-red-500 border-red-200' },
   }
   return map[status] ?? null
 }
 
-function TaskCard({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string, done: boolean) => void; onDelete: (id: string) => void }) {
-  const badge = dueDateLabel(task.due_date, task.done)
+function TaskCard({ task, onToggle, onDelete, lang, d }: {
+  task: Task
+  onToggle: (id: string, done: boolean) => void
+  onDelete: (id: string) => void
+  lang: 'es' | 'en'
+  d: DailyStrings
+}) {
+  const badge = dueDateLabel(task.due_date, task.done, lang, d)
   return (
     <div className={`bg-white rounded-2xl border px-4 py-3 flex items-start gap-3 shadow-sm ${task.done ? 'border-gray-100' : 'border-gray-200'}`}>
       <button onClick={() => onToggle(task.id, !task.done)}
@@ -412,7 +429,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: Task; onToggle: (id: str
         <p className={`text-sm leading-snug ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{parseContent(task.content)}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {badge && <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
-          <p className="text-xs text-gray-400">{formatMessageTime(task.created_at)}</p>
+          <p className="text-xs text-gray-400">{formatMessageTime(task.created_at, lang)}</p>
         </div>
       </div>
       <button onClick={() => onDelete(task.id)} className="text-gray-300 hover:text-red-400 shrink-0 mt-0.5">
@@ -422,7 +439,7 @@ function TaskCard({ task, onToggle, onDelete }: { task: Task; onToggle: (id: str
   )
 }
 
-function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completing, evidenceFile, onEvidenceChange, onConfirmComplete, onCancelComplete, uploading, evidenceRef }: {
+function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completing, evidenceFile, onEvidenceChange, onConfirmComplete, onCancelComplete, uploading, evidenceRef, lang, d }: {
   task: Task
   onAccept: () => void
   onReject: () => void
@@ -434,14 +451,17 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
   onCancelComplete: () => void
   uploading: boolean
   evidenceRef: React.RefObject<HTMLInputElement | null>
+  lang: 'es' | 'en'
+  d: DailyStrings
 }) {
-  const badge = statusBadge(task.task_status)
+  const badge = statusBadge(task.task_status, d)
   const isPending = task.task_status === 'pending'
   const isInProgress = task.task_status === 'in_progress'
   const isCompleted = task.task_status === 'completed'
   const isRejected = task.task_status === 'rejected'
+  const locale = lang === 'es' ? 'es' : 'en-US'
 
-  const senderName = task.assigned_by_name ?? parseSourceRoom(task.source_room).name ?? 'Alguien'
+  const senderName = task.assigned_by_name ?? parseSourceRoom(task.source_room).name ?? d.someone
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="px-4 py-3">
@@ -450,14 +470,16 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
           <div className="w-6 h-6 rounded-full bg-[#707070] flex items-center justify-center shrink-0">
             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           </div>
-          <span className="text-xs text-gray-400">De <span className="font-medium text-gray-600">{senderName}</span></span>
+          <span className="text-xs text-gray-400">{d.fromLabel} <span className="font-medium text-gray-600">{senderName}</span></span>
           {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
         </div>
 
         <p className="text-sm text-gray-800 leading-snug font-medium">{parseContent(task.content)}</p>
 
         {task.due_date && (
-          <p className="text-xs text-gray-400 mt-1">Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {d.dueLabel.replace('{date}', new Date(task.due_date + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' }))}
+          </p>
         )}
 
         {/* Evidence on completed */}
@@ -465,7 +487,7 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
           <a href={task.evidence_url} target="_blank" rel="noopener noreferrer"
             className="mt-2 flex items-center gap-2 text-xs text-blue-600 hover:underline">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
-            {task.evidence_name ?? 'Ver evidencia'}
+            {task.evidence_name ?? d.evidence}
           </a>
         )}
       </div>
@@ -475,11 +497,11 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
         <div className="px-4 pb-3 flex gap-2">
           <button onClick={onReject}
             className="flex-1 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-            Rechazar
+            {d.reject}
           </button>
           <button onClick={onAccept}
             className="flex-1 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-            Aceptar
+            {d.accept}
           </button>
         </div>
       )}
@@ -488,14 +510,14 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
         <div className="px-4 pb-3">
           <button onClick={onStartComplete}
             className="w-full py-2 rounded-xl text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors">
-            Marcar como terminada
+            {d.markDone}
           </button>
         </div>
       )}
 
       {isInProgress && completing && (
         <div className="px-4 pb-3 space-y-2">
-          <p className="text-xs text-gray-500 font-medium">¿Adjuntar evidencia? (opcional)</p>
+          <p className="text-xs text-gray-500 font-medium">{d.attachEvidence}</p>
           {evidenceFile ? (
             <div className="flex items-center gap-2 bg-blue-50 rounded-xl px-3 py-2">
               <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
@@ -505,17 +527,17 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
           ) : (
             <button onClick={() => evidenceRef.current?.click()}
               className="w-full py-2 rounded-xl text-sm border border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors">
-              + Adjuntar archivo / foto
+              {d.uploadEvidence}
             </button>
           )}
           <div className="flex gap-2">
             <button onClick={onCancelComplete}
               className="flex-1 py-2 rounded-xl text-sm border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-              Cancelar
+              {d.cancelComplete}
             </button>
             <button onClick={onConfirmComplete} disabled={uploading}
               className="flex-1 py-2 rounded-xl text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1">
-              {uploading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Subiendo…</> : 'Confirmar'}
+              {uploading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> {d.sending}</> : d.confirmComplete}
             </button>
           </div>
         </div>
@@ -523,7 +545,7 @@ function ReceivedTaskCard({ task, onAccept, onReject, onStartComplete, completin
 
       {isRejected && (
         <div className="px-4 pb-3">
-          <p className="text-xs text-red-400 text-center">Tarea rechazada</p>
+          <p className="text-xs text-red-400 text-center">{d.taskRejected}</p>
         </div>
       )}
     </div>
@@ -546,27 +568,30 @@ function parseContent(content: string) {
   return content
 }
 
-function SentTaskCard({ task }: { task: Task }) {
-  const badge = statusBadge(task.task_status)
-  const recipientName = task.assigned_to_name ?? parseSourceRoom(task.source_room).name ?? 'Alguien'
+function SentTaskCard({ task, lang, d }: { task: Task; lang: 'es' | 'en'; d: DailyStrings }) {
+  const badge = statusBadge(task.task_status, d)
+  const recipientName = task.assigned_to_name ?? parseSourceRoom(task.source_room).name ?? d.someone
+  const locale = lang === 'es' ? 'es' : 'en-US'
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3">
       <div className="flex items-center gap-1.5 mb-2">
         <div className="w-6 h-6 rounded-full bg-[#707070] flex items-center justify-center shrink-0">
           <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         </div>
-        <span className="text-xs text-gray-400">Para <span className="font-medium text-gray-600">{recipientName}</span></span>
+        <span className="text-xs text-gray-400">{d.toLabel} <span className="font-medium text-gray-600">{recipientName}</span></span>
         {badge && <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>{badge.label}</span>}
       </div>
       <p className="text-sm text-gray-800 leading-snug">{parseContent(task.content)}</p>
       {task.due_date && (
-        <p className="text-xs text-gray-400 mt-1">Vence: {new Date(task.due_date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'long' })}</p>
+        <p className="text-xs text-gray-400 mt-1">
+          {d.dueLabel.replace('{date}', new Date(task.due_date + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long' }))}
+        </p>
       )}
       {task.task_status === 'completed' && task.evidence_url && (
         <a href={task.evidence_url} target="_blank" rel="noopener noreferrer"
           className="mt-2 flex items-center gap-2 text-xs text-blue-600 hover:underline">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
-          Ver evidencia — {task.evidence_name ?? 'archivo'}
+          {d.evidence} — {task.evidence_name ?? ''}
         </a>
       )}
     </div>
@@ -574,12 +599,14 @@ function SentTaskCard({ task }: { task: Task }) {
 }
 
 function BottomNav({ userId, active }: { userId: string; active: string }) {
+  const { t } = useLanguage()
+  const nav = t.app.nav
   const tabs = [
-    { id: 'chats', label: 'Chats', href: `/chat/${userId}`, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg> },
-    { id: 'tasks', label: 'Pendientes', href: `/chat/${userId}/pendientes`, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg> },
-    { id: 'projects', label: 'Proyectos', href: `/chat/${userId}/proyectos`, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg> },
-    { id: 'docs', label: 'Docs', href: `/chat/${userId}/documentos`, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> },
-    { id: 'tu', label: 'Tú', href: `/chat/${userId}/perfil`, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> },
+    { id: 'chats',    label: nav.chats,    href: `/chat/${userId}`,            icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" /></svg> },
+    { id: 'tasks',    label: nav.tasks,    href: `/chat/${userId}/pendientes`,  icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg> },
+    { id: 'projects', label: nav.projects, href: `/chat/${userId}/proyectos`,   icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg> },
+    { id: 'docs',     label: nav.docs,     href: `/chat/${userId}/documentos`,  icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg> },
+    { id: 'tu',       label: t.app.tabs.you, href: `/chat/${userId}/perfil`,    icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg> },
   ]
   return (
     <div className="bg-white border-t border-gray-100 flex fixed bottom-0 left-0 right-0 z-10">

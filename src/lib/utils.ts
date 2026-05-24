@@ -1,34 +1,42 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { es, enUS } from 'date-fns/locale'
+
+export type Lang = 'es' | 'en'
+
+function dateFnsLocale(lang: Lang) {
+  return lang === 'es' ? es : enUS
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatMessageTime(date: string) {
+export function formatMessageTime(date: string, lang: Lang = 'es') {
   const d = new Date(date)
+  const locale = dateFnsLocale(lang)
   const time = format(d, 'HH:mm')
   if (isToday(d)) return time
-  if (isYesterday(d)) return `Ayer ${time}`
+  if (isYesterday(d)) return `${lang === 'es' ? 'Ayer' : 'Yesterday'} ${time}`
   const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000)
-  if (diffDays < 7) return format(d, 'EEE HH:mm', { locale: es })
+  if (diffDays < 7) return format(d, 'EEE HH:mm', { locale })
   return format(d, 'dd/MM/yy HH:mm')
 }
 
 // For conversation list — like WhatsApp: no time for past days
-export function formatChatListTime(date: string) {
+export function formatChatListTime(date: string, lang: Lang = 'es') {
   const d = new Date(date)
+  const locale = dateFnsLocale(lang)
   if (isToday(d)) return format(d, 'HH:mm')
-  if (isYesterday(d)) return 'Ayer'
+  if (isYesterday(d)) return lang === 'es' ? 'Ayer' : 'Yesterday'
   const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000)
-  if (diffDays < 7) return format(d, 'EEE', { locale: es })
+  if (diffDays < 7) return format(d, 'EEE', { locale })
   return format(d, 'dd/MM/yy')
 }
 
-export function formatRelativeTime(date: string) {
-  return formatDistanceToNow(new Date(date), { addSuffix: true, locale: es })
+export function formatRelativeTime(date: string, lang: Lang = 'es') {
+  return formatDistanceToNow(new Date(date), { addSuffix: true, locale: dateFnsLocale(lang) })
 }
 
 export function getInitials(name: string) {

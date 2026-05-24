@@ -4,6 +4,7 @@ import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatMessageTime } from '@/lib/utils'
+import { useLanguage } from '@/lib/i18n'
 
 type SearchResult = {
   id: string
@@ -34,6 +35,7 @@ function Highlighted({ text, query }: { text: string; query: string }) {
 
 export default function BuscarPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
+  const { lang } = useLanguage()
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -181,7 +183,7 @@ export default function BuscarPage({ params }: { params: Promise<{ userId: strin
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2 mb-0.5">
                     <p className="text-sm font-semibold text-gray-800 truncate">{result.sender_name}</p>
-                    <p className="text-xs text-gray-400 shrink-0">{formatMessageTime(result.created_at)}</p>
+                    <p className="text-xs text-gray-400 shrink-0">{formatMessageTime(result.created_at, lang)}</p>
                   </div>
                   <p className="text-sm text-gray-500 leading-snug line-clamp-2">
                     <Highlighted

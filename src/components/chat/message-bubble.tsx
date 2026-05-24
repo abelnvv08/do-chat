@@ -1,7 +1,10 @@
+'use client'
+
 import { Message } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { getInitials, formatMessageTime, cn } from '@/lib/utils'
 import { BotIcon } from 'lucide-react'
+import { useLanguage } from '@/lib/i18n'
 
 interface MessageBubbleProps {
   message: Message
@@ -10,6 +13,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps) {
+  const { lang } = useLanguage()
   const isAI = message.type === 'ai'
   const isSystem = message.type === 'system'
 
@@ -32,7 +36,7 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-violet-400">do AI</span>
-            <span className="text-xs text-zinc-500">{formatMessageTime(message.created_at)}</span>
+            <span className="text-xs text-zinc-500">{formatMessageTime(message.created_at, lang)}</span>
           </div>
           <div className="bg-violet-950/40 border border-violet-500/20 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed max-w-xl">
             {message.content}
@@ -61,7 +65,7 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
         {showAvatar && !isOwn && (
           <div className="flex items-center gap-2 px-1">
             <span className="text-xs font-semibold text-zinc-300">{name}</span>
-            <span className="text-xs text-zinc-500">{formatMessageTime(message.created_at)}</span>
+            <span className="text-xs text-zinc-500">{formatMessageTime(message.created_at, lang)}</span>
           </div>
         )}
         <div
@@ -76,7 +80,7 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
         </div>
         {showAvatar && isOwn && (
           <div className="flex justify-end px-1">
-            <span className="text-xs text-zinc-500">{formatMessageTime(message.created_at)}</span>
+            <span className="text-xs text-zinc-500">{formatMessageTime(message.created_at, lang)}</span>
           </div>
         )}
       </div>
