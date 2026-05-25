@@ -463,7 +463,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           invite_type: inviteType,
           due_date: inviteDue || null,
           remind_at: inviteRemindAt || null,
-          from_name: profile?.name ?? 'Usuario',
+          from_name: profile?.name ?? 'User',
           from_emoji: profile?.emoji ?? '😊',
         }),
       })
@@ -1494,7 +1494,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                 /* ── Modo edición ── */
                 <div className="relative space-y-3">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold text-white/90">Editar perfil</p>
+                    <p className="text-sm font-semibold text-white/90">{a.profile.editProfile}</p>
                     <button onClick={() => { setEditingProfile(false); setUsernameError('') }}
                       className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center active:scale-95 transition-all">
                       <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1503,18 +1503,18 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     </button>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Nombre</p>
+                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">{a.profile.nameLabel}</p>
                     <input type="text" value={editName} onChange={e => setEditName(e.target.value)} maxLength={30} autoFocus
-                      placeholder="Tu nombre"
+                      placeholder={a.profile.nameLabel}
                       className="w-full bg-white/15 border border-white/20 rounded-xl px-3 py-2 text-[15px] text-white placeholder:text-white/40 focus:outline-none focus:bg-white/25 transition-colors" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Usuario</p>
+                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">{a.profile.usernameLabel}</p>
                     <div className="flex items-center bg-white/15 border border-white/20 rounded-xl px-3 py-2 focus-within:bg-white/25 transition-colors">
                       <span className="text-white/60 text-[15px] mr-0.5">@</span>
                       <input type="text" value={newUsername}
                         onChange={e => { setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20)); setUsernameError('') }}
-                        placeholder="tuusuario"
+                        placeholder={a.profile.usernameLabel.toLowerCase()}
                         className="flex-1 text-[15px] text-white bg-transparent placeholder:text-white/40 focus:outline-none" />
                     </div>
                     {usernameError && <p className="text-xs text-red-300 mt-1">{usernameError}</p>}
@@ -1545,7 +1545,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                       } finally { setProfileSaving(false) }
                     }}
                     className="w-full py-2.5 rounded-xl bg-white text-blue-700 text-sm font-bold active:scale-[0.98] transition-all disabled:opacity-50">
-                    {profileSaving || usernameChecking ? 'Guardando…' : 'Guardar cambios'}
+                    {profileSaving || usernameChecking ? a.profile.saving : a.profile.save}
                   </button>
                 </div>
               ) : (
@@ -1584,7 +1584,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                             <div className="flex justify-center pt-3 pb-1">
                               <div className="w-9 h-1 rounded-full bg-slate-200" />
                             </div>
-                            <p className="text-center text-[13px] font-semibold text-slate-400 pb-3">Foto de perfil</p>
+                            <p className="text-center text-[13px] font-semibold text-slate-400 pb-3">{a.profile.avatarTitle}</p>
                             <button onClick={() => { setShowAvatarMenu(false); avatarInputRef.current?.click() }}
                               className="w-full flex items-center gap-4 px-5 py-4 text-[15px] text-slate-800 font-medium active:bg-slate-50 transition-colors border-t border-slate-100">
                               <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
@@ -1593,7 +1593,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
                                 </svg>
                               </div>
-                              Cambiar foto
+                              {a.profile.openGallery}
                             </button>
                             {(profile as any).avatar_url && (
                               <button onClick={deleteAvatar}
@@ -1603,14 +1603,14 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                                     <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                   </svg>
                                 </div>
-                                Eliminar foto
+                                {a.profile.deletePhoto}
                               </button>
                             )}
                           </div>
                           <div className="mx-3 mb-8 rounded-3xl bg-white overflow-hidden shadow-xl">
                             <button onClick={() => setShowAvatarMenu(false)}
                               className="w-full py-4 text-[15px] font-semibold text-blue-500 active:bg-slate-50 transition-colors">
-                              Cancelar
+                              {a.profile.cancel}
                             </button>
                           </div>
                         </div>
@@ -1623,7 +1623,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     <h1 className="text-[19px] font-bold text-white leading-tight truncate">{profile.name}</h1>
                     <div className="mt-2 flex flex-col gap-1.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Usuario</span>
+                        <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">{a.profile.usernameLabel}</span>
                         <span className="text-[14px] font-semibold text-white">{profile.username ? `@${profile.username}` : '—'}</span>
                       </div>
                       {(profile as any).phone && (
@@ -1641,7 +1641,7 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                     <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z" />
                     </svg>
-                    <span className="text-xs font-semibold text-white">Editar</span>
+                    <span className="text-xs font-semibold text-white">{a.profile.edit}</span>
                   </button>
                 </div>
               )}
