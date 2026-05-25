@@ -1570,26 +1570,51 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                         </svg>
                       </div>
                     </button>
-                    {/* Avatar menu */}
+                    {/* Avatar bottom sheet */}
                     {showAvatarMenu && (
-                      <div className="absolute top-full left-0 mt-1.5 z-50 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-44">
-                        <button onClick={() => { setShowAvatarMenu(false); avatarInputRef.current?.click() }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors">
-                          <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
-                          </svg>
-                          Cambiar foto
-                        </button>
-                        {(profile as any).avatar_url && (
-                          <button onClick={deleteAvatar}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors border-t border-slate-100">
-                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                            </svg>
-                            Eliminar foto
-                          </button>
-                        )}
-                      </div>
+                      <>
+                        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowAvatarMenu(false)}
+                          style={{ animation: 'fadeIn 0.18s ease' }} />
+                        <div className="fixed bottom-0 inset-x-0 z-50" style={{ animation: 'slideUp 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
+                          <style>{`
+                            @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+                            @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+                          `}</style>
+                          <div className="mx-3 mb-3 rounded-3xl bg-white overflow-hidden shadow-2xl">
+                            <div className="flex justify-center pt-3 pb-1">
+                              <div className="w-9 h-1 rounded-full bg-slate-200" />
+                            </div>
+                            <p className="text-center text-[13px] font-semibold text-slate-400 pb-3">Foto de perfil</p>
+                            <button onClick={() => { setShowAvatarMenu(false); avatarInputRef.current?.click() }}
+                              className="w-full flex items-center gap-4 px-5 py-4 text-[15px] text-slate-800 font-medium active:bg-slate-50 transition-colors border-t border-slate-100">
+                              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                                </svg>
+                              </div>
+                              Cambiar foto
+                            </button>
+                            {(profile as any).avatar_url && (
+                              <button onClick={deleteAvatar}
+                                className="w-full flex items-center gap-4 px-5 py-4 text-[15px] text-red-500 font-medium active:bg-red-50 transition-colors border-t border-slate-100">
+                                <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                  </svg>
+                                </div>
+                                Eliminar foto
+                              </button>
+                            )}
+                          </div>
+                          <div className="mx-3 mb-8 rounded-3xl bg-white overflow-hidden shadow-xl">
+                            <button onClick={() => setShowAvatarMenu(false)}
+                              className="w-full py-4 text-[15px] font-semibold text-blue-500 active:bg-slate-50 transition-colors">
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
 
