@@ -89,9 +89,13 @@ export async function encryptMsg(text: string, key: CryptoKey): Promise<string> 
 }
 
 export async function decryptMsg(ciphertext: string, key: CryptoKey): Promise<string> {
-  const { iv, ct } = JSON.parse(ciphertext)
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, key, unb64(ct))
-  return new TextDecoder().decode(plain)
+  try {
+    const { iv, ct } = JSON.parse(ciphertext)
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, key, unb64(ct))
+    return new TextDecoder().decode(plain)
+  } catch {
+    return ciphertext
+  }
 }
 
 export function isEncrypted(content: string): boolean {

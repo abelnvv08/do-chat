@@ -303,14 +303,17 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
     } finally { setLoading(false) }
   }
   async function fetchContacts() {
-    const res = await fetch(`/api/chat/contacts?user_id=${userId}`)
-    const data = await res.json()
-    const list: Contact[] = data.contacts ?? []
-    setContacts(list)
-    // Populate cache with the name the current user saved for each contact
-    for (const c of list) {
-      usersCache[c.id] = { name: c.name, emoji: c.emoji, bg: c.bg, text: 'text-white', border: 'border-white/20', avatar_url: c.avatar_url }
-    }
+    try {
+      const res = await fetch(`/api/chat/contacts?user_id=${userId}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const list: Contact[] = data.contacts ?? []
+      setContacts(list)
+      // Populate cache with the name the current user saved for each contact
+      for (const c of list) {
+        usersCache[c.id] = { name: c.name, emoji: c.emoji, bg: c.bg, text: 'text-white', border: 'border-white/20', avatar_url: c.avatar_url }
+      }
+    } catch { /* ignore network errors */ }
   }
   async function fetchPrefs() {
     try {
@@ -533,16 +536,19 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
     const file = e.target.files?.[0]
     if (!file) return
     setDocsUploading(true)
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('user_id', userId)
-    fd.append('room_id', `ai-${userId}`)
-    await fetch('/api/chat/upload', { method: 'POST', body: fd })
-    const res = await fetch(`/api/chat/files?user_id=${userId}`)
-    const { files: f } = await res.json()
-    setFiles(f ?? [])
-    setDocsUploading(false)
-    e.target.value = ''
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('user_id', userId)
+      fd.append('room_id', `ai-${userId}`)
+      await fetch('/api/chat/upload', { method: 'POST', body: fd })
+      const res = await fetch(`/api/chat/files?user_id=${userId}`)
+      const { files: f } = await res.json()
+      setFiles(f ?? [])
+    } finally {
+      setDocsUploading(false)
+      e.target.value = ''
+    }
   }
 
   // Profile functions
@@ -588,6 +594,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
     }
     setAvatarUploading(false)
   }
+
+  // Cleanup camera stream on unmount (prevents OS camera indicator staying on)
+  useEffect(() => {
+    return () => { cameraStreamRef.current?.getTracks().forEach(t => t.stop()); cameraStreamRef.current = null }
+  }, [])
 
   async function openCamera() {
     setShowAvatarMenu(false)
@@ -2317,9 +2328,10 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
   const [decryptedPreview, setDecryptedPreview] = useState<string | null>(null)
 
   useEffect(() => {
-    const ciphertext = room.lastMsg?.encryptedContent
+    const lastMsg = room.lastMsg
+    const ciphertext = lastMsg?.encryptedContent
     if (!ciphertext) return
-    const prefix = (room.lastMsg!.content ?? '').split(': ')[0] + ': '
+    const prefix = (lastMsg?.content ?? '').split(': ')[0] + ': '
     async function tryDecrypt() {
       try {
         let key: CryptoKey | null = null
@@ -2328,8 +2340,10 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
           const res = await fetch(`/api/chat/e2ee?user_id=${room.otherUserId}`)
           const d = await res.json()
           if (d.public_key) key = await deriveSharedKey(userId, d.public_key)
+          // Do NOT fall back to room key for DMs — wrong algorithm for ECDH-encrypted messages
+        } else if (room.type !== 'dm') {
+          key = await deriveRoomKey(userId, room.id)
         }
-        if (!key) key = await deriveRoomKey(userId, room.id)
         if (key) {
           const text = await decryptMsg(ciphertext!, key)
           setDecryptedPreview(prefix + text)

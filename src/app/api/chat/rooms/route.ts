@@ -20,7 +20,19 @@ export async function GET(req: NextRequest) {
   const room_id = req.nextUrl.searchParams.get('room_id')
   if (!room_id) return NextResponse.json({ error: 'Missing room_id' }, { status: 400 })
 
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = admin()
+  // Verify the caller is a member of this room
+  const { data: membership } = await supabase
+    .from('demo_room_members')
+    .select('user_id')
+    .eq('room_id', room_id)
+    .eq('user_id', sessionUser.id)
+    .single()
+  if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const { data: room } = await supabase.from('demo_rooms').select('*').eq('id', room_id).single()
   const { data: members } = await supabase
     .from('demo_room_members')

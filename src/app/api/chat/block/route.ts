@@ -16,14 +16,14 @@ async function getSessionUser(req: NextRequest) {
   return user
 }
 
-// GET /api/chat/block?user_id=xxx → lista de IDs bloqueados
+// GET /api/chat/block → lista de IDs bloqueados del usuario autenticado
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get('user_id')
-  if (!userId) return NextResponse.json({ blocked: [] })
+  const sessionUser = await getSessionUser(req)
+  if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { data } = await admin()
     .from('demo_blocked_users')
     .select('blocked_user_id')
-    .eq('user_id', userId)
+    .eq('user_id', sessionUser.id)
   return NextResponse.json({ blocked: (data ?? []).map((r: any) => r.blocked_user_id) })
 }
 

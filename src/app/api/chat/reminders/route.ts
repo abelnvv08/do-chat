@@ -48,6 +48,6 @@ export async function PATCH(req: NextRequest) {
   if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-  await admin().from('demo_reminders').update({ done: true }).eq('id', id)
+  await admin().from('demo_reminders').update({ done: true }).eq('id', id).eq('user_id', sessionUser.id)
   return NextResponse.json({ ok: true })
 }

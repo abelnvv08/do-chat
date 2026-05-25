@@ -178,6 +178,13 @@ export async function DELETE(req: NextRequest) {
   const sessionUser = await getSessionUser(req)
   if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await req.json()
-  await admin().from('demo_tasks').delete().eq('id', id)
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  const db = admin()
+  const { data: task } = await db.from('demo_tasks').select('user_id, assigned_to').eq('id', id).single()
+  if (!task) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (task.user_id !== sessionUser.id && task.assigned_to !== sessionUser.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  await db.from('demo_tasks').delete().eq('id', id)
   return NextResponse.json({ ok: true })
 }

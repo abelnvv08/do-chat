@@ -682,6 +682,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
     const interval = setInterval(() => { fetchMessages(); fetchReads() }, 3000)
     return () => {
       if (autoCallTimer) clearTimeout(autoCallTimer)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      if (longPressRef.current) clearTimeout(longPressRef.current)
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current)
+      const mr = mediaRecorderRef.current
+      if (mr && mr.state !== 'inactive') { try { mr.stop() } catch {} mr.stream?.getTracks().forEach(t => t.stop()) }
       document.removeEventListener('visibilitychange', onVisible)
       // Signal the other side before tearing down the channel
       if (callStateRef.current !== 'idle') {
