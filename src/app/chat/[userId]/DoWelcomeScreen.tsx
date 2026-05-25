@@ -1,86 +1,98 @@
 // src/app/chat/[userId]/DoWelcomeScreen.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useLanguage } from '@/lib/i18n'
-import type { DoChip } from '@/app/api/chat/do-context/route'
 
-const CHIP_ICON: Record<DoChip['type'], string> = {
-  task_today:    '⚠️',
-  task_tomorrow: '🟡',
-  active_chat:   '💬',
-  awaiting_reply:'📨',
-  generic:       '✦',
+type DoScreen = {
+  quickActionsTitle: string
+  actions: {
+    summarize: string
+    createTask: string
+    searchWeb: string
+    draftMessage: string
+    generateExcel: string
+    viewReminders: string
+  }
+  greeting: string
+  workingOn: string
 }
 
-const CHIP_COLOR: Record<DoChip['type'], { border: string; title: string; bg: string }> = {
-  task_today:    { border: 'border-red-200',    title: 'text-red-600',    bg: 'bg-white' },
-  task_tomorrow: { border: 'border-amber-200',  title: 'text-amber-600',  bg: 'bg-white' },
-  active_chat:   { border: 'border-blue-200',   title: 'text-blue-600',   bg: 'bg-white' },
-  awaiting_reply:{ border: 'border-emerald-200',title: 'text-emerald-600',bg: 'bg-white' },
-  generic:       { border: 'border-slate-200',  title: 'text-slate-500',  bg: 'bg-slate-50' },
+function QUICK_ACTIONS(lang: string, ds: DoScreen) {
+  const isEs = lang === 'es'
+  return [
+    {
+      key: 'summarize',
+      icon: '📋',
+      label: ds.actions.summarize,
+      prefill: isEs ? 'Resumí el chat de @' : 'Summarize the chat with @',
+    },
+    {
+      key: 'draftMessage',
+      icon: '✍️',
+      label: ds.actions.draftMessage,
+      prefill: isEs ? 'Redactá un mensaje para @' : 'Draft a message to @',
+    },
+    {
+      key: 'createTask',
+      icon: '✅',
+      label: ds.actions.createTask,
+      prefill: isEs ? 'Crear tarea: ' : 'Create task: ',
+    },
+    {
+      key: 'viewReminders',
+      icon: '📅',
+      label: ds.actions.viewReminders,
+      prefill: isEs
+        ? 'Mostrá mis recordatorios y tareas de esta semana'
+        : 'Show my reminders and tasks for this week',
+    },
+    {
+      key: 'searchWeb',
+      icon: '🌐',
+      label: ds.actions.searchWeb,
+      prefill: isEs ? 'Buscá en internet: ' : 'Search for: ',
+    },
+    {
+      key: 'generateExcel',
+      icon: '📊',
+      label: ds.actions.generateExcel,
+      prefill: isEs ? 'Generá un Excel con: ' : 'Generate Excel with: ',
+    },
+    {
+      key: 'meetingSummary',
+      icon: '📝',
+      label: isEs ? 'Resumen de reunión' : 'Meeting summary',
+      prefill: isEs
+        ? 'Hacé un resumen de mi reunión de hoy sobre: '
+        : 'Summarize my meeting today about: ',
+    },
+    {
+      key: 'pendingReply',
+      icon: '💬',
+      label: isEs ? 'Responder pendiente' : 'Reply pending',
+      prefill: isEs
+        ? 'En el chat de @, ayudame a redactar una respuesta'
+        : 'In the chat with @, help me draft a reply',
+    },
+    {
+      key: 'analyzeData',
+      icon: '📈',
+      label: isEs ? 'Analizar datos' : 'Analyze data',
+      prefill: isEs ? 'Analizá los datos de: ' : 'Analyze the data for: ',
+    },
+  ]
 }
 
 export function DoWelcomeScreen({
-  userId,
   userName,
-  onSend,
+  onPrefill,
 }: {
   userId: string
   userName: string
-  onSend: (text: string) => void
+  onPrefill: (text: string) => void
 }) {
   const { lang, t } = useLanguage()
   const ds = t.app.doScreen
-  const [chips, setChips] = useState<DoChip[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch(`/api/chat/do-context?user_id=${userId}`)
-      .then(r => r.json())
-      .then(d => setChips(d.chips ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [userId])
-
-  function chipSendText(chip: DoChip): string {
-    if (lang === 'es') {
-      if (chip.type === 'task_today') {
-        const n = chip.count
-        return `Tengo ${n} tarea${n !== 1 ? 's' : ''} que vence${n !== 1 ? 'n' : ''} hoy. Ayudame a organizarme.`
-      }
-      if (chip.type === 'task_tomorrow') {
-        const n = chip.count
-        return `Tengo ${n} tarea${n !== 1 ? 's' : ''} para mañana. ¿Cómo arrancamos?`
-      }
-      if (chip.type === 'active_chat')
-        return `Resumí el chat de ${chip.roomName} — tengo ${chip.unread} mensaje${chip.unread !== 1 ? 's' : ''} sin leer.`
-      if (chip.type === 'awaiting_reply')
-        return `En el chat de ${chip.roomName} llevo ${chip.hours}h sin respuesta. Ayudame a redactar una respuesta.`
-    } else {
-      if (chip.type === 'task_today') {
-        const n = chip.count
-        return `I have ${n} task${n !== 1 ? 's' : ''} due today. Help me organize.`
-      }
-      if (chip.type === 'task_tomorrow') {
-        const n = chip.count
-        return `I have ${n} task${n !== 1 ? 's' : ''} for tomorrow. How do we start?`
-      }
-      if (chip.type === 'active_chat')
-        return `Summarize the ${chip.roomName} chat — I have ${chip.unread} unread message${chip.unread !== 1 ? 's' : ''}.`
-      if (chip.type === 'awaiting_reply')
-        return `I've been waiting ${chip.hours}h for a reply in ${chip.roomName}. Help me draft a response.`
-    }
-    return chip.text
-  }
-
-  function chipSubtitle(chip: DoChip): string {
-    if (chip.type === 'task_today')     return ds.taskTodaySub
-    if (chip.type === 'task_tomorrow')  return ds.taskTomorrowSub
-    if (chip.type === 'active_chat')    return chip.roomName
-    if (chip.type === 'awaiting_reply') return chip.roomName
-    return ''
-  }
 
   const locale = lang === 'es' ? 'es-MX' : 'en-US'
   const dayName = new Date().toLocaleDateString(locale, {
@@ -92,7 +104,7 @@ export function DoWelcomeScreen({
   const greeting = ds.greeting.replace('{name}', displayName)
 
   return (
-    <div className="flex flex-col items-center px-4 pt-12 pb-4 gap-5 min-h-[300px]">
+    <div className="flex flex-col items-center px-4 pt-10 pb-4 gap-5">
       {/* Icon + greeting */}
       <div className="flex flex-col items-center gap-2">
         <img src="/dochatlogo.png" className="w-14 h-14 rounded-2xl object-cover shadow-md" alt="do AI" />
@@ -100,34 +112,21 @@ export function DoWelcomeScreen({
         <p className="text-xs text-slate-400 text-center capitalize">{dayName} · {ds.workingOn}</p>
       </div>
 
-      {/* Chips */}
-      <div className="w-full max-w-sm flex flex-col gap-2.5">
-        {loading ? (
-          <>
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-14 bg-slate-100 rounded-2xl animate-pulse" />
-            ))}
-          </>
-        ) : (
-          chips.map((chip, i) => {
-            const colors = CHIP_COLOR[chip.type]
-            const icon   = CHIP_ICON[chip.type]
-            const sub    = chipSubtitle(chip)
-            return (
-              <button
-                key={i}
-                onClick={() => onSend(chipSendText(chip))}
-                className={`w-full flex items-center gap-3 ${colors.bg} border-[1.5px] ${colors.border} rounded-2xl px-4 py-3 text-left active:scale-[0.98] transition-all shadow-sm`}
-              >
-                <span className="text-xl shrink-0">{icon}</span>
-                <div className="min-w-0">
-                  <p className={`text-xs font-bold ${colors.title} leading-tight`}>{chip.label}</p>
-                  {sub && <p className="text-xs text-slate-500 truncate mt-0.5">{sub}</p>}
-                </div>
-              </button>
-            )
-          })
-        )}
+      {/* Quick Actions grid */}
+      <div className="w-full max-w-sm">
+        <p className="text-xs text-slate-400 font-medium mb-3 px-1">{ds.quickActionsTitle}</p>
+        <div className="grid grid-cols-2 gap-2">
+          {QUICK_ACTIONS(lang, ds).map((action) => (
+            <button
+              key={action.key}
+              onClick={() => onPrefill(action.prefill)}
+              className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-3 text-left active:scale-[0.97] transition-all hover:bg-slate-100"
+            >
+              <span className="text-base shrink-0">{action.icon}</span>
+              <span className="text-xs text-slate-700 font-medium leading-tight">{action.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

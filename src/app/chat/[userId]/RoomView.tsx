@@ -491,6 +491,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   const matchRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const [matchIdx, setMatchIdx] = useState(0)
   const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; emoji: string }[]>([])
+  const [aiContacts, setAiContacts] = useState<{ id: string; name: string; emoji: string }[]>([])
   const mainInputRef = useRef<HTMLTextAreaElement | null>(null)
   const sendBtnRef = useRef<HTMLButtonElement>(null)
   const sseAbortRef = useRef<AbortController | null>(null)
@@ -644,6 +645,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         pendingCandidatesRef.current = []
         setCallState('active')
         setCallSeconds(0)
+        if (callTimerRef.current) clearInterval(callTimerRef.current)
         callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000)
       })
       .on('broadcast', { event: 'call-ice' }, async ({ payload }) => {
@@ -699,6 +701,22 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       sseAbortRef.current?.abort()
     }
   }, [roomId])
+
+  // Load contacts for @mention picker in AI room
+  useEffect(() => {
+    if (!isAIRoom) return
+    fetch(`/api/chat/contacts?user_id=${userId}`)
+      .then(r => r.json())
+      .then(d => {
+        const contacts = (d.contacts ?? []).map((c: any) => ({
+          id: c.id,
+          name: c.name ?? c.phone ?? 'Sin nombre',
+          emoji: c.emoji ?? '👤',
+        }))
+        setAiContacts(contacts)
+      })
+      .catch(() => {})
+  }, [isAIRoom, userId])
 
   async function markRead() {
     await fetch('/api/chat/reads', {
@@ -845,7 +863,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           const query = uploadedFiles.length > 0 && content
             ? `${content}\n\n[Archivos adjuntos: ${fileNames}]`
             : uploadedFiles.length > 0
-            ? `[Archivos adjuntos: ${fileNames}] ¿Qué contienen estos archivos?`
+            ? (lang === 'es'
+              ? `[Archivos adjuntos: ${fileNames}] ¿Qué contienen estos archivos?`
+              : `[Attached files: ${fileNames}] What do these files contain?`)
             : content
 
           sseAbortRef.current?.abort()
@@ -855,7 +875,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           const aiRes = await fetch('/api/chat/ai-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, query, room_id: roomId }),
+            body: JSON.stringify({ user_id: userId, query, room_id: roomId, lang }),
             signal: abortController.signal,
           })
 
@@ -1139,6 +1159,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message_id: editingMsg.id, content: plainContent, user_id: userId }),
     })
+    // Broadcast immediately so peer doesn't wait for the 3s poll
+    channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
   }
 
   async function deleteMessage(messageId: string) {
@@ -1149,6 +1171,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message_id: messageId, user_id: userId }),
     })
+    // Broadcast immediately so peer doesn't wait for the 3s poll
+    channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: {} })
   }
 
   async function toggleReaction(messageId: string, emoji: string) {
@@ -1308,6 +1332,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       setIncomingOffer(null)
       setCallState('active')
       setCallSeconds(0)
+      if (callTimerRef.current) clearInterval(callTimerRef.current)
       callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000)
     } catch {
       rejectCall()
@@ -1940,9 +1965,9 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             <DoWelcomeScreen
               userId={userId}
               userName={me?.name ?? ''}
-              onSend={(text) => {
+              onPrefill={(text) => {
                 setInput(text)
-                setTimeout(() => sendBtnRef.current?.click(), 0)
+                setTimeout(() => mainInputRef.current?.focus(), 50)
               }}
             />
           ) : (
@@ -2306,8 +2331,19 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                       channelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { from: userId, name: me?.name ?? 'Usuario' } })
                     }
                   }
-                  // @mention autocomplete (groups only)
-                  if (roomData.type === 'group' && groupMembers.length > 0) {
+                  // @mention autocomplete (groups + AI room)
+                  if (isAIRoom && aiContacts.length > 0) {
+                    const cursor = e.target.selectionStart ?? val.length
+                    const beforeCursor = val.slice(0, cursor)
+                    const match = beforeCursor.match(/@([^@\n]*)$/)
+                    if (match) {
+                      const q = match[1].toLowerCase()
+                      const filtered = aiContacts.filter(c => c.name.toLowerCase().includes(q))
+                      setMentionSuggestions(filtered)
+                    } else {
+                      setMentionSuggestions([])
+                    }
+                  } else if (roomData.type === 'group' && groupMembers.length > 0) {
                     const cursor = e.target.selectionStart ?? val.length
                     const beforeCursor = val.slice(0, cursor)
                     const match = beforeCursor.match(/@(\w*)$/)
@@ -2332,7 +2368,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                   }
                   handleKey(e)
                 }}
-                placeholder={isAIRoom ? (pendingFiles.length > 0 ? '¿Qué quieres hacer con este archivo?' : 'Adjunta un archivo o pregúntame algo…') : 'Escribe un mensaje…'}
+                placeholder={isAIRoom ? (pendingFiles.length > 0 ? (lang === 'es' ? '¿Qué quieres hacer con este archivo?' : 'What do you want to do with this file?') : (lang === 'es' ? 'Adjunta un archivo o pregúntame algo…' : 'Attach a file or ask me something…')) : 'Escribe un mensaje…'}
                 className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 resize-none focus:outline-none min-h-[20px] max-h-32 py-1"
                 minRows={1}
                 maxRows={4}
