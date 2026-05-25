@@ -1483,94 +1483,142 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
           <div className="flex-1 overflow-y-auto pb-24 bg-[#f0f4ff]">
 
             {/* Identity card */}
-            <div className="mx-4 mt-5 relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 border border-blue-600 p-6">
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) { setShowAvatarMenu(false); uploadAvatar(f) } e.target.value = '' }} />
+
+            <div className="mx-4 mt-5 relative rounded-3xl overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 border border-blue-600 p-5">
               <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
               <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
-              <div className="relative flex items-center gap-4">
-                {/* Square avatar */}
-                <div className="relative shrink-0">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-blue-400/40 shadow-xl shadow-blue-900/40 bg-[#707070] flex items-center justify-center">
-                    {avatarUploading ? (
-                      <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (profile as any).avatar_url ? (
-                      <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+
+              {editingProfile ? (
+                /* ── Modo edición ── */
+                <div className="relative space-y-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-semibold text-white/90">Editar perfil</p>
+                    <button onClick={() => { setEditingProfile(false); setUsernameError('') }}
+                      className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center active:scale-95 transition-all">
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                       </svg>
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Nombre</p>
+                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)} maxLength={30} autoFocus
+                      placeholder="Tu nombre"
+                      className="w-full bg-white/15 border border-white/20 rounded-xl px-3 py-2 text-[15px] text-white placeholder:text-white/40 focus:outline-none focus:bg-white/25 transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Usuario</p>
+                    <div className="flex items-center bg-white/15 border border-white/20 rounded-xl px-3 py-2 focus-within:bg-white/25 transition-colors">
+                      <span className="text-white/60 text-[15px] mr-0.5">@</span>
+                      <input type="text" value={newUsername}
+                        onChange={e => { setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20)); setUsernameError('') }}
+                        placeholder="tuusuario"
+                        className="flex-1 text-[15px] text-white bg-transparent placeholder:text-white/40 focus:outline-none" />
+                    </div>
+                    {usernameError && <p className="text-xs text-red-300 mt-1">{usernameError}</p>}
+                  </div>
+                  <button
+                    disabled={profileSaving || usernameChecking || editName.trim().length < 2}
+                    onClick={async () => {
+                      if (!editName.trim() || editName.trim().length < 2) return
+                      setProfileSaving(true)
+                      try {
+                        const clean = newUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
+                        if (clean && clean.length >= 3 && clean !== profile.username) {
+                          const check = await fetch(`/api/auth/users?username=${clean}&exclude=${userId}`)
+                          const { user: taken } = await check.json()
+                          if (taken) { setUsernameError(a.profile.errorTaken); return }
+                        }
+                        const res = await fetch('/api/auth/profile', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: editName.trim(), emoji: profile?.emoji ?? '', username: clean.length >= 3 ? clean : undefined }),
+                        })
+                        const data = await res.json()
+                        if (data.profile) {
+                          setProfile(data.profile)
+                          usersCache[userId] = { name: data.profile.name, emoji: data.profile.emoji, bg: data.profile.bg, text: 'text-white', border: 'border-white/20' }
+                          setEditingProfile(false)
+                        }
+                      } finally { setProfileSaving(false) }
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-white text-blue-700 text-sm font-bold active:scale-[0.98] transition-all disabled:opacity-50">
+                    {profileSaving || usernameChecking ? 'Guardando…' : 'Guardar cambios'}
+                  </button>
+                </div>
+              ) : (
+                /* ── Modo normal ── */
+                <div className="relative flex items-start gap-4">
+                  {/* Avatar tappable */}
+                  <div className="relative shrink-0">
+                    <button onClick={() => setShowAvatarMenu(v => !v)} disabled={avatarUploading}
+                      className="relative w-[72px] h-[72px] rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-xl shadow-blue-900/40 bg-white/20 flex items-center justify-center active:scale-95 transition-all block">
+                      {avatarUploading
+                        ? <div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                        : (profile as any).avatar_url
+                        ? <img src={(profile as any).avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+                        : <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                      }
+                      <div className="absolute bottom-0 inset-x-0 h-5 bg-black/40 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                        </svg>
+                      </div>
+                    </button>
+                    {/* Avatar menu */}
+                    {showAvatarMenu && (
+                      <div className="absolute top-full left-0 mt-1.5 z-50 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-44">
+                        <button onClick={() => { setShowAvatarMenu(false); avatarInputRef.current?.click() }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+                          <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
+                          </svg>
+                          Cambiar foto
+                        </button>
+                        {(profile as any).avatar_url && (
+                          <button onClick={deleteAvatar}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors border-t border-slate-100">
+                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                            Eliminar foto
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-xl font-bold text-slate-800 truncate">{profile.name}</h1>
-                  {(profile as any).phone && <p className="text-sm text-slate-400 mt-0.5">{(profile as any).phone}</p>}
-                  {profile.username && <p className="text-xs text-slate-500 mt-0.5">@{profile.username}</p>}
-                </div>
-              </div>
-              {/* Edit avatar */}
-              <button onClick={() => setShowAvatarMenu(true)} disabled={avatarUploading}
-                className="relative mt-4 w-full py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-500 text-xs font-medium active:scale-[0.98] transition-all disabled:opacity-40">
-                {avatarUploading ? a.profile.uploading : a.profile.edit}
-              </button>
-              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) { setShowAvatarMenu(false); uploadAvatar(f) } e.target.value = '' }} />
-            </div>
 
-            {/* Nombre */}
-            <div className="mx-4 mt-4 rounded-3xl bg-slate-50 border border-slate-200 overflow-hidden">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide px-5 pt-4 pb-1">{a.profile.nameLabel}</p>
-              {editingProfile ? (
-                <div className="px-5 pb-4">
-                  <input type="text" value={editName} onChange={e => setEditName(e.target.value)} maxLength={30} autoFocus
-                    className="w-full text-[15px] text-slate-800 focus:outline-none bg-transparent border-b border-slate-200 pb-1" />
-                  <p className="text-[11px] text-slate-600 text-right mt-1">{editName.length}/30</p>
-                  <div className="flex justify-end gap-4 mt-3">
-                    <button onClick={() => setEditingProfile(false)} className="text-sm text-slate-500 font-medium">{a.profile.cancel}</button>
-                    <button onClick={saveProfile} disabled={profileSaving || editName.trim().length < 2}
-                      className="text-sm text-blue-600 font-semibold disabled:opacity-40">
-                      {profileSaving ? a.profile.saving : a.profile.save}
-                    </button>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <h1 className="text-[19px] font-bold text-white leading-tight truncate">{profile.name}</h1>
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Usuario</span>
+                        <span className="text-[14px] font-semibold text-white">{profile.username ? `@${profile.username}` : '—'}</span>
+                      </div>
+                      {(profile as any).phone && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Tel</span>
+                          <span className="text-[14px] font-semibold text-white">{(profile as any).phone}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <button onClick={() => { setEditName(profile.name); setEditingProfile(true) }}
-                  className="w-full flex items-center justify-between px-5 pb-4 text-left active:bg-slate-50">
-                  <span className="text-[15px] text-slate-800">{profile.name}</span>
-                  <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-                </button>
-              )}
-            </div>
 
-            {/* Usuario */}
-            <div className="mx-4 mt-3 rounded-3xl bg-slate-50 border border-slate-200 overflow-hidden">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide px-5 pt-4 pb-1">{a.profile.usernameLabel}</p>
-              {editingUsername ? (
-                <div className="px-5 pb-4">
-                  <div className="flex items-center gap-1 border-b border-slate-200 pb-1">
-                    <span className="text-[15px] text-slate-500">@</span>
-                    <input type="text" value={newUsername} onChange={e => { setNewUsername(e.target.value); setUsernameError('') }}
-                      maxLength={20} autoFocus placeholder="tu_usuario"
-                      className="flex-1 text-[15px] text-slate-800 focus:outline-none bg-transparent" />
-                  </div>
-                  {usernameError && <p className="text-xs text-red-400 mt-1">{usernameError}</p>}
-                  <p className="text-[11px] text-slate-600 mt-1">{a.profile.usernameHint}</p>
-                  <div className="flex justify-end gap-4 mt-3">
-                    <button onClick={() => { setEditingUsername(false); setUsernameError('') }} className="text-sm text-slate-500 font-medium">{a.profile.cancel}</button>
-                    <button onClick={saveUsername} disabled={usernameChecking || newUsername.trim().length < 3}
-                      className="text-sm text-blue-600 font-semibold disabled:opacity-40">
-                      {usernameChecking ? a.profile.checking : a.profile.save}
-                    </button>
-                  </div>
+                  {/* Botón Editar */}
+                  <button onClick={() => { setEditName(profile.name); setNewUsername(profile.username ?? ''); setEditingProfile(true) }}
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 border border-white/25 active:scale-95 transition-all">
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-white">Editar</span>
+                  </button>
                 </div>
-              ) : (
-                <button onClick={() => { setNewUsername(profile.username ?? ''); setEditingUsername(true) }}
-                  className="w-full flex items-center justify-between px-5 pb-4 text-left active:bg-slate-50">
-                  <span className="text-[15px] text-slate-800">
-                    {profile.username ? `@${profile.username}` : <span className="text-slate-600">{a.profile.setUsername}</span>}
-                  </span>
-                  <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
-                </button>
               )}
             </div>
 
