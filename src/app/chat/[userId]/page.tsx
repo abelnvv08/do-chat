@@ -233,7 +233,7 @@ const [darkMode, setDarkMode] = useState(() => {
       .then(r => r.json())
       .then(d => setBlockedIds(new Set(d.blocked ?? [])))
       .catch(() => {})
-    fetch(`/api/chat/do-context?user_id=${userId}`)
+    fetch(`/api/chat/do-context?user_id=${userId}&lang=${lang}`)
       .then(r => r.json())
       .then(d => { if (d.previewText) setDoPreviewText(d.previewText) })
       .catch(() => {})
@@ -574,25 +574,28 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
 
   async function uploadAvatar(file: File) {
     setAvatarUploading(true)
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('user_id', userId)
-    const res = await fetch('/api/auth/upload-avatar', { method: 'POST', body: fd })
-    const data = await res.json()
-    if (res.ok && data.url) {
-      const db = (await import('@/lib/supabase-client')).supabase
-      const { data: { session } } = await db.auth.getSession()
-      await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', avatar_url: data.url }),
-      })
-      setProfile(prev => prev ? { ...prev, avatar_url: data.url } as any : prev)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('user_id', userId)
+      const res = await fetch('/api/auth/upload-avatar', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (res.ok && data.url) {
+        const db = (await import('@/lib/supabase-client')).supabase
+        const { data: { session } } = await db.auth.getSession()
+        await fetch('/api/auth/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', avatar_url: data.url }),
+        })
+        setProfile(prev => prev ? { ...prev, avatar_url: data.url } as any : prev)
+      }
+    } finally {
+      setAvatarUploading(false)
     }
-    setAvatarUploading(false)
   }
 
   // Cleanup camera stream on unmount (prevents OS camera indicator staying on)
@@ -634,31 +637,37 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
   async function deleteAvatar() {
     setShowAvatarMenu(false)
     setAvatarUploading(true)
-    await fetch('/api/auth/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', avatar_url: null }),
-    })
-    setProfile(prev => prev ? { ...prev, avatar_url: null } as any : prev)
-    setAvatarUploading(false)
+    try {
+      await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', avatar_url: null }),
+      })
+      setProfile(prev => prev ? { ...prev, avatar_url: null } as any : prev)
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
   async function saveUsername() {
     const clean = newUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
     if (clean.length < 3) { setUsernameError(a.profile.errorMin); return }
     setUsernameChecking(true)
-    const check = await fetch(`/api/auth/users?username=${clean}&exclude=${userId}`)
-    const { user: taken } = await check.json()
-    if (taken) { setUsernameError(a.profile.errorTaken); setUsernameChecking(false); return }
-    const res = await fetch('/api/auth/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', username: clean }),
-    })
-    const data = await res.json()
-    setUsernameChecking(false)
-    if (data.profile) { setProfile(data.profile); setEditingUsername(false) }
-    else { setUsernameError(data.error ?? a.profile.errorSave) }
+    try {
+      const check = await fetch(`/api/auth/users?username=${clean}&exclude=${userId}`)
+      const { user: taken } = await check.json()
+      if (taken) { setUsernameError(a.profile.errorTaken); return }
+      const res = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: profile!.name, emoji: profile!.emoji ?? '', username: clean }),
+      })
+      const data = await res.json()
+      if (data.profile) { setProfile(data.profile); setEditingUsername(false) }
+      else { setUsernameError(data.error ?? a.profile.errorSave) }
+    } finally {
+      setUsernameChecking(false)
+    }
   }
 
   function handleCallLog(log: CallLogEntry) {

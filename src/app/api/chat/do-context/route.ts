@@ -40,7 +40,9 @@ const MESSAGES_LIMIT       = 1_000
 
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get('user_id')
-  if (!userId) return NextResponse.json({ chips: [], previewText: 'Tu asistente · siempre activo' })
+  const lang   = req.nextUrl.searchParams.get('lang') === 'es' ? 'es' : 'en'
+  const es = lang === 'es'
+  if (!userId) return NextResponse.json({ chips: [], previewText: es ? 'Tu asistente · siempre activo' : 'Your assistant · always on' })
 
   const sessionUser = await getSessionUser(req)
   if (!sessionUser || sessionUser.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -148,7 +150,9 @@ export async function GET(req: NextRequest) {
       const roomName = nonAiRooms.find(r => r.id === topRoomId)?.name ?? 'Chat'
       activeChatChip = {
         type: 'active_chat',
-        label: `${topCount} mensaje${topCount > 1 ? 's' : ''} nuevo${topCount > 1 ? 's' : ''}`,
+        label: es
+          ? `${topCount} mensaje${topCount > 1 ? 's' : ''} nuevo${topCount > 1 ? 's' : ''}`
+          : `${topCount} new message${topCount > 1 ? 's' : ''}`,
         roomName,
         unread: topCount,
       }
@@ -162,7 +166,7 @@ export async function GET(req: NextRequest) {
       const othersLast = othersLatestPerRoom[roomId]
       if (othersLast && othersLast > myLast) continue // Someone replied after me
       const diffHours = Math.floor((now.getTime() - new Date(myLast).getTime()) / ONE_HOUR_MS)
-      awaitingReplyChip = { type: 'awaiting_reply', label: `Sin respuesta ${diffHours}h`, roomName, hours: diffHours }
+      awaitingReplyChip = { type: 'awaiting_reply', label: es ? `Sin respuesta ${diffHours}h` : `No reply ${diffHours}h`, roomName, hours: diffHours }
       break
     }
   }
@@ -173,24 +177,32 @@ export async function GET(req: NextRequest) {
   if ((todayCount ?? 0) > 0) {
     chips.push({
       type: 'task_today',
-      label: `${todayCount} tarea${todayCount! > 1 ? 's' : ''} vence${todayCount! > 1 ? 'n' : ''} hoy`,
+      label: es
+        ? `${todayCount} tarea${todayCount! > 1 ? 's' : ''} vence${todayCount! > 1 ? 'n' : ''} hoy`
+        : `${todayCount} task${todayCount! > 1 ? 's' : ''} due today`,
       count: todayCount!,
     })
   }
   if (chips.length < 3 && (tomorrowCount ?? 0) > 0) {
     chips.push({
       type: 'task_tomorrow',
-      label: `${tomorrowCount} tarea${tomorrowCount! > 1 ? 's' : ''} para mañana`,
+      label: es
+        ? `${tomorrowCount} tarea${tomorrowCount! > 1 ? 's' : ''} para mañana`
+        : `${tomorrowCount} task${tomorrowCount! > 1 ? 's' : ''} tomorrow`,
       count: tomorrowCount!,
     })
   }
   if (chips.length < 3 && activeChatChip)    chips.push(activeChatChip)
   if (chips.length < 3 && awaitingReplyChip) chips.push(awaitingReplyChip)
 
-  const generics: DoChip[] = [
+  const generics: DoChip[] = es ? [
     { type: 'generic', label: 'Resumí mis chats',  text: 'Resumí los chats más activos de esta semana' },
     { type: 'generic', label: 'Ver pendientes',    text: '¿Qué tengo pendiente esta semana?' },
     { type: 'generic', label: '¿En qué quedamos?', text: 'Revisá mis conversaciones y decime qué quedó pendiente de resolver' },
+  ] : [
+    { type: 'generic', label: 'Summarize my chats', text: 'Summarize my most active chats this week' },
+    { type: 'generic', label: 'View pending tasks', text: 'What do I have pending this week?' },
+    { type: 'generic', label: "What's pending?",    text: 'Review my conversations and tell me what is still unresolved' },
   ]
   for (const g of generics) {
     if (chips.length >= 3) break
@@ -200,12 +212,18 @@ export async function GET(req: NextRequest) {
   // ── Preview text for chat list ────────────────────────────────────────────
   const parts: string[] = []
   if ((todayCount ?? 0) > 0)
-    parts.push(`${todayCount} tarea${todayCount! > 1 ? 's' : ''} vence${todayCount! > 1 ? 'n' : ''} hoy`)
+    parts.push(es
+      ? `${todayCount} tarea${todayCount! > 1 ? 's' : ''} vence${todayCount! > 1 ? 'n' : ''} hoy`
+      : `${todayCount} task${todayCount! > 1 ? 's' : ''} due today`)
   else if ((tomorrowCount ?? 0) > 0)
-    parts.push(`${tomorrowCount} tarea${tomorrowCount! > 1 ? 's' : ''} para mañana`)
-  if (activeChatChip) parts.push(`${activeChatChip.unread} chat${activeChatChip.unread > 1 ? 's' : ''} sin leer`)
+    parts.push(es
+      ? `${tomorrowCount} tarea${tomorrowCount! > 1 ? 's' : ''} para mañana`
+      : `${tomorrowCount} task${tomorrowCount! > 1 ? 's' : ''} tomorrow`)
+  if (activeChatChip) parts.push(es
+    ? `${activeChatChip.unread} chat${activeChatChip.unread > 1 ? 's' : ''} sin leer`
+    : `${activeChatChip.unread} unread chat${activeChatChip.unread > 1 ? 's' : ''}`)
 
-  const previewText = parts.length > 0 ? parts.join(' · ') : 'Tu asistente · siempre activo'
+  const previewText = parts.length > 0 ? parts.join(' · ') : (es ? 'Tu asistente · siempre activo' : 'Your assistant · always on')
 
   return NextResponse.json({ chips, previewText } satisfies DoContextResponse)
 }

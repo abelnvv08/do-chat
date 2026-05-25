@@ -710,7 +710,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
       .then(d => {
         const contacts = (d.contacts ?? []).map((c: any) => ({
           id: c.id,
-          name: c.name ?? c.phone ?? 'Sin nombre',
+          name: c.name ?? c.phone ?? (lang === 'es' ? 'Sin nombre' : 'No name'),
           emoji: c.emoji ?? '👤',
         }))
         setAiContacts(contacts)
@@ -1620,7 +1620,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 📞
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">{incomingOffer.hasVideo ? 'Videollamada entrante' : 'Llamada entrante'}</p>
+                <p className="text-xs text-gray-400 mb-1">{incomingOffer.hasVideo ? (lang === 'es' ? 'Videollamada entrante' : 'Incoming video call') : (lang === 'es' ? 'Llamada entrante' : 'Incoming call')}</p>
                 <p className="text-xl font-bold text-gray-900">{incomingOffer.callerName}</p>
               </div>
               <div className="flex items-center justify-center gap-12 mt-2">
@@ -1642,7 +1642,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                   </svg>
                 </button>
               </div>
-              <p className="text-xs text-gray-400">Rechazar · Aceptar</p>
+              <p className="text-xs text-gray-400">{lang === 'es' ? 'Rechazar · Aceptar' : 'Decline · Accept'}</p>
             </div>
           </div>
         </div>
@@ -1761,7 +1761,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
             )}
             <div className="text-center">
               <p className="text-white text-xl font-semibold drop-shadow">{room?.name ?? '…'}</p>
-              <p className="text-white/70 text-sm mt-1">{isVideoCall ? 'Videollamada…' : 'Llamando…'}</p>
+              <p className="text-white/70 text-sm mt-1">{isVideoCall ? (lang === 'es' ? 'Videollamada…' : 'Video call…') : (lang === 'es' ? 'Llamando…' : 'Calling…')}</p>
             </div>
           </div>
           <div className="absolute bottom-16 z-10">
@@ -1904,7 +1904,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
 
             {isAIRoom && (
               <button onClick={async () => {
-                if (!confirm('¿Limpiar todo el historial con do AI?')) return
+                if (!confirm(lang === 'es' ? '¿Limpiar todo el historial con do AI?' : 'Clear all chat history with do AI?')) return
                 await fetch('/api/chat/messages', {
                   method: 'DELETE',
                   headers: { 'Content-Type': 'application/json' },
@@ -1912,8 +1912,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                 })
                 setMessages([])
               }}
-                title="Limpiar chat"
-                aria-label="Limpiar chat"
+                title={lang === 'es' ? 'Limpiar chat' : 'Clear chat'}
+                aria-label={lang === 'es' ? 'Limpiar chat' : 'Clear chat'}
                 className="text-white/60 hover:text-red-300 transition-colors p-1 shrink-0">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -1977,7 +1977,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                   ? <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" strokeWidth={1.5}/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M23 21v-2a4 4 0 0 0-3-3.87"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   : <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
               </div>
-              <p className="text-gray-500 text-sm font-medium">Sin mensajes aún</p>
+              <p className="text-gray-500 text-sm font-medium">{t.app.chat.noMessages}</p>
             </div>
           )
         )}
@@ -2404,12 +2404,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           <div className="bg-[#f2f2f7] px-4 pb-2 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top, 44px) + 8px)' }}>
             <button onClick={() => { setShowContactInfo(false); setEditingContact(false) }} className="flex items-center gap-1 text-[#1a56db] font-medium text-[15px] -ml-1 py-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
-              Atrás
+              {lang === 'es' ? 'Atrás' : 'Back'}
             </button>
-            <h2 className="text-[17px] font-semibold text-gray-900">Info. del contacto</h2>
+            <h2 className="text-[17px] font-semibold text-gray-900">{lang === 'es' ? 'Info. del contacto' : 'Contact Info'}</h2>
             {editingContact ? (
               <button onClick={saveContactName} disabled={savingContact} className="text-[#1a56db] font-semibold text-[15px] disabled:opacity-40">
-                {savingContact ? '…' : 'Guardar'}
+                {savingContact ? '…' : (lang === 'es' ? 'Guardar' : 'Save')}
               </button>
             ) : contactIsSaved ? (
               <button onClick={() => {
@@ -2647,7 +2647,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900">{member.name}{isMe ? ' (Tú)' : ''}</p>
                         <p className={`text-xs font-medium ${member.role === 'admin' ? 'text-blue-500' : 'text-gray-400'}`}>
-                          {member.role === 'admin' ? 'Admin' : 'Miembro'}
+                          {member.role === 'admin' ? 'Admin' : (lang === 'es' ? 'Miembro' : 'Member')}
                         </p>
                       </div>
                       {amAdmin && !isMe && (
@@ -2656,9 +2656,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                             onClick={() => toggleAdmin(member.id, member.role)}
                             className={`text-xs font-medium transition-colors ${member.role === 'admin' ? 'text-orange-400 hover:text-orange-600' : 'text-blue-400 hover:text-blue-600'}`}
                           >
-                            {member.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+                            {member.role === 'admin'
+                            ? (lang === 'es' ? 'Quitar admin' : 'Remove admin')
+                            : (lang === 'es' ? 'Hacer admin' : 'Make admin')}
                           </button>
-                          <button onClick={() => removeMember(member.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium">Eliminar</button>
+                          <button onClick={() => removeMember(member.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors font-medium">{lang === 'es' ? 'Eliminar' : 'Remove'}</button>
                         </div>
                       )}
                     </div>
