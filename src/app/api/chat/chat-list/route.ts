@@ -128,6 +128,7 @@ export async function GET(req: NextRequest) {
     }
 
     let lastMsgPreview = ''
+    let encryptedContent: string | null = null
     if (lastMsg) {
       const isOwn = lastMsg.user_id === user_id
       const senderName = isOwn ? 'Tú' : (profileMap[lastMsg.user_id] ?? 'Usuario')
@@ -138,20 +139,28 @@ export async function GET(req: NextRequest) {
         catch { lastMsgPreview = `${senderName}: Archivo` }
       } else if (lastMsg.type === 'ai') {
         const plain = await decrypt(lastMsg.content)
-        // Old E2EE messages still in the DB: server can't decrypt the inner layer
-        const display = isEncrypted(plain) ? '📨 Mensaje' : plain
-        lastMsgPreview = `do AI: ${display}`
+        if (isEncrypted(plain)) {
+          // Old E2EE message — let client decrypt; server returns ciphertext
+          lastMsgPreview = 'do AI: 📨'
+          encryptedContent = plain
+        } else {
+          lastMsgPreview = `do AI: ${plain}`
+        }
       } else {
         const plain = await decrypt(lastMsg.content)
-        // Old E2EE messages still in the DB: server can't decrypt the inner layer
-        const display = isEncrypted(plain) ? '📨 Mensaje' : plain
-        lastMsgPreview = `${senderName}: ${display}`
+        if (isEncrypted(plain)) {
+          // Old E2EE message — let client decrypt; server returns ciphertext
+          lastMsgPreview = `${senderName}: 📨`
+          encryptedContent = plain
+        } else {
+          lastMsgPreview = `${senderName}: ${plain}`
+        }
       }
     }
 
     return {
       ...room,
-      lastMsg: lastMsg ? { content: lastMsgPreview, created_at: lastMsg.created_at, user_id: lastMsg.user_id } : null,
+      lastMsg: lastMsg ? { content: lastMsgPreview, encryptedContent, created_at: lastMsg.created_at, user_id: lastMsg.user_id } : null,
       unread,
       seenByOthers,
     }

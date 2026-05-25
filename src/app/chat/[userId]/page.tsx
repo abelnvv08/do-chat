@@ -8,7 +8,7 @@ import { formatMessageTime, formatChatListTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase-client'
 import { RoomView, type CallLogEntry } from './RoomView'
 import { ProjectWorkspace } from './ProjectWorkspace'
-import { initKeyPair, getLocalPublicKey } from '@/lib/e2ee'
+import { initKeyPair, getLocalPublicKey, deriveSharedKey, deriveRoomKey, decryptMsg } from '@/lib/e2ee'
 import { useLanguage, LangToggle } from '@/lib/i18n'
 
 function UserIcon({ className }: { className?: string }) {
@@ -54,7 +54,7 @@ function ContactAvatar({ avatarUrl, size = 'md', className = '' }: { avatarUrl?:
 }
 
 type RoomWithMeta = Room & {
-  lastMsg: { content: string; created_at: string; user_id: string } | null
+  lastMsg: { content: string; encryptedContent?: string | null; created_at: string; user_id: string } | null
   unread: number
   seenByOthers: boolean
 }
@@ -2245,6 +2245,29 @@ function TaskCard({ task, onToggle, onDelete }: { task: { id: string; content: s
 function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { room: RoomWithMeta; userId: string; pref: RoomPref; pinnedCount: number; onAction: () => void; onOpenRoom: (roomId: string) => void }) {
   const { lang, t } = useLanguage()
   const muted = !!pref.muted_until && new Date(pref.muted_until) > new Date()
+  const [decryptedPreview, setDecryptedPreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    const ciphertext = room.lastMsg?.encryptedContent
+    if (!ciphertext) return
+    const prefix = (room.lastMsg!.content ?? '').split(': ')[0] + ': '
+    async function tryDecrypt() {
+      try {
+        let key: CryptoKey | null = null
+        if (room.type === 'dm' && room.otherUserId) {
+          const otherPub = localStorage.getItem(`e2ee_pub_${room.otherUserId}`)
+          if (otherPub) key = await deriveSharedKey(userId, otherPub)
+        }
+        if (!key) key = await deriveRoomKey(userId, room.id)
+        if (key) {
+          const text = await decryptMsg(ciphertext!, key)
+          setDecryptedPreview(prefix + text)
+        }
+      } catch { /* keep fallback */ }
+    }
+    tryDecrypt()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room.lastMsg?.encryptedContent])
   const hasUnread = room.unread > 0 && !muted
   return (
     <div className={`flex items-center gap-3 px-4 py-2.5 transition-colors active:bg-slate-50 ${hasUnread ? 'bg-blue-500/5' : ''}`}>
@@ -2295,7 +2318,7 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
               </svg>
             )}
             <p className={`text-xs truncate ${hasUnread ? 'text-slate-600 font-medium' : 'text-slate-500'}`}>
-              {room.lastMsg?.content ?? t.app.chat.noMessages}
+              {decryptedPreview ?? room.lastMsg?.content ?? t.app.chat.noMessages}
             </p>
           </div>
         </div>
