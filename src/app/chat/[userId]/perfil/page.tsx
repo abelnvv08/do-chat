@@ -85,7 +85,7 @@ function PinScreen({ userId, mode, onSuccess, onCancel }: {
 export default function PerfilPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params)
   const router = useRouter()
-  const [me, setMe] = useState<{ name: string; emoji: string; bg: string; phone?: string | null; plan?: string; avatar_url?: string | null } | null>(null)
+  const [me, setMe] = useState<{ name: string; username?: string | null; emoji: string; bg: string; phone?: string | null; plan?: string; avatar_url?: string | null } | null>(null)
   const [pinMode, setPinMode] = useState<'set' | 'change' | 'remove' | null>(null)
   const [, forceUpdate] = useState(0)
   const [icalUrl, setIcalUrl] = useState(() =>
@@ -96,12 +96,48 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
 
+  // Edit profile
+  const [editing, setEditing] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editUsername, setEditUsername] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
   useEffect(() => {
     fetch('/api/auth/profile').then(r => r.json()).then(d => {
       if (d.profile) setMe(d.profile)
       else router.push('/login')
     })
   }, [])
+
+  function startEdit() {
+    if (!me) return
+    setEditName(me.name)
+    setEditUsername(me.username ?? '')
+    setSaveError('')
+    setEditing(true)
+  }
+
+  async function saveProfile() {
+    if (!editName.trim() || editName.trim().length < 2) {
+      setSaveError('El nombre debe tener al menos 2 caracteres')
+      return
+    }
+    setSaving(true)
+    setSaveError('')
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim(), username: editUsername.trim() || undefined, emoji: me?.emoji ?? '' }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setSaveError(d.error ?? 'Error al guardar'); return }
+      setMe(prev => prev ? { ...prev, name: editName.trim(), username: d.profile?.username ?? prev.username } : prev)
+      setEditing(false)
+    } catch { setSaveError('Error al guardar') }
+    finally { setSaving(false) }
+  }
 
   if (!me) return (
     <div className="min-h-dvh bg-[#f8fafc] flex items-center justify-center">
@@ -168,55 +204,100 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
       <div className="flex-1 overflow-y-auto pb-32 px-4 space-y-4 pt-4">
 
         {/* ── Tarjeta de identidad ── */}
-        <div className="relative rounded-3xl overflow-hidden p-6"
-          style={{ background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 60%, #3b82f6 100%)' }}>
-          {/* Fondo decorativo */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+        {editing ? (
+          /* ── Modo edición ── */
+          <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-semibold text-slate-800">Editar perfil</p>
+              <button onClick={() => setEditing(false)}
+                className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center active:scale-95 transition-all">
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-          <div className="relative flex items-center gap-5">
-            {/* Avatar cuadrado */}
-            <div className="relative shrink-0">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-xl shadow-blue-900/30">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide pl-1">Nombre</label>
+              <input
+                autoFocus
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                placeholder="Tu nombre"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide pl-1">Nombre de usuario</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">@</span>
+                <input
+                  value={editUsername}
+                  onChange={e => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20))}
+                  placeholder="tuusuario"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-8 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                />
+              </div>
+            </div>
+
+            {saveError && <p className="text-xs text-red-500 pl-1">{saveError}</p>}
+
+            <button onClick={saveProfile} disabled={saving}
+              className="w-full py-3 rounded-2xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50">
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+          </div>
+        ) : (
+          /* ── Modo normal ── */
+          <div className="relative rounded-3xl overflow-hidden p-6"
+            style={{ background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 60%, #3b82f6 100%)' }}>
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+
+            <div className="relative flex items-start gap-4">
+              {/* Avatar */}
+              <div className="w-[72px] h-[72px] rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-xl shadow-blue-900/30 shrink-0">
                 {me.avatar_url
-                  ? <Image src={me.avatar_url} alt={me.name} width={80} height={80} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-[#707070] flex items-center justify-center">
-                      <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  ? <Image src={me.avatar_url} alt={me.name} width={72} height={72} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-white/20 flex items-center justify-center">
+                      <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                       </svg>
                     </div>
                 }
               </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0 pt-1">
+                <h1 className="text-[18px] font-bold text-white leading-tight truncate">{me.name}</h1>
+                {me.username && (
+                  <p className="text-[15px] text-white/90 font-medium mt-0.5">@{me.username}</p>
+                )}
+                {me.phone && (
+                  <p className="text-[14px] text-white/75 mt-0.5">{me.phone}</p>
+                )}
+              </div>
+
+              {/* Botón editar */}
+              <button onClick={startEdit}
+                className="shrink-0 w-9 h-9 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center active:scale-95 transition-all hover:bg-white/30">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z" />
+                </svg>
+              </button>
             </div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-white truncate">{me.name}</h1>
-              {me.phone && <p className="text-sm text-blue-100 mt-0.5">{me.phone}</p>}
-              <p className="text-xs text-blue-200/80 mt-1">DO Chat</p>
+            {/* Soporte */}
+            <div className="relative mt-5">
+              <Link href="mailto:hola@getdochat.com"
+                className="flex items-center gap-2 py-2.5 px-4 rounded-2xl bg-white/15 border border-white/20 active:scale-95 transition-all hover:bg-white/20 w-full">
+                <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>
+                <span className="text-sm font-medium text-white/90">Soporte</span>
+              </Link>
             </div>
           </div>
-
-          {/* Acciones rápidas */}
-          <div className="relative mt-5 grid grid-cols-2 gap-2">
-            {[
-              { label: 'Exportar', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>, action: handleExport, loading: exporting },
-              { label: 'Soporte', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" /></svg>, href: 'mailto:hola@getdochat.com' },
-            ].map((btn, i) => (
-              btn.href
-                ? <Link key={i} href={btn.href}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white/15 border border-white/20 active:scale-95 transition-all hover:bg-white/20">
-                    <span className="text-white/80">{btn.icon}</span>
-                    <span className="text-[10px] font-medium text-white/60">{btn.label}</span>
-                  </Link>
-                : <button key={i} onClick={btn.action} disabled={btn.loading}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white/15 border border-white/20 active:scale-95 transition-all hover:bg-white/20 disabled:opacity-40">
-                    <span className="text-white/80">{btn.loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" /> : btn.icon}</span>
-                    <span className="text-[10px] font-medium text-white/60">{btn.label}</span>
-                  </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* ── Seguridad ── */}
         <div className="rounded-3xl bg-white border border-slate-100 shadow-sm overflow-hidden">
