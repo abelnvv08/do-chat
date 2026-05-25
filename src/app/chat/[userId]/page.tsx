@@ -1622,15 +1622,11 @@ setDarkMode(localStorage.getItem('dark_mode') === '1')
                   <div className="flex-1 min-w-0 pt-0.5">
                     <h1 className="text-[19px] font-bold text-white leading-tight truncate">{profile.name}</h1>
                     <div className="mt-2 flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">{a.profile.usernameLabel}</span>
-                        <span className="text-[14px] font-semibold text-white">{profile.username ? `@${profile.username}` : '—'}</span>
-                      </div>
+                      {profile.username && (
+                        <span className="text-[14px] font-semibold text-white/90">@{profile.username}</span>
+                      )}
                       {(profile as any).phone && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Tel</span>
-                          <span className="text-[14px] font-semibold text-white">{(profile as any).phone}</span>
-                        </div>
+                        <span className="text-[14px] font-semibold text-white/90">{(profile as any).phone}</span>
                       )}
                     </div>
                   </div>
