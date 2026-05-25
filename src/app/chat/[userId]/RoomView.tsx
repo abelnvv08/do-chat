@@ -2105,7 +2105,8 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                     ))}
                     <div className="w-px h-5 bg-gray-200 mx-1" />
                     <button onClick={() => {
-                      const preview = msg.type === 'text' ? msg.content.slice(0, 80) : msg.type === 'image' ? 'Imagen' : msg.type === 'audio' ? 'Audio' : 'Archivo'
+                      // For legacy E2EE messages, content is still ciphertext — don't store it as preview
+                      const preview = msg.type === 'text' && !isEncrypted(msg.content) ? msg.content.slice(0, 80) : msg.type === 'image' ? 'Imagen' : msg.type === 'audio' ? 'Audio' : '📨'
                       setReplyingTo({ id: msg.id, preview, userName: msg.user?.name ?? 'Usuario' })
                       setReactionPickerMsgId(null)
                     }} className="flex items-center gap-1 px-2 py-1 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -2114,7 +2115,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
                       </svg>
                       <span className="text-xs text-gray-600 font-medium">Responder</span>
                     </button>
-                    {isOwn && msg.type === 'text' && (
+                    {isOwn && msg.type === 'text' && !isEncrypted(msg.content) && (
                       <button onClick={() => { setEditInput(msg.content); setEditingMsg({ id: msg.id, content: msg.content }); setReactionPickerMsgId(null) }}
                         className="flex items-center gap-1 px-2 py-1 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors">
                         <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
