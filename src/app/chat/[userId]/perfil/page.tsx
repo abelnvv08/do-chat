@@ -269,22 +269,23 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
               </div>
 
               {/* Info */}
-              <div className="flex-1 min-w-0 pt-1">
-                <h1 className="text-[18px] font-bold text-white leading-tight truncate">{me.name}</h1>
-                {me.username && (
-                  <p className="text-[15px] text-white/90 font-medium mt-0.5">@{me.username}</p>
-                )}
+              <div className="flex-1 min-w-0 pt-0.5">
+                <h1 className="text-[20px] font-bold text-white leading-tight truncate">{me.name}</h1>
+                <p className="text-[14px] text-white font-medium mt-1 opacity-90">
+                  {me.username ? `@${me.username}` : '@—'}
+                </p>
                 {me.phone && (
-                  <p className="text-[14px] text-white/75 mt-0.5">{me.phone}</p>
+                  <p className="text-[13px] text-white mt-0.5 opacity-70">{me.phone}</p>
                 )}
               </div>
 
               {/* Botón editar */}
               <button onClick={startEdit}
-                className="shrink-0 w-9 h-9 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center active:scale-95 transition-all hover:bg-white/30">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/25 border border-white/30 active:scale-95 transition-all">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Z" />
                 </svg>
+                <span className="text-xs font-semibold text-white">Editar</span>
               </button>
             </div>
 
