@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -103,6 +103,47 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  // Avatar
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingAvatar(true)
+    setShowAvatarMenu(false)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('user_id', userId)
+      const res = await fetch('/api/auth/upload-avatar', { method: 'POST', body: fd })
+      const d = await res.json()
+      if (!res.ok) { alert(d.error ?? 'Error al subir foto'); return }
+      await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: me!.name, emoji: me!.emoji ?? '', avatar_url: d.url }),
+      })
+      setMe(prev => prev ? { ...prev, avatar_url: d.url } : prev)
+    } catch { alert('Error al subir foto') }
+    finally { setUploadingAvatar(false); if (avatarInputRef.current) avatarInputRef.current.value = '' }
+  }
+
+  async function handleAvatarDelete() {
+    setShowAvatarMenu(false)
+    setUploadingAvatar(true)
+    try {
+      await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: me!.name, emoji: me!.emoji ?? '', avatar_url: null }),
+      })
+      setMe(prev => prev ? { ...prev, avatar_url: null } : prev)
+    } catch { alert('Error al eliminar foto') }
+    finally { setUploadingAvatar(false) }
+  }
+
   useEffect(() => {
     fetch('/api/auth/profile').then(r => r.json()).then(d => {
       if (d.profile) setMe(d.profile)
@@ -203,6 +244,14 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
 
       <div className="flex-1 overflow-y-auto pb-32 px-4 space-y-4 pt-4">
 
+        {/* Input oculto para subir foto */}
+        <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+
+        {/* Backdrop para cerrar menú avatar */}
+        {showAvatarMenu && (
+          <div className="fixed inset-0 z-40" onClick={() => setShowAvatarMenu(false)} />
+        )}
+
         {/* ── Tarjeta de identidad ── */}
         {editing ? (
           /* ── Modo edición ── */
@@ -215,6 +264,57 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
+
+            {/* Avatar tappable en modo edición */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <button onClick={() => setShowAvatarMenu(v => !v)}
+                  className="relative w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-slate-200 active:scale-95 transition-all block">
+                  {uploadingAvatar
+                    ? <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    : me.avatar_url
+                    ? <Image src={me.avatar_url} alt={me.name} width={80} height={80} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                        <svg className="w-9 h-9 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                      </div>
+                  }
+                  {/* Overlay cámara */}
+                  <div className="absolute inset-0 bg-black/30 flex items-end justify-center pb-1.5">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Menú foto */}
+                {showAvatarMenu && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-44">
+                    <button onClick={() => { setShowAvatarMenu(false); avatarInputRef.current?.click() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+                      <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                      </svg>
+                      Cambiar foto
+                    </button>
+                    {me.avatar_url && (
+                      <button onClick={handleAvatarDelete}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors border-t border-slate-100">
+                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Eliminar foto
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -256,16 +356,53 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
             <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5 blur-2xl pointer-events-none" />
 
             <div className="relative flex items-start gap-4">
-              {/* Avatar */}
-              <div className="w-[72px] h-[72px] rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-xl shadow-blue-900/30 shrink-0">
-                {me.avatar_url
-                  ? <Image src={me.avatar_url} alt={me.name} width={72} height={72} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-white/20 flex items-center justify-center">
-                      <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              {/* Avatar tappable */}
+              <div className="relative shrink-0">
+                <button onClick={() => setShowAvatarMenu(v => !v)}
+                  className="relative w-[72px] h-[72px] rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-xl shadow-blue-900/30 block active:scale-95 transition-all">
+                  {uploadingAvatar
+                    ? <div className="w-full h-full bg-white/20 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      </div>
+                    : me.avatar_url
+                    ? <Image src={me.avatar_url} alt={me.name} width={72} height={72} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-white/20 flex items-center justify-center">
+                        <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                      </div>
+                  }
+                  {/* Overlay cámara */}
+                  <div className="absolute bottom-0 inset-x-0 h-6 bg-black/40 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Menú foto */}
+                {showAvatarMenu && (
+                  <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-44">
+                    <button onClick={() => { setShowAvatarMenu(false); avatarInputRef.current?.click() }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+                      <svg className="w-4 h-4 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
                       </svg>
-                    </div>
-                }
+                      Cambiar foto
+                    </button>
+                    {me.avatar_url && (
+                      <button onClick={handleAvatarDelete}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors border-t border-slate-100">
+                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Eliminar foto
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Info */}
