@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { type Room } from '@/lib/demo'
-import { decrypt } from '@/lib/encryption'
+import { decrypt, isEncrypted } from '@/lib/encryption'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -138,10 +138,14 @@ export async function GET(req: NextRequest) {
         catch { lastMsgPreview = `${senderName}: Archivo` }
       } else if (lastMsg.type === 'ai') {
         const plain = await decrypt(lastMsg.content)
-        lastMsgPreview = `do AI: ${plain}`
+        // Old E2EE messages still in the DB: server can't decrypt the inner layer
+        const display = isEncrypted(plain) ? '📨 Mensaje' : plain
+        lastMsgPreview = `do AI: ${display}`
       } else {
         const plain = await decrypt(lastMsg.content)
-        lastMsgPreview = `${senderName}: ${plain}`
+        // Old E2EE messages still in the DB: server can't decrypt the inner layer
+        const display = isEncrypted(plain) ? '📨 Mensaje' : plain
+        lastMsgPreview = `${senderName}: ${display}`
       }
     }
 

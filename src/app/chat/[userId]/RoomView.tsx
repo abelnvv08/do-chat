@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, KeyboardEvent } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import { SendHorizonalIcon, ArrowLeftIcon, PaperclipIcon, FileIcon, XIcon, MicIcon, StopCircleIcon } from 'lucide-react'
 import { usersCache, getAIRoom, DemoMessage } from '@/lib/demo'
-import { deriveSharedKey, deriveRoomKey, encryptMsg, decryptMsg, isEncrypted } from '@/lib/e2ee'
+import { deriveSharedKey, deriveRoomKey, decryptMsg, isEncrypted } from '@/lib/e2ee'
 import { formatMessageTime } from '@/lib/utils'
 import { useLanguage } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase-client'
@@ -825,11 +825,10 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           }
         }
         if (content) {
-          const contentToSend = encReady && encKey ? (await encryptMsg(content, encKey)) : content
           await fetch('/api/chat/messages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, content: contentToSend, room_id: roomId }),
+            body: JSON.stringify({ user_id: userId, content, room_id: roomId }),
           })
         }
         broadcast()
@@ -923,12 +922,11 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
         if (!r.ok) { const d = await r.json(); setUploadError(d.error ?? 'Error al subir archivo'); break }
       }
       if (content) {
-        const contentToSend = encReady && encKey ? (await encryptMsg(content, encKey)) : content
         const optimisticId = `optimistic-${Date.now()}`
         setMessages(prev => [...prev, {
           id: optimisticId,
           user_id: userId,
-          content: contentToSend,
+          content,
           type: 'text',
           room_id: roomId,
           created_at: new Date().toISOString(),
@@ -942,7 +940,7 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: userId, content: contentToSend, room_id: roomId,
+            user_id: userId, content, room_id: roomId,
             reply_to_id: reply?.id ?? null,
             reply_preview: reply?.preview ?? null,
           }),
@@ -1129,13 +1127,12 @@ export function RoomView({ userId, roomId, onBack, initialRoom, autoCall, onCall
   async function saveEdit() {
     if (!editingMsg || !editInput.trim()) return
     const plainContent = editInput.trim()
-    const finalContent = encReady && encKey ? (await encryptMsg(plainContent, encKey)) : plainContent
-    setMessages(prev => prev.map(m => m.id === editingMsg.id ? { ...m, content: finalContent, edited: true } : m))
+    setMessages(prev => prev.map(m => m.id === editingMsg.id ? { ...m, content: plainContent, edited: true } : m))
     setEditingMsg(null)
     await fetch('/api/chat/messages', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message_id: editingMsg.id, content: finalContent, user_id: userId }),
+      body: JSON.stringify({ message_id: editingMsg.id, content: plainContent, user_id: userId }),
     })
   }
 
