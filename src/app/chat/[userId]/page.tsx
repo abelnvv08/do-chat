@@ -2255,8 +2255,10 @@ function ChatRow({ room, userId, pref, pinnedCount, onAction, onOpenRoom }: { ro
       try {
         let key: CryptoKey | null = null
         if (room.type === 'dm' && room.otherUserId) {
-          const otherPub = localStorage.getItem(`e2ee_pub_${room.otherUserId}`)
-          if (otherPub) key = await deriveSharedKey(userId, otherPub)
+          // Other user's public key lives on the server, not in local localStorage
+          const res = await fetch(`/api/chat/e2ee?user_id=${room.otherUserId}`)
+          const d = await res.json()
+          if (d.public_key) key = await deriveSharedKey(userId, d.public_key)
         }
         if (!key) key = await deriveRoomKey(userId, room.id)
         if (key) {
