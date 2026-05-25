@@ -271,12 +271,20 @@ export default function PerfilPage({ params }: { params: Promise<{ userId: strin
               {/* Info */}
               <div className="flex-1 min-w-0 pt-0.5">
                 <h1 className="text-[20px] font-bold text-white leading-tight truncate">{me.name}</h1>
-                <p className="text-[14px] text-white font-medium mt-1 opacity-90">
-                  {me.username ? `@${me.username}` : '@—'}
-                </p>
-                {me.phone && (
-                  <p className="text-[13px] text-white mt-0.5 opacity-70">{me.phone}</p>
-                )}
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-blue-200 uppercase tracking-widest">Usuario</span>
+                    <span className="text-[14px] font-semibold text-white">
+                      {me.username ? `@${me.username}` : '—'}
+                    </span>
+                  </div>
+                  {me.phone && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-blue-200 uppercase tracking-widest">Tel</span>
+                      <span className="text-[14px] font-semibold text-white">{me.phone}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Botón editar */}
